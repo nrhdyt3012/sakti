@@ -34,7 +34,7 @@ import com.example.saktinocompose.teknisi.pages.DatabasePage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(userEmail: String, userRole: String,modifier: Modifier = Modifier) {
+fun TeknisiScreen(userEmail: String, userRole: String,modifier: Modifier = Modifier) {
     val navItemList = listOf(
         NavItem("Beranda", R.drawable.home),
         NavItem("Action", R.drawable.build),

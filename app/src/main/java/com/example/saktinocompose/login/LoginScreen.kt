@@ -63,6 +63,8 @@ fun LoginScreen(
         loginViewModel.loginEvent.collect { event ->
             when (event) {
                 is LoginEvent.LoginSuccess -> {
+                    successEmail = event.email  // ✅ Tambahkan ini
+                    successRole = event.role
                     showSuccessDialog = true
                 }
                 is LoginEvent.LoginError -> {
