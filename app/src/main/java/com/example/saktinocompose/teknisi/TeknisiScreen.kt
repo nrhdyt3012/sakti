@@ -31,98 +31,107 @@ import com.example.saktinocompose.R
 import com.example.saktinocompose.teknisi.pages.ActionPage
 import com.example.saktinocompose.teknisi.pages.BerandaPage
 import com.example.saktinocompose.teknisi.pages.DatabasePage
+import com.example.saktinocompose.teknisi.pages.ProfilePage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TeknisiScreen(userEmail: String, userRole: String,modifier: Modifier = Modifier) {
+fun TeknisiScreen(userEmail: String, userRole: String, modifier: Modifier = Modifier) {
     val navItemList = listOf(
         NavItem("Beranda", R.drawable.home),
         NavItem("Action", R.drawable.build),
         NavItem("Database", R.drawable.database),
-//        NavItem("Setting", R.drawable.setting),
     )
 
     var selectedIndex by remember { mutableStateOf(0) }
     var selectedStatus by remember { mutableStateOf<String?>(null) }
+    var showProfile by remember { mutableStateOf(false) }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        topBar = {
-            TopAppBar(
-                title = {},
-                navigationIcon = {
-                    Image(
-                        painter = painterResource(id = R.drawable.logo_app),
-                        contentDescription = "Back to Beranda",
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .size(width = 100.dp, height = 40.dp)
-                            .clickable {
-                                selectedIndex = 0
-                                selectedStatus = null
-                            }
-                    )
-                },
-                actions = {
-                    IconButton(onClick = {
-                        // Navigate ke NotificationPage
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications"
+    if (showProfile) {
+        ProfilePage(
+            userEmail = userEmail,
+            userRole = userRole,
+            onBackClick = { showProfile = false }
+        )
+    } else {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                TopAppBar(
+                    title = {},
+                    navigationIcon = {
+                        Image(
+                            painter = painterResource(id = R.drawable.logo_app),
+                            contentDescription = "Back to Beranda",
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .size(width = 100.dp, height = 40.dp)
+                                .clickable {
+                                    selectedIndex = 0
+                                    selectedStatus = null
+                                }
                         )
-                    }
-
-                    IconButton(onClick = {
-                        // Navigate ke ProfilPage
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = "Profile"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFF37474F),
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White,
-                    actionIconContentColor = Color.White
-                )
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                navItemList.forEachIndexed { index, navItem ->
-                    NavigationBarItem(
-                        selected = selectedIndex == index,
-                        onClick = {
-                            selectedIndex = index
-                            selectedStatus = null // Reset status ketika pindah tab
-                        },
-                        icon = {
+                    },
+                    actions = {
+                        IconButton(onClick = {
+                            // Navigate ke NotificationPage
+                        }) {
                             Icon(
-                                painter = painterResource(id = navItem.icon),
-                                contentDescription = "Icon",
-                                modifier = Modifier.size(24.dp)
+                                imageVector = Icons.Default.Notifications,
+                                contentDescription = "Notifications"
                             )
-                        },
-                        label = {
-                            Text(text = navItem.label)
                         }
+
+                        IconButton(onClick = {
+                            showProfile = true
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = "Profile"
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color(0xFF37474F),
+                        titleContentColor = Color.White,
+                        navigationIconContentColor = Color.White,
+                        actionIconContentColor = Color.White
                     )
+                )
+            },
+            bottomBar = {
+                NavigationBar {
+                    navItemList.forEachIndexed { index, navItem ->
+                        NavigationBarItem(
+                            selected = selectedIndex == index,
+                            onClick = {
+                                selectedIndex = index
+                                selectedStatus = null
+                            },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(id = navItem.icon),
+                                    contentDescription = "Icon",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            },
+                            label = {
+                                Text(text = navItem.label)
+                            }
+                        )
+                    }
                 }
             }
+        ) { innerPadding ->
+            ContentScreen(
+                modifier = Modifier.padding(innerPadding),
+                selectedIndex = selectedIndex,
+                selectedStatus = selectedStatus,
+                onStatusClick = { status ->
+                    selectedStatus = status
+                    selectedIndex = 1
+                }
+            )
         }
-    ) { innerPadding ->
-        ContentScreen(
-            modifier = Modifier.padding(innerPadding),
-            selectedIndex = selectedIndex,
-            selectedStatus = selectedStatus,
-            onStatusClick = { status ->
-                selectedStatus = status
-                selectedIndex = 1 // Pindah ke ActionPage
-            }
-        )
     }
 }
 
@@ -137,6 +146,5 @@ fun ContentScreen(
         0 -> BerandaPage()
         1 -> ActionPage(filterStatus = selectedStatus)
         2 -> DatabasePage(onStatusClick = onStatusClick)
-//        3 -> SettingPage()
     }
 }

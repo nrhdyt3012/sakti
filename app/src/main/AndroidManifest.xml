@@ -12,12 +12,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SaktiNoCompose" >
         <activity
-            android:name=".teknisi.HomeActivity"
-            android:exported="true"
+            android:name=".teknisi.TeknisiActivity"
+            android:exported="false"
             android:theme="@style/Theme.SaktiNoCompose" />
         <activity
             android:name=".enduser.EnduserActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.SaktiNoCompose" />
         <activity
             android:name=".login.LoginActivity"
