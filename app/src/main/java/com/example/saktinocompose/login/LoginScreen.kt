@@ -1,6 +1,5 @@
 package com.example.saktinocompose.login
 
-import android.content.Intent
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -11,7 +10,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -22,49 +20,46 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-//import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-// Definisikan warna yang digunakan
 val White = Color(0xFFFFFFFF)
-
 val MediumGreen = Color(0xFF009951)
 val GrayBackground = Color(0xFF485F88)
-
 val Black = Color(0xFF000000)
-
 
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModelCompose = viewModel(),
-    onLoginSuccess: (email: String, role: UserRole) -> Unit
+    onLoginSuccess: (userId: Int, email: String, name: String, role: String) -> Unit
 ) {
     val uiState by loginViewModel.uiState.collectAsState()
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf<String?>(null) }
+    var successUserId by remember { mutableStateOf(0) }
     var successEmail by remember { mutableStateOf("") }
-    var successRole by remember { mutableStateOf<UserRole?>(null) }
+    var successName by remember { mutableStateOf("") }
+    var successRole by remember { mutableStateOf("") }
 
     // Listener untuk event dari ViewModel
     LaunchedEffect(Unit) {
         loginViewModel.loginEvent.collect { event ->
             when (event) {
                 is LoginEvent.LoginSuccess -> {
-                    successEmail = event.email  // ✅ Tambahkan ini
-                    successRole = event.role
+                    successUserId = event.user.id
+                    successEmail = event.user.email
+                    successName = event.user.name
+                    successRole = event.user.role
                     showSuccessDialog = true
                 }
                 is LoginEvent.LoginError -> {
@@ -74,22 +69,22 @@ fun LoginScreen(
         }
     }
 
-    // --- Dialog ---
-    if (showSuccessDialog && successRole != null) {
-        val roleText = when (successRole) {
-            UserRole.TEKNISI -> "Teknisi"
-            UserRole.END_USER -> "Pengguna Akhir"
-            else -> ""
+    // Success Dialog
+    if (showSuccessDialog) {
+        val roleText = when (successRole.uppercase()) {
+            "TEKNISI" -> "Teknisi"
+            "END_USER" -> "End User"
+            else -> successRole
         }
 
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
-            title = { Text("Yeah!") },
-            text = { Text("Selamat datang kembali, $successEmail\nRole: $roleText") },
+            title = { Text("Selamat Datang!") },
+            text = { Text("Login berhasil.\n\nNama: $successName\nRole: $roleText") },
             confirmButton = {
                 Button(onClick = {
                     showSuccessDialog = false
-                    successRole?.let { onLoginSuccess(successEmail, it) }
+                    onLoginSuccess(successUserId, successEmail, successName, successRole)
                 }) {
                     Text("Lanjut")
                 }
@@ -97,6 +92,7 @@ fun LoginScreen(
         )
     }
 
+    // Error Dialog
     if (showErrorDialog != null) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = null },
@@ -110,22 +106,12 @@ fun LoginScreen(
         )
     }
 
-    // --- Animasi ---
-    val infiniteTransition = rememberInfiniteTransition(label = "infinite transition")
-    val imageTranslationX by infiniteTransition.animateFloat(
-        initialValue = -30f,
-        targetValue = 30f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(6000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ), label = "image translation"
-    )
-
+    // Animasi
     val viewAlphas = List(7) { remember { Animatable(0f) } }
     LaunchedEffect(Unit) {
         launch {
             viewAlphas.forEachIndexed { index, animatable ->
-                delay(150) // Jeda antar animasi
+                delay(150)
                 animatable.animateTo(
                     targetValue = 1f,
                     animationSpec = tween(durationMillis = 200)
@@ -134,7 +120,6 @@ fun LoginScreen(
         }
     }
 
-    // --- UI Layout ---
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -148,9 +133,9 @@ fun LoginScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Image with animation
+            // Image
             Image(
-                painter = painterResource(id = R.drawable.image_login), // Pastikan drawable ada
+                painter = painterResource(id = R.drawable.image_login),
                 contentDescription = "Login Image",
                 modifier = Modifier
                     .size(150.dp)
@@ -159,7 +144,6 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            // Texts and Inputs
             Text(
                 text = "Log In",
                 fontSize = 24.sp,
@@ -171,13 +155,12 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Email Field
-            // === EMAIL FIELD ===
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = loginViewModel::onEmailChange,
                 label = {
                     Surface(
-                        color = Color.White, // Background label putih
+                        color = Color.White,
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
@@ -206,7 +189,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-// === PASSWORD FIELD ===
+            // Password Field
             var passwordVisible by remember { mutableStateOf(false) }
 
             OutlinedTextField(
@@ -214,7 +197,7 @@ fun LoginScreen(
                 onValueChange = loginViewModel::onPasswordChange,
                 label = {
                     Surface(
-                        color = Color.White, // Background label putih
+                        color = Color.White,
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
@@ -265,7 +248,7 @@ fun LoginScreen(
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = Color.White
+                        color = Black
                     )
                 } else {
                     Text("Login", fontSize = 18.sp)
@@ -273,13 +256,6 @@ fun LoginScreen(
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    LoginScreen(onLoginSuccess = {_, _ -> })
 }

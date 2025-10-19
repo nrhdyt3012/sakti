@@ -1,7 +1,10 @@
 package com.example.saktinocompose.login
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.saktinocompose.data.AppDatabase
+import com.example.saktinocompose.data.entity.User
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,12 +12,13 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.security.MessageDigest
 
 enum class UserRole {
     TEKNISI,
     END_USER
 }
-// Data class untuk menampung semua state UI
+
 data class LoginUiState(
     val email: String = "",
     val password: String = "",
@@ -22,27 +26,21 @@ data class LoginUiState(
     val errorMessage: String? = null
 )
 
-// Enum untuk role user
-
-
-// Sealed interface untuk event sekali jalan (Single-time events)
 sealed interface LoginEvent {
-    data class LoginSuccess(val email: String, val role: UserRole) : LoginEvent
+    data class LoginSuccess(val user: User) : LoginEvent
     data class LoginError(val message: String) : LoginEvent
 }
 
-class LoginViewModelCompose : ViewModel() {
+class LoginViewModelCompose(application: Application) : AndroidViewModel(application) {
+
+    private val database = AppDatabase.getDatabase(application)
+    private val userDao = database.userDao()
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState = _uiState.asStateFlow()
 
     private val _loginEvent = MutableSharedFlow<LoginEvent>()
     val loginEvent = _loginEvent.asSharedFlow()
-
-    private val validUsers = mapOf(
-        "test@example.com" to Pair("password123", UserRole.TEKNISI),
-        "enduser@example.com" to Pair("password456", UserRole.END_USER)
-    )
 
     fun onEmailChange(email: String) {
         _uiState.update { it.copy(email = email) }
@@ -52,35 +50,39 @@ class LoginViewModelCompose : ViewModel() {
         _uiState.update { it.copy(password = password) }
     }
 
+    private fun hashPassword(password: String): String {
+        val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
     fun login() {
         viewModelScope.launch {
-            val email = _uiState.value.email
+            val email = _uiState.value.email.trim()
             val password = _uiState.value.password
 
             if (email.isEmpty() || password.isEmpty()) {
-                _loginEvent.emit(LoginEvent.LoginError("Email and Password cannot be empty."))
+                _loginEvent.emit(LoginEvent.LoginError("Email dan Password tidak boleh kosong"))
                 return@launch
             }
 
-            // Mulai loading
             _uiState.update { it.copy(isLoading = true) }
 
-            // Simulasi proses network/authentication
-            delay(2000)
+            delay(1000) // Simulasi network delay
 
-            // Logika validasi dengan role
-            val userCredentials = validUsers[email]
+            try {
+                val user = userDao.getUserByEmail(email)
+                val hashedPassword = hashPassword(password)
 
-            if (userCredentials != null && userCredentials.first == password) {
-                // Kirim event sukses dengan role
-                _loginEvent.emit(LoginEvent.LoginSuccess(email, userCredentials.second))
-            } else {
-                // Kirim event error
-                _loginEvent.emit(LoginEvent.LoginError("Email atau password tidak valid."))
+                if (user != null && user.passwordHash == hashedPassword) {
+                    _loginEvent.emit(LoginEvent.LoginSuccess(user))
+                } else {
+                    _loginEvent.emit(LoginEvent.LoginError("Email atau password tidak valid"))
+                }
+            } catch (e: Exception) {
+                _loginEvent.emit(LoginEvent.LoginError("Terjadi kesalahan: ${e.message}"))
+            } finally {
+                _uiState.update { it.copy(isLoading = false) }
             }
-
-            // Selesai loading
-            _uiState.update { it.copy(isLoading = false) }
         }
     }
 }

@@ -6,10 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Work
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,7 +25,9 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfilePage(
+    userId: Int,
     userEmail: String,
+    userName: String,
     userRole: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -49,7 +48,6 @@ fun ProfilePage(
                     onClick = {
                         scope.launch {
                             profileViewModel.logout(context)
-                            // Navigasi ke LoginActivity
                             val intent = Intent(context, LoginActivity::class.java)
                             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                             context.startActivity(intent)
@@ -130,6 +128,62 @@ fun ProfilePage(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    // User ID
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Badge,
+                            contentDescription = "User ID",
+                            tint = Color(0xFF37474F),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "User ID",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                            Text(
+                                text = userId.toString(),
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    Divider()
+
+                    // Nama
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = "Name",
+                            tint = Color(0xFF37474F),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Nama",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                            Text(
+                                text = userName,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    Divider()
+
                     // Email
                     Row(
                         modifier = Modifier.fillMaxWidth(),

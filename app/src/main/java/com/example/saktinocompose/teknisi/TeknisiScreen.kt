@@ -35,7 +35,13 @@ import com.example.saktinocompose.teknisi.pages.ProfilePage
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TeknisiScreen(userEmail: String, userRole: String, modifier: Modifier = Modifier) {
+fun TeknisiScreen(
+    userId: Int,
+    userEmail: String,
+    userName: String,
+    userRole: String,
+    modifier: Modifier = Modifier
+) {
     val navItemList = listOf(
         NavItem("Beranda", R.drawable.home),
         NavItem("Action", R.drawable.build),
@@ -48,7 +54,9 @@ fun TeknisiScreen(userEmail: String, userRole: String, modifier: Modifier = Modi
 
     if (showProfile) {
         ProfilePage(
+            userId = userId,
             userEmail = userEmail,
+            userName = userName,
             userRole = userRole,
             onBackClick = { showProfile = false }
         )

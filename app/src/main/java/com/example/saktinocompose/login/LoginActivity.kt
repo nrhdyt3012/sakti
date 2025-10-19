@@ -23,9 +23,18 @@ class LoginActivity: ComponentActivity(){
         lifecycleScope.launch {
             val userSession = sessionManager.userSession.first()
 
-            if (userSession.isLoggedIn && userSession.email != null && userSession.role != null) {
+            if (userSession.isLoggedIn &&
+                userSession.userId != null &&
+                userSession.email != null &&
+                userSession.name != null &&
+                userSession.role != null) {
                 // User sudah login, langsung navigasi ke halaman sesuai role
-                navigateToHome(userSession.email, userSession.role)
+                navigateToHome(
+                    userId = userSession.userId,
+                    email = userSession.email,
+                    name = userSession.name,
+                    role = userSession.role
+                )
             } else {
                 // User belum login, tampilkan login screen
                 showLoginScreen()
@@ -36,25 +45,27 @@ class LoginActivity: ComponentActivity(){
     private fun showLoginScreen() {
         setContent {
             LoginScreen(
-                onLoginSuccess = { email, role ->
+                onLoginSuccess = { userId, email, name, role ->
                     // Simpan session
                     lifecycleScope.launch {
-                        sessionManager.saveSession(email, role.name)
-                        navigateToHome(email, role.name)
+                        sessionManager.saveSession(userId, email, name, role)
+                        navigateToHome(userId, email, name, role)
                     }
                 }
             )
         }
     }
 
-    private fun navigateToHome(email: String, role: String) {
+    private fun navigateToHome(userId: Int, email: String, name: String, role: String) {
         val intent = when (role.uppercase()) {
             "TEKNISI" -> Intent(this, TeknisiActivity::class.java)
             "END_USER" -> Intent(this, EnduserActivity::class.java)
             else -> return
         }
 
+        intent.putExtra("USER_ID", userId)
         intent.putExtra("USER_EMAIL", email)
+        intent.putExtra("USER_NAME", name)
         intent.putExtra("USER_ROLE", role)
         startActivity(intent)
         finish()

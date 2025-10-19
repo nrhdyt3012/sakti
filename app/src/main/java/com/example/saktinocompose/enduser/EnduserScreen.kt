@@ -29,15 +29,23 @@ import androidx.compose.ui.unit.dp
 import com.example.saktinocompose.menu.NavItem
 import com.example.saktinocompose.R
 import com.example.saktinocompose.enduser.pages.ActionPage2
+import com.example.saktinocompose.enduser.pages.BerandaPage2
 import com.example.saktinocompose.enduser.pages.DatabasePage2
 import com.example.saktinocompose.enduser.pages.ProfilePage2
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EnduserScreen(userEmail: String, userRole: String, modifier: Modifier = Modifier) {
+fun EnduserScreen(
+    userId: Int,
+    userEmail: String,
+    userName: String,
+    userRole: String,
+    modifier: Modifier = Modifier
+) {
     val navItemList = listOf(
-        NavItem("Action", R.drawable.build),
-        NavItem("Database", R.drawable.database),
+        NavItem("Beranda", R.drawable.home),
+//        NavItem("Action", R.drawable.build),
+        NavItem("Status", R.drawable.database),
     )
 
     var selectedIndex by remember { mutableStateOf(0) }
@@ -46,7 +54,9 @@ fun EnduserScreen(userEmail: String, userRole: String, modifier: Modifier = Modi
 
     if (showProfile) {
         ProfilePage2(
+            userId = userId,
             userEmail = userEmail,
+            userName = userName,
             userRole = userRole,
             onBackClick = { showProfile = false }
         )
@@ -122,11 +132,12 @@ fun EnduserScreen(userEmail: String, userRole: String, modifier: Modifier = Modi
         ) { innerPadding ->
             ContentScreen(
                 modifier = Modifier.padding(innerPadding),
+                userId = userId,
                 selectedIndex = selectedIndex,
                 selectedStatus = selectedStatus,
                 onStatusClick = { status ->
                     selectedStatus = status
-                    selectedIndex = 0
+                    selectedIndex = 1
                 }
             )
         }
@@ -136,12 +147,14 @@ fun EnduserScreen(userEmail: String, userRole: String, modifier: Modifier = Modi
 @Composable
 fun ContentScreen(
     modifier: Modifier = Modifier,
+    userId: Int,
     selectedIndex: Int,
     selectedStatus: String?,
     onStatusClick: (String) -> Unit
 ) {
     when (selectedIndex) {
-        0 -> ActionPage2(filterStatus = selectedStatus)
-        1 -> DatabasePage2(onStatusClick = onStatusClick)
+        0 -> BerandaPage2(userId = userId)
+        1 -> ActionPage2(filterStatus = selectedStatus)
+        2 -> DatabasePage2(onStatusClick = onStatusClick)
     }
 }

@@ -1,5 +1,6 @@
 [versions]
 agp = "8.12.3"
+datastorePreferences = "1.0.0"
 kotlin = "2.0.21"
 coreKtx = "1.17.0"
 junit = "4.13.2"
@@ -12,6 +13,7 @@ lifecycleViewmodelCompose = "2.9.4"
 material = "1.13.0"
 appcompat = "1.7.1"
 constraintlayout = "2.2.1"
+materialIconsExtended = "1.7.8"
 navigationFragmentKtx = "2.9.5"
 navigationUiKtx = "2.9.5"
 material3 = "1.4.0"
@@ -19,7 +21,9 @@ foundation = "1.9.2"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleViewmodelCompose" }
+androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtended" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
