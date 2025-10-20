@@ -19,6 +19,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -28,10 +29,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.saktinocompose.menu.NavItem
 import com.example.saktinocompose.R
-import com.example.saktinocompose.enduser.pages.ActionPage2
-import com.example.saktinocompose.enduser.pages.BerandaPage2
-import com.example.saktinocompose.enduser.pages.DatabasePage2
-import com.example.saktinocompose.enduser.pages.ProfilePage2
+import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.enduser.pages.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,106 +39,143 @@ fun EnduserScreen(
     userEmail: String,
     userName: String,
     userRole: String,
-    modifier: Modifier = Modifier
 ) {
     val navItemList = listOf(
         NavItem("Beranda", R.drawable.home),
-//        NavItem("Action", R.drawable.build),
-        NavItem("Status", R.drawable.database),
+        NavItem("Status", R.drawable.database)
     )
 
-    var selectedIndex by remember { mutableStateOf(0) }
-    var selectedStatus by remember { mutableStateOf<String?>(null) }
+    var selectedIndex by remember { mutableIntStateOf(0) }
     var showProfile by remember { mutableStateOf(false) }
+    var showFormInput by remember { mutableStateOf(false) }
+    var showDetailForm by remember { mutableStateOf(false) }
+    var showStatusHistory by remember { mutableStateOf(false) }
+    var selectedChangeRequest by remember { mutableStateOf<ChangeRequest?>(null) }
 
-    if (showProfile) {
-        ProfilePage2(
-            userId = userId,
-            userEmail = userEmail,
-            userName = userName,
-            userRole = userRole,
-            onBackClick = { showProfile = false }
-        )
-    } else {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                TopAppBar(
-                    title = {},
-                    navigationIcon = {
-                        Image(
-                            painter = painterResource(id = R.drawable.logo_app),
-                            contentDescription = "Back to Beranda",
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .size(width = 100.dp, height = 40.dp)
-                                .clickable {
-                                    selectedIndex = 0
-                                    selectedStatus = null
-                                }
-                        )
-                    },
-                    actions = {
-                        IconButton(onClick = {
-                            // Navigate ke NotificationPage
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications"
-                            )
-                        }
-
-                        IconButton(onClick = {
-                            showProfile = true
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile"
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFF37474F),
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White,
-                        actionIconContentColor = Color.White
-                    )
-                )
-            },
-            bottomBar = {
-                NavigationBar {
-                    navItemList.forEachIndexed { index, navItem ->
-                        NavigationBarItem(
-                            selected = selectedIndex == index,
-                            onClick = {
-                                selectedIndex = index
-                                selectedStatus = null
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(id = navItem.icon),
-                                    contentDescription = "Icon",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
-                            label = {
-                                Text(text = navItem.label)
-                            }
-                        )
-                    }
-                }
-            }
-        ) { innerPadding ->
-            ContentScreen(
-                modifier = Modifier.padding(innerPadding),
+    when {
+        showProfile -> {
+            ProfilePage2(
                 userId = userId,
-                selectedIndex = selectedIndex,
-                selectedStatus = selectedStatus,
-                onStatusClick = { status ->
-                    selectedStatus = status
+                userEmail = userEmail,
+                userName = userName,
+                userRole = userRole,
+                onBackClick = { showProfile = false }
+            )
+        }
+        showDetailForm && selectedChangeRequest != null -> {
+            FormDetailPage(
+                changeRequest = selectedChangeRequest!!,
+                onBackClick = {
+                    showDetailForm = false
+                    selectedChangeRequest = null
+                }
+            )
+        }
+        showStatusHistory && selectedChangeRequest != null -> {
+            StatusHistoryPage(
+                changeRequest = selectedChangeRequest!!,
+                onBackClick = {
+                    showStatusHistory = false
+                    selectedChangeRequest = null
+                }
+            )
+        }
+        showFormInput -> {
+            EnduserForm(
+                userId = userId,
+                userName = userName,
+                onFormSubmitted = {
+                    showFormInput = false
                     selectedIndex = 1
                 }
             )
+        }
+        else -> {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    TopAppBar(
+                        title = {},
+                        navigationIcon = {
+                            Image(
+                                painter = painterResource(id = R.drawable.logo_app),
+                                contentDescription = "Logo",
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .size(width = 100.dp, height = 40.dp)
+                                    .clickable {
+                                        selectedIndex = 0
+                                        showFormInput = false
+                                    }
+                            )
+                        },
+                        actions = {
+                            IconButton(onClick = {
+                                // Navigate ke NotificationPage
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notifications"
+                                )
+                            }
+
+                            IconButton(onClick = {
+                                showProfile = true
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Profile"
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color(0xFF37474F),
+                            titleContentColor = Color.White,
+                            navigationIconContentColor = Color.White,
+                            actionIconContentColor = Color.White
+                        )
+                    )
+                },
+                bottomBar = {
+                    NavigationBar {
+                        navItemList.forEachIndexed { index, navItem ->
+                            NavigationBarItem(
+                                selected = selectedIndex == index,
+                                onClick = {
+                                    selectedIndex = index
+                                    showFormInput = false
+                                },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(id = navItem.icon),
+                                        contentDescription = "Icon",
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                },
+                                label = {
+                                    Text(text = navItem.label)
+                                }
+                            )
+                        }
+                    }
+                }
+            ) { innerPadding ->
+                ContentScreen(
+                    modifier = Modifier.padding(innerPadding),
+                    userId = userId,
+                    userName = userName,
+                    selectedIndex = selectedIndex,
+                    onCreateFormClick = { showFormInput = true },
+                    onStatusHistoryClick = { changeRequest ->
+                        selectedChangeRequest = changeRequest
+                        showStatusHistory = true
+                    },
+                    onDetailClick = { changeRequest ->
+                        selectedChangeRequest = changeRequest
+                        showDetailForm = true
+                    }
+                )
+            }
         }
     }
 }
@@ -148,13 +184,22 @@ fun EnduserScreen(
 fun ContentScreen(
     modifier: Modifier = Modifier,
     userId: Int,
+    userName: String,
     selectedIndex: Int,
-    selectedStatus: String?,
-    onStatusClick: (String) -> Unit
+    onCreateFormClick: () -> Unit,
+    onStatusHistoryClick: (ChangeRequest) -> Unit,
+    onDetailClick: (ChangeRequest) -> Unit
 ) {
     when (selectedIndex) {
-        0 -> BerandaPage2(userId = userId)
-        1 -> ActionPage2(filterStatus = selectedStatus)
-        2 -> DatabasePage2(onStatusClick = onStatusClick)
+        0 -> EnduserBerandaPage(
+            userId = userId,
+            userName = userName,
+            onCreateFormClick = onCreateFormClick
+        )
+        1 -> EnduserStatusPage(
+            userId = userId,
+            onStatusHistoryClick = onStatusHistoryClick,
+            onDetailClick = onDetailClick
+        )
     }
 }

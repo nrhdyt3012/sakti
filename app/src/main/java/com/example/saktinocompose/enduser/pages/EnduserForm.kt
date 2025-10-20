@@ -27,8 +27,10 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BerandaPage2(
+fun EnduserForm(
     userId: Int,
+    userName: String,
+    onFormSubmitted: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ChangeRequestViewModel = viewModel()
 ) {
@@ -40,19 +42,25 @@ fun BerandaPage2(
     var alasan by remember { mutableStateOf("") }
     var tujuan by remember { mutableStateOf("") }
     var asetTerdampak by remember { mutableStateOf("") }
-    var dampakRisiko by remember { mutableStateOf("") }
-    var rencanaImplementasi by remember { mutableStateOf("") }
-    var rencanaRollback by remember { mutableStateOf("") }
-    var jadwal by remember { mutableStateOf("") }
-    var pic by remember { mutableStateOf("") }
+    var showAsetDropdown by remember { mutableStateOf(false) }
+    var usulanJadwal by remember { mutableStateOf("") }
 
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
     val jenisOptions = listOf("Standar", "Minor", "Major", "Emergency")
+    val asetOptions = listOf(
+        "Aset Perangkat Keras",
+        "Aplikasi/Service",
+        "OS/Build",
+        "Jaringan (switch/router/AP)",
+        "Database/Instance",
+        "Sertifikat",
+        "VM/Container",
+        "Endpoint"
+    )
 
-    // Date Picker
     val calendar = Calendar.getInstance()
     val datePickerDialog = DatePickerDialog(
         context,
@@ -60,16 +68,15 @@ fun BerandaPage2(
             val selectedCalendar = Calendar.getInstance()
             selectedCalendar.set(year, month, dayOfMonth)
             val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            jadwal = dateFormat.format(selectedCalendar.time)
+            usulanJadwal = dateFormat.format(selectedCalendar.time)
         },
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
         calendar.get(Calendar.DAY_OF_MONTH)
     ).apply {
-        datePicker.minDate = System.currentTimeMillis() // Tanggal tidak boleh kurang dari hari ini
+        datePicker.minDate = System.currentTimeMillis()
     }
 
-    // Success Dialog
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
@@ -79,16 +86,12 @@ fun BerandaPage2(
                 Button(
                     onClick = {
                         showSuccessDialog = false
-                        // Reset form
                         jenisPerubahan = ""
                         alasan = ""
                         tujuan = ""
                         asetTerdampak = ""
-                        dampakRisiko = ""
-                        rencanaImplementasi = ""
-                        rencanaRollback = ""
-                        jadwal = ""
-                        pic = ""
+                        usulanJadwal = ""
+                        onFormSubmitted()
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4CAF50)
@@ -100,7 +103,6 @@ fun BerandaPage2(
         )
     }
 
-    // Error Dialog
     if (showErrorDialog) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = false },
@@ -124,8 +126,10 @@ fun BerandaPage2(
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
             .verticalScroll(scrollState)
-            .padding(top = 90.dp)
+            .padding(16.dp)
     ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text(
             text = "Form Permohonan Perubahan",
             fontSize = 20.sp,
@@ -147,7 +151,7 @@ fun BerandaPage2(
                 modifier = Modifier.padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 1. Jenis Perubahan (Dropdown)
+                // 1. Jenis Perubahan
                 Text("1. Jenis Perubahan *", fontWeight = FontWeight.SemiBold)
                 ExposedDropdownMenuBox(
                     expanded = showJenisDropdown,
@@ -198,7 +202,7 @@ fun BerandaPage2(
                 )
 
                 // 3. Tujuan
-                Text("3. Tujuan", fontWeight = FontWeight.SemiBold)
+                Text("3. Tujuan *", fontWeight = FontWeight.SemiBold)
                 OutlinedTextField(
                     value = tujuan,
                     onValueChange = { tujuan = it },
@@ -211,66 +215,46 @@ fun BerandaPage2(
                     )
                 )
 
-                // 4. Aset/CI Terdampak
-                Text("4. Aset/CI Terdampak *", fontWeight = FontWeight.SemiBold)
-                OutlinedTextField(
-                    value = asetTerdampak,
-                    onValueChange = { asetTerdampak = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 2,
-                    placeholder = { Text("Sebutkan aset yang terdampak") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
+                // 4. Aset Terdampak
+                Text("4. Aset Terdampak (CI) *", fontWeight = FontWeight.SemiBold)
+                ExposedDropdownMenuBox(
+                    expanded = showAsetDropdown,
+                    onExpandedChange = { showAsetDropdown = !showAsetDropdown }
+                ) {
+                    OutlinedTextField(
+                        value = asetTerdampak,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Pilih Aset") },
+                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
                     )
-                )
+                    ExposedDropdownMenu(
+                        expanded = showAsetDropdown,
+                        onDismissRequest = { showAsetDropdown = false }
+                    ) {
+                        asetOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(option) },
+                                onClick = {
+                                    asetTerdampak = option
+                                    showAsetDropdown = false
+                                }
+                            )
+                        }
+                    }
+                }
 
-                // 5. Dampak & Risiko
-                Text("5. Dampak & Risiko", fontWeight = FontWeight.SemiBold)
+                // 5. Usulan Jadwal
+                Text("5. Usulan Jadwal *", fontWeight = FontWeight.SemiBold)
                 OutlinedTextField(
-                    value = dampakRisiko,
-                    onValueChange = { dampakRisiko = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    placeholder = { Text("Jelaskan dampak dan risiko (kualitatif/kuantitatif)") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-
-                // 6. Rencana Implementasi
-                Text("6. Rencana Implementasi", fontWeight = FontWeight.SemiBold)
-                OutlinedTextField(
-                    value = rencanaImplementasi,
-                    onValueChange = { rencanaImplementasi = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    placeholder = { Text("Jelaskan rencana implementasi") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-
-                // 7. Rencana Rollback
-                Text("7. Rencana Rollback *", fontWeight = FontWeight.SemiBold)
-                OutlinedTextField(
-                    value = rencanaRollback,
-                    onValueChange = { rencanaRollback = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    placeholder = { Text("Jelaskan rencana rollback") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-
-                // 8. Jadwal
-                Text("8. Jadwal *", fontWeight = FontWeight.SemiBold)
-                OutlinedTextField(
-                    value = jadwal,
+                    value = usulanJadwal,
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier
@@ -290,25 +274,10 @@ fun BerandaPage2(
                     )
                 )
 
-                // 9. PIC
-                Text("9. PIC", fontWeight = FontWeight.SemiBold)
-                OutlinedTextField(
-                    value = pic,
-                    onValueChange = { pic = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Nama PIC") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Submit Button
                 Button(
                     onClick = {
-                        // Validasi
                         when {
                             jenisPerubahan.isBlank() -> {
                                 errorMessage = "Jenis Perubahan wajib diisi"
@@ -318,31 +287,26 @@ fun BerandaPage2(
                                 errorMessage = "Alasan wajib diisi"
                                 showErrorDialog = true
                             }
+                            tujuan.isBlank() -> {
+                                errorMessage = "Tujuan wajib diisi"
+                                showErrorDialog = true
+                            }
                             asetTerdampak.isBlank() -> {
-                                errorMessage = "Aset/CI Terdampak wajib diisi"
+                                errorMessage = "Aset Terdampak wajib diisi"
                                 showErrorDialog = true
                             }
-                            rencanaRollback.isBlank() -> {
-                                errorMessage = "Rencana Rollback wajib diisi"
-                                showErrorDialog = true
-                            }
-                            jadwal.isBlank() -> {
-                                errorMessage = "Jadwal wajib diisi"
+                            usulanJadwal.isBlank() -> {
+                                errorMessage = "Usulan Jadwal wajib diisi"
                                 showErrorDialog = true
                             }
                             else -> {
-                                // Submit
                                 viewModel.submitChangeRequest(
                                     userId = userId,
                                     jenisPerubahan = jenisPerubahan,
                                     alasan = alasan,
                                     tujuan = tujuan,
                                     asetTerdampak = asetTerdampak,
-                                    dampakRisiko = dampakRisiko,
-                                    rencanaImplementasi = rencanaImplementasi,
-                                    rencanaRollback = rencanaRollback,
-                                    jadwal = jadwal,
-                                    pic = pic
+                                    usulanJadwal = usulanJadwal
                                 )
                                 showSuccessDialog = true
                             }

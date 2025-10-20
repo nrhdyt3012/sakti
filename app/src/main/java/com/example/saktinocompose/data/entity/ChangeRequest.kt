@@ -13,11 +13,11 @@ data class ChangeRequest(
     val alasan: String,
     val tujuan: String,
     val asetTerdampak: String,
-    val dampakRisiko: String,
-    val rencanaImplementasi: String,
-    val rencanaRollback: String,
-    val jadwal: String, // Format: yyyy-MM-dd
-    val pic: String,
+//    val dampakRisiko: String,
+//    val rencanaImplementasi: String,
+//    val rencanaRollback: String,
+    val usulanJadwal: String, // Format: yyyy-MM-dd
+//    val pic: String,
     val status: String = "Submitted", // "Submitted", "Perlu Ditinjau", "Sedang Ditinjau", "Selesai Ditinjau"
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()

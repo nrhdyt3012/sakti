@@ -5,8 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.saktinocompose.data.dao.ApprovalHistoryDao
 import com.example.saktinocompose.data.dao.ChangeRequestDao
 import com.example.saktinocompose.data.dao.UserDao
+import com.example.saktinocompose.data.entity.ApprovalHistory
 import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.data.entity.User
 import kotlinx.coroutines.CoroutineScope
@@ -15,13 +17,14 @@ import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
 @Database(
-    entities = [User::class, ChangeRequest::class],
-    version = 1,
+    entities = [User::class, ChangeRequest::class, ApprovalHistory::class],
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun changeRequestDao(): ChangeRequestDao
+    abstract fun approvalHistoryDao(): ApprovalHistoryDao
 
     companion object {
         @Volatile
@@ -34,6 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "sakti_database"
                 )
+                    .fallbackToDestructiveMigration()
                     .addCallback(DatabaseCallback())
                     .build()
                 INSTANCE = instance
@@ -53,17 +57,15 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         private suspend fun populateDatabase(userDao: UserDao) {
-            // Hash password menggunakan SHA-256
             fun hashPassword(password: String): String {
                 val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
                 return bytes.joinToString("") { "%02x".format(it) }
             }
 
-            // Insert dummy users
             userDao.insertUser(
                 User(
                     email = "test@example.com",
-                    name = "Teknisi Utama",
+                    name = "Budi",
                     passwordHash = hashPassword("password123"),
                     role = "TEKNISI"
                 )
@@ -71,7 +73,7 @@ abstract class AppDatabase : RoomDatabase() {
             userDao.insertUser(
                 User(
                     email = "enduser@example.com",
-                    name = "End User Demo",
+                    name = "Andi",
                     passwordHash = hashPassword("password456"),
                     role = "END_USER"
                 )
