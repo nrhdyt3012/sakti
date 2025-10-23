@@ -242,7 +242,8 @@ fun EnduserBerandaPage(
             Icon(
                 imageVector = Icons.Default.Add,
                 contentDescription = "Add",
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(24.dp),
+                tint = Color.White
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
