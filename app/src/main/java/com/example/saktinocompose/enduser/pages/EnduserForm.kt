@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.*
@@ -18,7 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,6 +32,7 @@ fun EnduserForm(
     userId: Int,
     userName: String,
     onFormSubmitted: () -> Unit = {},
+    onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: ChangeRequestViewModel = viewModel()
 ) {
@@ -126,218 +127,235 @@ fun EnduserForm(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
-            .verticalScroll(scrollState)
-            .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Form Permohonan Perubahan",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black,
-            modifier = Modifier
-                .padding(vertical = 16.dp)
-                .fillMaxWidth(),
-            textAlign = TextAlign.Center
+        // Top App Bar
+        TopAppBar(
+            title = {
+                Text(
+                    "Form Permohonan Perubahan",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back"
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color(0xFF37474F),
+                titleContentColor = Color.White,
+                navigationIconContentColor = Color.White
+            )
         )
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(12.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                // 1. Jenis Perubahan
-                Text("1. Jenis Perubahan *", fontWeight = FontWeight.SemiBold)
-                ExposedDropdownMenuBox(
-                    expanded = showJenisDropdown,
-                    onExpandedChange = { showJenisDropdown = !showJenisDropdown }
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    OutlinedTextField(
-                        value = jenisPerubahan,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Pilih Jenis") },
-                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
-                        )
-                    )
-                    ExposedDropdownMenu(
+                    // 1. Jenis Perubahan
+                    Text("1. Jenis Perubahan *", fontWeight = FontWeight.SemiBold)
+                    ExposedDropdownMenuBox(
                         expanded = showJenisDropdown,
-                        onDismissRequest = { showJenisDropdown = false }
+                        onExpandedChange = { showJenisDropdown = !showJenisDropdown }
                     ) {
-                        jenisOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    jenisPerubahan = option
-                                    showJenisDropdown = false
-                                }
+                        OutlinedTextField(
+                            value = jenisPerubahan,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Pilih Jenis") },
+                            trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
                             )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showJenisDropdown,
+                            onDismissRequest = { showJenisDropdown = false }
+                        ) {
+                            jenisOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        jenisPerubahan = option
+                                        showJenisDropdown = false
+                                    }
+                                )
+                            }
                         }
                     }
-                }
 
-                // 2. Alasan
-                Text("2. Alasan *", fontWeight = FontWeight.SemiBold)
-                OutlinedTextField(
-                    value = alasan,
-                    onValueChange = { alasan = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    placeholder = { Text("Jelaskan alasan perubahan") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-
-                // 3. Tujuan
-                Text("3. Tujuan *", fontWeight = FontWeight.SemiBold)
-                OutlinedTextField(
-                    value = tujuan,
-                    onValueChange = { tujuan = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    placeholder = { Text("Jelaskan tujuan perubahan") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-
-                // 4. Aset Terdampak
-                Text("4. Aset Terdampak (CI) *", fontWeight = FontWeight.SemiBold)
-                ExposedDropdownMenuBox(
-                    expanded = showAsetDropdown,
-                    onExpandedChange = { showAsetDropdown = !showAsetDropdown }
-                ) {
+                    // 2. Alasan
+                    Text("2. Alasan *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
-                        value = asetTerdampak,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Pilih Aset") },
-                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(),
+                        value = alasan,
+                        onValueChange = { alasan = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        placeholder = { Text("Jelaskan alasan perubahan") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White
                         )
                     )
-                    ExposedDropdownMenu(
+
+                    // 3. Tujuan
+                    Text("3. Tujuan *", fontWeight = FontWeight.SemiBold)
+                    OutlinedTextField(
+                        value = tujuan,
+                        onValueChange = { tujuan = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        placeholder = { Text("Jelaskan tujuan perubahan") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    // 4. Aset Terdampak
+                    Text("4. Aset Terdampak (CI) *", fontWeight = FontWeight.SemiBold)
+                    ExposedDropdownMenuBox(
                         expanded = showAsetDropdown,
-                        onDismissRequest = { showAsetDropdown = false }
+                        onExpandedChange = { showAsetDropdown = !showAsetDropdown }
                     ) {
-                        asetOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option) },
-                                onClick = {
-                                    asetTerdampak = option
-                                    showAsetDropdown = false
-                                }
+                        OutlinedTextField(
+                            value = asetTerdampak,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Pilih Aset") },
+                            trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
                             )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showAsetDropdown,
+                            onDismissRequest = { showAsetDropdown = false }
+                        ) {
+                            asetOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        asetTerdampak = option
+                                        showAsetDropdown = false
+                                    }
+                                )
+                            }
                         }
                     }
-                }
 
-                // 5. Usulan Jadwal
-                Text("5. Usulan Jadwal *", fontWeight = FontWeight.SemiBold)
-                OutlinedTextField(
-                    value = usulanJadwal,
-                    onValueChange = {},
-                    readOnly = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { datePickerDialog.show() },
-                    placeholder = { Text("Pilih tanggal") },
-                    trailingIcon = {
-                        Icon(
-                            Icons.Default.CalendarToday,
-                            contentDescription = "Pilih Tanggal",
-                            modifier = Modifier.clickable { datePickerDialog.show() }
+                    // 5. Usulan Jadwal
+                    Text("5. Usulan Jadwal *", fontWeight = FontWeight.SemiBold)
+                    OutlinedTextField(
+                        value = usulanJadwal,
+                        onValueChange = {},
+                        readOnly = true,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { datePickerDialog.show() },
+                        placeholder = { Text("Pilih tanggal") },
+                        trailingIcon = {
+                            Icon(
+                                Icons.Default.CalendarToday,
+                                contentDescription = "Pilih Tanggal",
+                                modifier = Modifier.clickable { datePickerDialog.show() }
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
                         )
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
                     )
-                )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                Button(
-                    onClick = {
-                        when {
-                            jenisPerubahan.isBlank() -> {
-                                errorMessage = "Jenis Perubahan wajib diisi"
-                                showErrorDialog = true
+                    Button(
+                        onClick = {
+                            when {
+                                jenisPerubahan.isBlank() -> {
+                                    errorMessage = "Jenis Perubahan wajib diisi"
+                                    showErrorDialog = true
+                                }
+                                alasan.isBlank() -> {
+                                    errorMessage = "Alasan wajib diisi"
+                                    showErrorDialog = true
+                                }
+                                tujuan.isBlank() -> {
+                                    errorMessage = "Tujuan wajib diisi"
+                                    showErrorDialog = true
+                                }
+                                asetTerdampak.isBlank() -> {
+                                    errorMessage = "Aset Terdampak wajib diisi"
+                                    showErrorDialog = true
+                                }
+                                usulanJadwal.isBlank() -> {
+                                    errorMessage = "Usulan Jadwal wajib diisi"
+                                    showErrorDialog = true
+                                }
+                                else -> {
+                                    viewModel.submitChangeRequest(
+                                        userId = userId,
+                                        jenisPerubahan = jenisPerubahan,
+                                        alasan = alasan,
+                                        tujuan = tujuan,
+                                        asetTerdampak = asetTerdampak,
+                                        usulanJadwal = usulanJadwal
+                                    )
+                                    showSuccessDialog = true
+                                }
                             }
-                            alasan.isBlank() -> {
-                                errorMessage = "Alasan wajib diisi"
-                                showErrorDialog = true
-                            }
-                            tujuan.isBlank() -> {
-                                errorMessage = "Tujuan wajib diisi"
-                                showErrorDialog = true
-                            }
-                            asetTerdampak.isBlank() -> {
-                                errorMessage = "Aset Terdampak wajib diisi"
-                                showErrorDialog = true
-                            }
-                            usulanJadwal.isBlank() -> {
-                                errorMessage = "Usulan Jadwal wajib diisi"
-                                showErrorDialog = true
-                            }
-                            else -> {
-                                viewModel.submitChangeRequest(
-                                    userId = userId,
-                                    jenisPerubahan = jenisPerubahan,
-                                    alasan = alasan,
-                                    tujuan = tujuan,
-                                    asetTerdampak = asetTerdampak,
-                                    usulanJadwal = usulanJadwal
-                                )
-                                showSuccessDialog = true
-                            }
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF37474F)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF37474F)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "Submit Permohonan",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = White
+                        )
+                    }
+
                     Text(
-                        text = "Submit Permohonan",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = White
+                        text = "* Field wajib diisi",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.align(Alignment.Start)
                     )
                 }
-
-                Text(
-                    text = "* Field wajib diisi",
-                    fontSize = 12.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.align(Alignment.Start)
-                )
             }
-        }
 
-        Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(80.dp))
+        }
     }
 }

@@ -109,6 +109,9 @@ fun EnduserScreen(
                 onFormSubmitted = {
                     showFormInput = false
                     selectedIndex = 1
+                },
+                onBackClick = {
+                    showFormInput = false
                 }
             )
         }
