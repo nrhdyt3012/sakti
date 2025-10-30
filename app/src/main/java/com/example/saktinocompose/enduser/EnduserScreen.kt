@@ -50,7 +50,10 @@ fun EnduserScreen(
     var showFormInput by remember { mutableStateOf(false) }
     var showDetailForm by remember { mutableStateOf(false) }
     var showStatusHistory by remember { mutableStateOf(false) }
+    var showFilteredList by remember { mutableStateOf(false) }
     var selectedChangeRequest by remember { mutableStateOf<ChangeRequest?>(null) }
+    var filteredRequests by remember { mutableStateOf<List<ChangeRequest>>(emptyList()) }
+    var filterType by remember { mutableStateOf<FilterType?>(null) }
 
     when {
         showProfile -> {
@@ -62,12 +65,31 @@ fun EnduserScreen(
                 onBackClick = { showProfile = false }
             )
         }
+        showFilteredList && filterType != null -> {
+            FilteredListPage(
+                filterType = filterType!!,
+                changeRequests = filteredRequests,
+                onBackClick = {
+                    showFilteredList = false
+                    filterType = null
+                },
+                onDetailClick = { changeRequest ->
+                    selectedChangeRequest = changeRequest
+                    showDetailForm = true
+                    showFilteredList = false
+                }
+            )
+        }
         showDetailForm && selectedChangeRequest != null -> {
             FormDetailPage(
                 changeRequest = selectedChangeRequest!!,
                 onBackClick = {
                     showDetailForm = false
-                    selectedChangeRequest = null
+                    if (filterType != null) {
+                        showFilteredList = true
+                    } else {
+                        selectedChangeRequest = null
+                    }
                 }
             )
         }
@@ -106,6 +128,8 @@ fun EnduserScreen(
                                     .clickable {
                                         selectedIndex = 0
                                         showFormInput = false
+                                        showFilteredList = false
+                                        filterType = null
                                     }
                             )
                         },
@@ -144,6 +168,8 @@ fun EnduserScreen(
                                 onClick = {
                                     selectedIndex = index
                                     showFormInput = false
+                                    showFilteredList = false
+                                    filterType = null
                                 },
                                 icon = {
                                     Icon(
@@ -173,6 +199,11 @@ fun EnduserScreen(
                     onDetailClick = { changeRequest ->
                         selectedChangeRequest = changeRequest
                         showDetailForm = true
+                    },
+                    onFilterClick = { type, requests ->
+                        filterType = type
+                        filteredRequests = requests
+                        showFilteredList = true
                     }
                 )
             }
@@ -188,13 +219,15 @@ fun ContentScreen(
     selectedIndex: Int,
     onCreateFormClick: () -> Unit,
     onStatusHistoryClick: (ChangeRequest) -> Unit,
-    onDetailClick: (ChangeRequest) -> Unit
+    onDetailClick: (ChangeRequest) -> Unit,
+    onFilterClick: (FilterType, List<ChangeRequest>) -> Unit
 ) {
     when (selectedIndex) {
         0 -> EnduserBerandaPage(
             userId = userId,
             userName = userName,
-            onCreateFormClick = onCreateFormClick
+            onCreateFormClick = onCreateFormClick,
+            onFilterClick = onFilterClick
         )
         1 -> EnduserStatusPage(
             userId = userId,

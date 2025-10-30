@@ -19,6 +19,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -26,12 +27,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.saktinocompose.menu.NavItem
 import com.example.saktinocompose.R
-import com.example.saktinocompose.teknisi.pages.ActionPage
-import com.example.saktinocompose.teknisi.pages.BerandaPage
-import com.example.saktinocompose.teknisi.pages.DatabasePage
-import com.example.saktinocompose.teknisi.pages.ProfilePage
+import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.menu.NavItem
+import com.example.saktinocompose.teknisi.pages.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,101 +43,135 @@ fun TeknisiScreen(
 ) {
     val navItemList = listOf(
         NavItem("Beranda", R.drawable.home),
-        NavItem("Action", R.drawable.build),
-        NavItem("Database", R.drawable.database),
+        NavItem("CMDB", R.drawable.database)
     )
 
-    var selectedIndex by remember { mutableStateOf(0) }
-    var selectedStatus by remember { mutableStateOf<String?>(null) }
+    var selectedIndex by remember { mutableIntStateOf(0) }
     var showProfile by remember { mutableStateOf(false) }
+    var showDetailForm by remember { mutableStateOf(false) }
+    var showCategoryList by remember { mutableStateOf(false) }
+    var selectedChangeRequest by remember { mutableStateOf<ChangeRequest?>(null) }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
 
-    if (showProfile) {
-        ProfilePage(
-            userId = userId,
-            userEmail = userEmail,
-            userName = userName,
-            userRole = userRole,
-            onBackClick = { showProfile = false }
-        )
-    } else {
-        Scaffold(
-            modifier = Modifier.fillMaxSize(),
-            topBar = {
-                TopAppBar(
-                    title = {},
-                    navigationIcon = {
-                        Image(
-                            painter = painterResource(id = R.drawable.logo_app),
-                            contentDescription = "Back to Beranda",
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .size(width = 100.dp, height = 40.dp)
-                                .clickable {
-                                    selectedIndex = 0
-                                    selectedStatus = null
-                                }
-                        )
-                    },
-                    actions = {
-                        IconButton(onClick = {
-                            // Navigate ke NotificationPage
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Notifications,
-                                contentDescription = "Notifications"
-                            )
-                        }
-
-                        IconButton(onClick = {
-                            showProfile = true
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = "Profile"
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = Color(0xFF37474F),
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White,
-                        actionIconContentColor = Color.White
-                    )
-                )
-            },
-            bottomBar = {
-                NavigationBar {
-                    navItemList.forEachIndexed { index, navItem ->
-                        NavigationBarItem(
-                            selected = selectedIndex == index,
-                            onClick = {
-                                selectedIndex = index
-                                selectedStatus = null
-                            },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(id = navItem.icon),
-                                    contentDescription = "Icon",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                            },
-                            label = {
-                                Text(text = navItem.label)
-                            }
-                        )
-                    }
-                }
-            }
-        ) { innerPadding ->
-            ContentScreen(
-                modifier = Modifier.padding(innerPadding),
-                selectedIndex = selectedIndex,
-                selectedStatus = selectedStatus,
-                onStatusClick = { status ->
-                    selectedStatus = status
-                    selectedIndex = 1
+    when {
+        showProfile -> {
+            ProfilePage(
+                userId = userId,
+                userEmail = userEmail,
+                userName = userName,
+                userRole = userRole,
+                onBackClick = { showProfile = false }
+            )
+        }
+        showDetailForm && selectedChangeRequest != null -> {
+            DetailFormTeknisiPage(
+                changeRequest = selectedChangeRequest!!,
+                teknisiId = userId,
+                teknisiName = userName,
+                onBackClick = {
+                    showDetailForm = false
+                    selectedChangeRequest = null
                 }
             )
+        }
+        showCategoryList && selectedCategory != null -> {
+            CMDBCategoryListPage(
+                categoryName = selectedCategory!!,
+                teknisiId = userId,
+                teknisiName = userName,
+                onBackClick = {
+                    showCategoryList = false
+                    selectedCategory = null
+                },
+                onDetailClick = { request ->
+                    selectedChangeRequest = request
+                    showDetailForm = true
+                    showCategoryList = false
+                }
+            )
+        }
+        else -> {
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                topBar = {
+                    TopAppBar(
+                        title = {},
+                        navigationIcon = {
+                            Image(
+                                painter = painterResource(id = R.drawable.logo_app),
+                                contentDescription = "Logo",
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .size(width = 100.dp, height = 40.dp)
+                                    .clickable {
+                                        selectedIndex = 0
+                                    }
+                            )
+                        },
+                        actions = {
+                            IconButton(onClick = {
+                                // Navigate ke NotificationPage
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "Notifications"
+                                )
+                            }
+
+                            IconButton(onClick = {
+                                showProfile = true
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Profile"
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(
+                            containerColor = Color(0xFF37474F),
+                            titleContentColor = Color.White,
+                            navigationIconContentColor = Color.White,
+                            actionIconContentColor = Color.White
+                        )
+                    )
+                },
+                bottomBar = {
+                    NavigationBar {
+                        navItemList.forEachIndexed { index, navItem ->
+                            NavigationBarItem(
+                                selected = selectedIndex == index,
+                                onClick = {
+                                    selectedIndex = index
+                                },
+                                icon = {
+                                    Icon(
+                                        painter = painterResource(id = navItem.icon),
+                                        contentDescription = "Icon",
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                },
+                                label = {
+                                    Text(text = navItem.label)
+                                }
+                            )
+                        }
+                    }
+                }
+            ) { innerPadding ->
+                ContentScreen(
+                    modifier = Modifier.padding(innerPadding),
+                    userName = userName,
+                    selectedIndex = selectedIndex,
+                    onDetailClick = { request ->
+                        selectedChangeRequest = request
+                        showDetailForm = true
+                    },
+                    onCategoryClick = { category ->
+                        selectedCategory = category
+                        showCategoryList = true
+                    }
+                )
+            }
         }
     }
 }
@@ -146,13 +179,18 @@ fun TeknisiScreen(
 @Composable
 fun ContentScreen(
     modifier: Modifier = Modifier,
+    userName: String,
     selectedIndex: Int,
-    selectedStatus: String?,
-    onStatusClick: (String) -> Unit
+    onDetailClick: (ChangeRequest) -> Unit,
+    onCategoryClick: (String) -> Unit
 ) {
     when (selectedIndex) {
-        0 -> BerandaPage()
-        1 -> ActionPage(filterStatus = selectedStatus)
-        2 -> DatabasePage(onStatusClick = onStatusClick)
+        0 -> BerandaPage(
+            userName = userName,
+            onDetailClick = onDetailClick
+        )
+        1 -> CMDBPage(
+            onCategoryClick = onCategoryClick
+        )
     }
 }

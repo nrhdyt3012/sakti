@@ -7,9 +7,11 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.saktinocompose.data.dao.ApprovalHistoryDao
 import com.example.saktinocompose.data.dao.ChangeRequestDao
+import com.example.saktinocompose.data.dao.RiskAssessmentDao
 import com.example.saktinocompose.data.dao.UserDao
 import com.example.saktinocompose.data.entity.ApprovalHistory
 import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.entity.RiskAssessment
 import com.example.saktinocompose.data.entity.User
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -17,14 +19,15 @@ import kotlinx.coroutines.launch
 import java.security.MessageDigest
 
 @Database(
-    entities = [User::class, ChangeRequest::class, ApprovalHistory::class],
-    version = 2,
+    entities = [User::class, ChangeRequest::class, ApprovalHistory::class, RiskAssessment::class],
+    version = 3,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
     abstract fun userDao(): UserDao
     abstract fun changeRequestDao(): ChangeRequestDao
     abstract fun approvalHistoryDao(): ApprovalHistoryDao
+    abstract fun riskAssessmentDao(): RiskAssessmentDao
 
     companion object {
         @Volatile
@@ -62,6 +65,7 @@ abstract class AppDatabase : RoomDatabase() {
                 return bytes.joinToString("") { "%02x".format(it) }
             }
 
+            // Insert Teknisi
             userDao.insertUser(
                 User(
                     email = "test@example.com",
@@ -70,11 +74,29 @@ abstract class AppDatabase : RoomDatabase() {
                     role = "TEKNISI"
                 )
             )
+
+            // Insert 3 End Users
             userDao.insertUser(
                 User(
-                    email = "enduser@example.com",
+                    email = "enduser1@example.com",
                     name = "Andi",
                     passwordHash = hashPassword("password456"),
+                    role = "END_USER"
+                )
+            )
+            userDao.insertUser(
+                User(
+                    email = "enduser2@example.com",
+                    name = "Siti",
+                    passwordHash = hashPassword("password789"),
+                    role = "END_USER"
+                )
+            )
+            userDao.insertUser(
+                User(
+                    email = "enduser3@example.com",
+                    name = "Rudi",
+                    passwordHash = hashPassword("password000"),
                     role = "END_USER"
                 )
             )

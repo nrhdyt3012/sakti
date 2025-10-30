@@ -1,6 +1,7 @@
 package com.example.saktinocompose.enduser.pages
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -25,6 +27,7 @@ fun EnduserBerandaPage(
     userId: Int,
     userName: String,
     onCreateFormClick: () -> Unit,
+    onFilterClick: (FilterType, List<ChangeRequest>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: ChangeRequestViewModel = viewModel()
 ) {
@@ -43,13 +46,13 @@ fun EnduserBerandaPage(
         calendar.time
     }
 
-    val monthlyCount = changeRequests.count { cr ->
+    val monthlyRequests = changeRequests.filter { cr ->
         val date = Date(cr.createdAt)
         val dateMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(date)
         dateMonth == thisMonth
     }
 
-    val weeklyCount = changeRequests.count { cr ->
+    val weeklyRequests = changeRequests.filter { cr ->
         val date = Date(cr.createdAt)
         date.after(thisWeek) || date == thisWeek
     }
@@ -107,7 +110,11 @@ fun EnduserBerandaPage(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Card(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable {
+                        onFilterClick(FilterType.MONTHLY, monthlyRequests)
+                    },
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -119,7 +126,7 @@ fun EnduserBerandaPage(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = monthlyCount.toString(),
+                        text = monthlyRequests.size.toString(),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -134,7 +141,11 @@ fun EnduserBerandaPage(
             }
 
             Card(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable {
+                        onFilterClick(FilterType.WEEKLY, weeklyRequests)
+                    },
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -146,7 +157,7 @@ fun EnduserBerandaPage(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = weeklyCount.toString(),
+                        text = weeklyRequests.size.toString(),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -186,10 +197,17 @@ fun EnduserBerandaPage(
 
         allStatuses.forEach { (status, color) ->
             val count = statusCounts[status] ?: 0
+            val statusRequests = changeRequests.filter { it.status == status }
+
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = 4.dp)
+                    .clickable {
+                        if (count > 0) {
+                            onFilterClick(FilterType.STATUS(status), statusRequests)
+                        }
+                    },
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(8.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
@@ -255,5 +273,18 @@ fun EnduserBerandaPage(
         }
 
         Spacer(modifier = Modifier.height(80.dp))
+    }
+}
+
+// Enum untuk tipe filter
+sealed class FilterType {
+    object MONTHLY : FilterType()
+    object WEEKLY : FilterType()
+    data class STATUS(val status: String) : FilterType()
+
+    fun getTitle(): String = when (this) {
+        is MONTHLY -> "Pengajuan Bulan Ini"
+        is WEEKLY -> "Pengajuan Minggu Ini"
+        is STATUS -> "Status: ${this.status}"
     }
 }
