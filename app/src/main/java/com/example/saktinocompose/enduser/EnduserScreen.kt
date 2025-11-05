@@ -156,7 +156,7 @@ fun EnduserScreen(
                             }
                         },
                         colors = TopAppBarDefaults.topAppBarColors(
-                            containerColor = Color(0xFF37474F),
+                            containerColor = Color(0xFF384E66),
                             titleContentColor = Color.White,
                             navigationIconContentColor = Color.White,
                             actionIconContentColor = Color.White
@@ -164,7 +164,7 @@ fun EnduserScreen(
                     )
                 },
                 bottomBar = {
-                    NavigationBar {
+                    NavigationBar (containerColor = Color(0xFF384E66)){
                         navItemList.forEachIndexed { index, navItem ->
                             NavigationBarItem(
                                 selected = selectedIndex == index,
@@ -183,7 +183,8 @@ fun EnduserScreen(
                                 },
                                 label = {
                                     Text(text = navItem.label)
-                                }
+                                },
+
                             )
                         }
                     }

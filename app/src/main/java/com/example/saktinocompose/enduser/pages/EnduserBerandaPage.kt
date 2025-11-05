@@ -74,7 +74,7 @@ fun EnduserBerandaPage(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 70.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF37474F)),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66)),
             shape = RoundedCornerShape(12.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
@@ -259,7 +259,7 @@ fun EnduserBerandaPage(
                 .fillMaxWidth()
                 .height(56.dp),
             colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF37474F)
+                containerColor = Color(0xFF384E66)
             ),
             shape = RoundedCornerShape(12.dp)
         ) {

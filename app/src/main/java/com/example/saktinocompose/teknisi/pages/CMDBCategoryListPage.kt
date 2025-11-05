@@ -59,7 +59,7 @@ fun CMDBCategoryListPage(
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFF37474F),
+                containerColor = Color(0xFF384E66),
                 titleContentColor = Color.White,
                 navigationIconContentColor = Color.White
             )
@@ -75,7 +75,7 @@ fun CMDBCategoryListPage(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF37474F)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66)),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Row(

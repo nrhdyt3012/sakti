@@ -145,7 +145,7 @@ fun EnduserForm(
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFF37474F),
+                containerColor = Color(0xFF384E66),
                 titleContentColor = Color.White,
                 navigationIconContentColor = Color.White
             )
@@ -185,8 +185,14 @@ fun EnduserForm(
                                 .fillMaxWidth()
                                 .menuAnchor(),
                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                focusedPlaceholderColor = Color.Black,
+                                unfocusedPlaceholderColor = Color.Black,
                                 focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
+                                unfocusedContainerColor = Color.White,
+                                focusedLabelColor = Color(0xFF384E66),
+                                unfocusedLabelColor = Color(0xFF384E66)
                             )
                         )
                         ExposedDropdownMenu(
@@ -214,8 +220,14 @@ fun EnduserForm(
                         minLines = 3,
                         placeholder = { Text("Jelaskan alasan perubahan") },
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedPlaceholderColor = Color.Black,
+                            unfocusedPlaceholderColor = Color.Black,
                             focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
+                            unfocusedContainerColor = Color.White,
+                            focusedLabelColor = Color(0xFF384E66),
+                            unfocusedLabelColor = Color(0xFF384E66)
                         )
                     )
 
@@ -228,8 +240,14 @@ fun EnduserForm(
                         minLines = 3,
                         placeholder = { Text("Jelaskan tujuan perubahan") },
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedPlaceholderColor = Color.Black,
+                            unfocusedPlaceholderColor = Color.Black,
                             focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
+                            unfocusedContainerColor = Color.White,
+                            focusedLabelColor = Color(0xFF384E66),
+                            unfocusedLabelColor = Color(0xFF384E66)
                         )
                     )
 
@@ -249,8 +267,14 @@ fun EnduserForm(
                                 .fillMaxWidth()
                                 .menuAnchor(),
                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                focusedPlaceholderColor = Color.Black,
+                                unfocusedPlaceholderColor = Color.Black,
                                 focusedContainerColor = Color.White,
-                                unfocusedContainerColor = Color.White
+                                unfocusedContainerColor = Color.White,
+                                focusedLabelColor = Color(0xFF384E66),
+                                unfocusedLabelColor = Color(0xFF384E66)
                             )
                         )
                         ExposedDropdownMenu(
@@ -287,8 +311,14 @@ fun EnduserForm(
                             )
                         },
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedPlaceholderColor = Color.Black,
+                            unfocusedPlaceholderColor = Color.Black,
                             focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
+                            unfocusedContainerColor = Color.White,
+                            focusedLabelColor = Color(0xFF384E66),
+                            unfocusedLabelColor = Color(0xFF384E66)
                         )
                     )
 
@@ -334,7 +364,7 @@ fun EnduserForm(
                             .fillMaxWidth()
                             .height(56.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF37474F)
+                            containerColor = Color(0xFF384E66)
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {

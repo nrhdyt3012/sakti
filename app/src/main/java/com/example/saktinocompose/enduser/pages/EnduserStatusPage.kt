@@ -259,7 +259,7 @@ fun ChangeRequestCard(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF37474F)
+                        containerColor = Color(0xFF384E66)
                     )
                 ) {
                     Icon(

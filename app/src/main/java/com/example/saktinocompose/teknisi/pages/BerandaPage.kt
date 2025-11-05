@@ -72,7 +72,7 @@ fun BerandaPage(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 40.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF384C65)),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66)),
             shape = RoundedCornerShape(12.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
@@ -132,7 +132,7 @@ fun BerandaPage(
                     Text(
                         text = "Bulan Ini",
                         fontSize = 14.sp,
-                        color = Color.Gray
+                        color = Color.Black
                     )
                 }
             }
@@ -159,7 +159,7 @@ fun BerandaPage(
                     Text(
                         text = "Minggu Ini",
                         fontSize = 14.sp,
-                        color = Color.Gray
+                        color = Color.Black
                     )
                 }
             }
@@ -300,11 +300,11 @@ fun RecentRequestCard(
                 onClick = onDetailClick,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF37474F)
+                    containerColor = Color(0xFF384E66)
                 ),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Detail & Take Action", fontSize = 13.sp)
+                Text("Detail & Take Action", fontSize = 13.sp, color = Color.White)
             }
         }
     }

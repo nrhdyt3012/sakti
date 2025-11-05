@@ -48,7 +48,7 @@ fun FormDetailPage(
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFF37474F),
+                containerColor = Color(0xFF384E66),
                 titleContentColor = Color.White,
                 navigationIconContentColor = Color.White
             )
@@ -64,7 +64,7 @@ fun FormDetailPage(
             // Ticket ID Card
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF37474F)),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66)),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(

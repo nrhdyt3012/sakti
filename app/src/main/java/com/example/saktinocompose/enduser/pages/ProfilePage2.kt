@@ -87,7 +87,7 @@ fun ProfilePage2(
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color(0xFF37474F),
+                containerColor = Color(0xFF384E66),
                 titleContentColor = Color.White,
                 navigationIconContentColor = Color.White
             )
@@ -106,7 +106,7 @@ fun ProfilePage2(
                 modifier = Modifier
                     .size(120.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF37474F)),
+                    .background(Color(0xFF384E66)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(

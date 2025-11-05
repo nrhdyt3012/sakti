@@ -179,8 +179,6 @@ fun LoginScreen(
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
-                    focusedIndicatorColor = MediumGreen,
-                    unfocusedIndicatorColor = Color.Gray,
                     focusedLabelColor = Color.Black,
                     unfocusedLabelColor = Color.Gray,
                     cursorColor = MediumGreen
@@ -223,8 +221,6 @@ fun LoginScreen(
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
-                    focusedIndicatorColor = MediumGreen,
-                    unfocusedIndicatorColor = Color.Gray,
                     focusedLabelColor = Color.Black,
                     unfocusedLabelColor = Color.Gray,
                     cursorColor = MediumGreen
