@@ -216,27 +216,35 @@ fun TeknisiScreen(
                     )
                 },
                 bottomBar = {
-                    NavigationBar (containerColor = Color(0xFF384E66)){
+                    NavigationBar(containerColor = Color(0xFF384E66)) {
                         navItemList.forEachIndexed { index, navItem ->
+                            val isSelected = selectedIndex == index
+
                             NavigationBarItem(
-                                selected = selectedIndex == index,
+                                selected = isSelected,
                                 onClick = {
                                     selectedIndex = index
                                 },
                                 icon = {
                                     Icon(
                                         painter = painterResource(id = navItem.icon),
-                                        contentDescription = "Icon",
-                                        modifier = Modifier.size(24.dp)
+                                        contentDescription = navItem.label,
+                                        modifier = Modifier.size(24.dp),
+                                        tint = if (isSelected) Color(0xFF121524) else Color(0xFFB0BEC5)
                                     )
                                 },
                                 label = {
-                                    Text(text = navItem.label, color = Color.White)
-                                }
+                                    Text(
+                                        text = navItem.label,
+                                        color = if (isSelected) Color(0xFF121524) else Color(0xFFCFD8DC)
+                                    )
+                                },
+                                alwaysShowLabel = true
                             )
                         }
                     }
                 }
+
             ) { innerPadding ->
                 ContentScreen(
                     modifier = Modifier.padding(innerPadding),
