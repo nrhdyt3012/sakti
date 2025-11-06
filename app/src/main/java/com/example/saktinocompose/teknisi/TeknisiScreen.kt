@@ -1,5 +1,6 @@
 package com.example.saktinocompose.teknisi
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -15,6 +18,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -50,8 +54,63 @@ fun TeknisiScreen(
     var showProfile by remember { mutableStateOf(false) }
     var showDetailForm by remember { mutableStateOf(false) }
     var showCategoryList by remember { mutableStateOf(false) }
+    var showFilteredList by remember { mutableStateOf(false) }
     var selectedChangeRequest by remember { mutableStateOf<ChangeRequest?>(null) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var filteredRequests by remember { mutableStateOf<List<ChangeRequest>>(emptyList()) }
+    var filterType by remember { mutableStateOf<TeknisiFilterType?>(null) }
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    // Back Handler untuk menangani tombol back
+    BackHandler {
+        when {
+            showProfile -> showProfile = false
+            showFilteredList -> {
+                showFilteredList = false
+                filterType = null
+            }
+            showDetailForm -> {
+                showDetailForm = false
+                if (selectedCategory != null) {
+                    showCategoryList = true
+                } else if (filterType != null) {
+                    showFilteredList = true
+                } else {
+                    selectedChangeRequest = null
+                }
+            }
+            showCategoryList -> {
+                showCategoryList = false
+                selectedCategory = null
+            }
+            selectedIndex != 0 -> selectedIndex = 0
+            else -> showExitDialog = true // Tampilkan dialog konfirmasi keluar
+        }
+    }
+
+    // Dialog konfirmasi keluar aplikasi
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Keluar Aplikasi") },
+            text = { Text("Apakah Anda yakin ingin keluar dari aplikasi?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Keluar dari aplikasi
+                        android.os.Process.killProcess(android.os.Process.myPid())
+                    }
+                ) {
+                    Text("Ya")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text("Tidak")
+                }
+            }
+        )
+    }
 
     when {
         showProfile -> {
@@ -63,6 +122,21 @@ fun TeknisiScreen(
                 onBackClick = { showProfile = false }
             )
         }
+        showFilteredList && filterType != null -> {
+            TeknisiFilteredListPage(
+                filterType = filterType!!,
+                changeRequests = filteredRequests,
+                onBackClick = {
+                    showFilteredList = false
+                    filterType = null
+                },
+                onDetailClick = { request ->
+                    selectedChangeRequest = request
+                    showDetailForm = true
+                    showFilteredList = false
+                }
+            )
+        }
         showDetailForm && selectedChangeRequest != null -> {
             DetailFormTeknisiPage(
                 changeRequest = selectedChangeRequest!!,
@@ -70,7 +144,13 @@ fun TeknisiScreen(
                 teknisiName = userName,
                 onBackClick = {
                     showDetailForm = false
-                    selectedChangeRequest = null
+                    if (selectedCategory != null) {
+                        showCategoryList = true
+                    } else if (filterType != null) {
+                        showFilteredList = true
+                    } else {
+                        selectedChangeRequest = null
+                    }
                 }
             )
         }
@@ -151,7 +231,7 @@ fun TeknisiScreen(
                                     )
                                 },
                                 label = {
-                                    Text(text = navItem.label)
+                                    Text(text = navItem.label, color = Color.White)
                                 }
                             )
                         }
@@ -169,6 +249,11 @@ fun TeknisiScreen(
                     onCategoryClick = { category ->
                         selectedCategory = category
                         showCategoryList = true
+                    },
+                    onFilterClick = { type, requests ->
+                        filterType = type
+                        filteredRequests = requests
+                        showFilteredList = true
                     }
                 )
             }
@@ -182,12 +267,14 @@ fun ContentScreen(
     userName: String,
     selectedIndex: Int,
     onDetailClick: (ChangeRequest) -> Unit,
-    onCategoryClick: (String) -> Unit
+    onCategoryClick: (String) -> Unit,
+    onFilterClick: (TeknisiFilterType, List<ChangeRequest>) -> Unit
 ) {
     when (selectedIndex) {
         0 -> BerandaPage(
             userName = userName,
-            onDetailClick = onDetailClick
+            onDetailClick = onDetailClick,
+            onFilterClick = onFilterClick
         )
         1 -> CMDBPage(
             onCategoryClick = onCategoryClick

@@ -1,5 +1,6 @@
 package com.example.saktinocompose.enduser
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,6 +9,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -15,6 +18,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -54,6 +58,57 @@ fun EnduserScreen(
     var selectedChangeRequest by remember { mutableStateOf<ChangeRequest?>(null) }
     var filteredRequests by remember { mutableStateOf<List<ChangeRequest>>(emptyList()) }
     var filterType by remember { mutableStateOf<FilterType?>(null) }
+    var showExitDialog by remember { mutableStateOf(false) }
+
+    // Back Handler untuk menangani tombol back
+    BackHandler {
+        when {
+            showProfile -> showProfile = false
+            showFilteredList -> {
+                showFilteredList = false
+                filterType = null
+            }
+            showDetailForm -> {
+                showDetailForm = false
+                if (filterType != null) {
+                    showFilteredList = true
+                } else {
+                    selectedChangeRequest = null
+                }
+            }
+            showStatusHistory -> {
+                showStatusHistory = false
+                selectedChangeRequest = null
+            }
+            showFormInput -> showFormInput = false
+            selectedIndex != 0 -> selectedIndex = 0
+            else -> showExitDialog = true // Tampilkan dialog konfirmasi keluar
+        }
+    }
+
+    // Dialog konfirmasi keluar aplikasi
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Keluar Aplikasi") },
+            text = { Text("Apakah Anda yakin ingin keluar dari aplikasi?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        // Keluar dari aplikasi
+                        android.os.Process.killProcess(android.os.Process.myPid())
+                    }
+                ) {
+                    Text("Ya")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text("Tidak")
+                }
+            }
+        )
+    }
 
     when {
         showProfile -> {
@@ -182,10 +237,11 @@ fun EnduserScreen(
                                     )
                                 },
                                 label = {
-                                    Text(text = navItem.label)
+                                    Text(text = navItem.label,
+                                        color = Color.White)
                                 },
 
-                            )
+                                )
                         }
                     }
                 }

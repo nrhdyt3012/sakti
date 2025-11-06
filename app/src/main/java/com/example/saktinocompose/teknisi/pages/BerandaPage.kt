@@ -1,9 +1,9 @@
 package com.example.saktinocompose.teknisi.pages
 
+import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -27,10 +28,12 @@ import java.util.*
 fun BerandaPage(
     userName: String = "Teknisi",
     onDetailClick: (ChangeRequest) -> Unit = {},
+    onFilterClick: (TeknisiFilterType, List<ChangeRequest>) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
     viewModel: ChangeRequestViewModel = viewModel()
 ) {
     val allChangeRequests by viewModel.getAllChangeRequests().collectAsState(initial = emptyList())
+    val context = LocalContext.current
 
     val thisMonth = remember {
         val calendar = Calendar.getInstance()
@@ -44,13 +47,13 @@ fun BerandaPage(
         calendar.time
     }
 
-    val monthlyCount = allChangeRequests.count { cr ->
+    val monthlyRequests = allChangeRequests.filter { cr ->
         val date = Date(cr.createdAt)
         val dateMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(date)
         dateMonth == thisMonth
     }
 
-    val weeklyCount = allChangeRequests.count { cr ->
+    val weeklyRequests = allChangeRequests.filter { cr ->
         val date = Date(cr.createdAt)
         date.after(thisWeek) || date == thisWeek
     }
@@ -111,7 +114,11 @@ fun BerandaPage(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Card(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable {
+                        onFilterClick(TeknisiFilterType.MONTHLY, monthlyRequests)
+                    },
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -123,7 +130,7 @@ fun BerandaPage(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = monthlyCount.toString(),
+                        text = monthlyRequests.size.toString(),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -138,7 +145,11 @@ fun BerandaPage(
             }
 
             Card(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable {
+                        onFilterClick(TeknisiFilterType.WEEKLY, weeklyRequests)
+                    },
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -150,7 +161,7 @@ fun BerandaPage(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = weeklyCount.toString(),
+                        text = weeklyRequests.size.toString(),
                         fontSize = 32.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -160,6 +171,87 @@ fun BerandaPage(
                         text = "Minggu Ini",
                         fontSize = 14.sp,
                         color = Color.Black
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Status Pengajuan",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.Black
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        val statusCounts = allChangeRequests.groupingBy { it.status }.eachCount()
+        val allStatuses = listOf(
+            "Submitted" to Color(0xFF9E9E9E),
+            "In-Review" to Color(0xFF2196F3),
+            "Approved" to Color(0xFF4CAF50),
+            "Scheduled" to Color(0xFFFF9800),
+            "Implementing" to Color(0xFFFF5722),
+            "Completed" to Color(0xFF4CAF50),
+            "Failed" to Color(0xFFD32F2F),
+            "Closed" to Color(0xFF607D8B)
+        )
+
+        allStatuses.forEach { (status, color) ->
+            val count = statusCounts[status] ?: 0
+            val statusRequests = allChangeRequests.filter { it.status == status }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp)
+                    .clickable {
+                        if (count > 0) {
+                            onFilterClick(TeknisiFilterType.STATUS(status), statusRequests)
+                        } else {
+                            Toast
+                                .makeText(
+                                    context,
+                                    "Tidak ada pengajuan dengan status $status",
+                                    Toast.LENGTH_SHORT
+                                )
+                                .show()
+                        }
+                    },
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Card(
+                            modifier = Modifier.size(12.dp),
+                            colors = CardDefaults.cardColors(containerColor = color),
+                            shape = RoundedCornerShape(50)
+                        ) {}
+                        Text(
+                            text = status,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black
+                        )
+                    }
+                    Text(
+                        text = count.toString(),
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = color
                     )
                 }
             }
@@ -263,6 +355,7 @@ fun RecentRequestCard(
                         containerColor = when (changeRequest.status) {
                             "Submitted" -> Color(0xFF9E9E9E)
                             "In-Review" -> Color(0xFF2196F3)
+                            "Approved" -> Color(0xFF4CAF50)
                             else -> Color.Gray
                         }
                     ),
@@ -307,5 +400,18 @@ fun RecentRequestCard(
                 Text("Detail & Take Action", fontSize = 13.sp, color = Color.White)
             }
         }
+    }
+}
+
+// Enum untuk tipe filter Teknisi
+sealed class TeknisiFilterType {
+    object MONTHLY : TeknisiFilterType()
+    object WEEKLY : TeknisiFilterType()
+    data class STATUS(val status: String) : TeknisiFilterType()
+
+    fun getTitle(): String = when (this) {
+        is MONTHLY -> "Pengajuan Bulan Ini"
+        is WEEKLY -> "Pengajuan Minggu Ini"
+        is STATUS -> "Status: ${this.status}"
     }
 }

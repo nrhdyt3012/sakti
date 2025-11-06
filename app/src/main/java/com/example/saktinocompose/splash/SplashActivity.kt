@@ -124,7 +124,7 @@ fun SplashScreen(onNavigate: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Image(
-            painter = painterResource(id = R.drawable.splash_corner_top),
+            painter = painterResource(id = R.drawable.splash_corner_bottom),
             contentDescription = "Top Ornament",
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -135,7 +135,7 @@ fun SplashScreen(onNavigate: () -> Unit) {
         )
 
         Image(
-            painter = painterResource(id = R.drawable.splash_corner_bottom),
+            painter = painterResource(id = R.drawable.splash_corner_top),
             contentDescription = "Bottom Ornament",
             modifier = Modifier
                 .align(Alignment.BottomStart)
