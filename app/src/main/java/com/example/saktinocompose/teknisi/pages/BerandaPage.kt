@@ -260,65 +260,65 @@ fun BerandaPage(
         Spacer(modifier = Modifier.height(24.dp))
 
         // Recent Requests
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = "Pengajuan Terbaru",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.Black
-            )
-            Text(
-                text = "Maks 5 item",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-        }
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween,
+//            verticalAlignment = Alignment.CenterVertically
+//        ) {
+//            Text(
+//                text = "Pengajuan Terbaru",
+//                fontSize = 18.sp,
+//                fontWeight = FontWeight.Bold,
+//                color = Color.Black
+//            )
+//            Text(
+//                text = "Maks 5 item",
+//                fontSize = 12.sp,
+//                color = Color.Gray
+//            )
+//        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        if (recentRequests.isEmpty()) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Assessment,
-                        contentDescription = "No Data",
-                        modifier = Modifier.size(48.dp),
-                        tint = Color.Gray
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "Belum ada pengajuan",
-                        fontSize = 14.sp,
-                        color = Color.Gray
-                    )
-                }
-            }
-        } else {
-            recentRequests.forEach { request ->
-                RecentRequestCard(
-                    changeRequest = request,
-                    onDetailClick = { onDetailClick(request) }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(80.dp))
+//        if (recentRequests.isEmpty()) {
+//            Card(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(vertical = 16.dp),
+//                colors = CardDefaults.cardColors(containerColor = Color.White),
+//                shape = RoundedCornerShape(12.dp)
+//            ) {
+//                Column(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(32.dp),
+//                    horizontalAlignment = Alignment.CenterHorizontally
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Default.Assessment,
+//                        contentDescription = "No Data",
+//                        modifier = Modifier.size(48.dp),
+//                        tint = Color.Gray
+//                    )
+//                    Spacer(modifier = Modifier.height(12.dp))
+//                    Text(
+//                        text = "Belum ada pengajuan",
+//                        fontSize = 14.sp,
+//                        color = Color.Gray
+//                    )
+//                }
+//            }
+//        } else {
+//            recentRequests.forEach { request ->
+//                RecentRequestCard(
+//                    changeRequest = request,
+//                    onDetailClick = { onDetailClick(request) }
+//                )
+//                Spacer(modifier = Modifier.height(8.dp))
+//            }
+//        }
+//
+//        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 
