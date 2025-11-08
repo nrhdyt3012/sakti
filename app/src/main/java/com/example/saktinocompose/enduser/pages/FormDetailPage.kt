@@ -1,5 +1,7 @@
 package com.example.saktinocompose.enduser.pages
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -7,15 +9,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.saktinocompose.data.entity.ChangeRequest
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -30,6 +37,8 @@ fun FormDetailPage(
     val dateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale.getDefault())
     val createdDate = dateFormat.format(Date(changeRequest.createdAt))
     val updatedDate = dateFormat.format(Date(changeRequest.updatedAt))
+
+    var showFullImage by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
@@ -103,13 +112,85 @@ fun FormDetailPage(
                         color = Color.Black
                     )
 
-                    HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+                    HorizontalDivider()
 
                     DetailItem(label = "Jenis Perubahan", value = changeRequest.jenisPerubahan)
                     DetailItem(label = "Alasan", value = changeRequest.alasan)
                     DetailItem(label = "Tujuan", value = changeRequest.tujuan)
                     DetailItem(label = "Aset Terdampak", value = changeRequest.asetTerdampak)
                     DetailItem(label = "Usulan Jadwal", value = changeRequest.usulanJadwal)
+                }
+            }
+
+            // Photo Card (if exists)
+            changeRequest.photoPath?.let { path ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Image,
+                                contentDescription = "Photo",
+                                tint = Color(0xFF384E66)
+                            )
+                            Text(
+                                text = "Foto Bukti",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                        }
+
+                        HorizontalDivider()
+
+                        val photoFile = File(path)
+                        if (photoFile.exists()) {
+                            val bitmap = remember(path) {
+                                BitmapFactory.decodeFile(path)
+                            }
+
+                            bitmap?.let {
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    onClick = { showFullImage = true }
+                                ) {
+                                    Image(
+                                        bitmap = it.asImageBitmap(),
+                                        contentDescription = "Foto Bukti",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+
+                                Text(
+                                    text = "Ketuk untuk memperbesar",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray,
+                                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                                )
+                            }
+                        } else {
+                            Text(
+                                text = "Foto tidak ditemukan",
+                                fontSize = 13.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(8.dp)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -131,7 +212,7 @@ fun FormDetailPage(
                         color = Color.Black
                     )
 
-                    HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+                    HorizontalDivider()
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -174,6 +255,37 @@ fun FormDetailPage(
             }
 
             Spacer(modifier = Modifier.height(80.dp))
+        }
+    }
+
+    // Full Image Dialog
+    if (showFullImage && changeRequest.photoPath != null) {
+        val photoFile = File(changeRequest.photoPath)
+        if (photoFile.exists()) {
+            val bitmap = remember(changeRequest.photoPath) {
+                BitmapFactory.decodeFile(changeRequest.photoPath)
+            }
+
+            bitmap?.let {
+                AlertDialog(
+                    onDismissRequest = { showFullImage = false },
+                    confirmButton = {
+                        TextButton(onClick = { showFullImage = false }) {
+                            Text("Tutup")
+                        }
+                    },
+                    text = {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = "Foto Bukti Full",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 500.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                )
+            }
         }
     }
 }

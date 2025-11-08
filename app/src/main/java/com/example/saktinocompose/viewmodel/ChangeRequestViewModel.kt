@@ -21,7 +21,8 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         alasan: String,
         tujuan: String,
         asetTerdampak: String,
-        usulanJadwal: String
+        usulanJadwal: String,
+        photoPath: String? = null
     ) {
         viewModelScope.launch {
             val ticketId = generateTicketId()
@@ -33,6 +34,7 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 tujuan = tujuan,
                 asetTerdampak = asetTerdampak,
                 usulanJadwal = usulanJadwal,
+                photoPath = photoPath,
                 status = "Submitted"
             )
             changeRequestDao.insertChangeRequest(changeRequest)

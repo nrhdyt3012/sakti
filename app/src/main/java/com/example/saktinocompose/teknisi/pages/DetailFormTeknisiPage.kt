@@ -1,5 +1,7 @@
 package com.example.saktinocompose.teknisi.pages
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,16 +10,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.enduser.pages.DetailItem
 import com.example.saktinocompose.viewmodel.RiskAssessmentViewModel
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,6 +46,7 @@ fun DetailFormTeknisiPage(
     var showRiskDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showEmergencyDialog by remember { mutableStateOf(false) }
+    var showFullImage by remember { mutableStateOf(false) }
 
     val existingRiskAssessment by viewModel.getRiskAssessmentFlow(changeRequest.id)
         .collectAsState(initial = null)
@@ -212,230 +220,77 @@ fun DetailFormTeknisiPage(
                 }
             }
 
-            // Status & Timeline Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(12.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Photo Card (if exists)
+            changeRequest.photoPath?.let { path ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Text(
-                        text = "Status & Waktu",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.Black
-                    )
-
-                    HorizontalDivider()
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(
-                            text = "Status Saat Ini:",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = when (changeRequest.status) {
-                                    "Submitted" -> Color(0xFF9E9E9E)
-                                    "In-Review" -> Color(0xFF2196F3)
-                                    "Approved" -> Color(0xFF4CAF50)
-                                    "Completed" -> Color(0xFF4CAF50)
-                                    "Failed" -> Color(0xFFD32F2F)
-                                    else -> Color.Gray
-                                }
-                            ),
-                            shape = RoundedCornerShape(6.dp)
+                        Row(
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
+                            Icon(
+                                imageVector = Icons.Filled.Image,
+                                contentDescription = "Photo",
+                                tint = Color(0xFF384E66)
+                            )
                             Text(
-                                text = changeRequest.status,
-                                fontSize = 13.sp,
+                                text = "Foto Bukti dari End User",
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                color = Color.Black
                             )
                         }
-                    }
 
-                    DetailItem(label = "Dibuat pada", value = createdDate)
-                    DetailItem(label = "Diperbarui pada", value = updatedDate)
-                }
-            }
+                        HorizontalDivider()
 
-            // Risk Assessment Card (if exists and not emergency)
-            if (!isEmergency) {
-                existingRiskAssessment?.let { risk ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = getRiskLevelColor(risk.levelRisiko).copy(alpha = 0.1f)
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Risk Assessment",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Assessment,
-                                    contentDescription = "Risk",
-                                    tint = getRiskLevelColor(risk.levelRisiko)
-                                )
+                        val photoFile = File(path)
+                        if (photoFile.exists()) {
+                            val bitmap = remember(path) {
+                                BitmapFactory.decodeFile(path)
                             }
 
-                            HorizontalDivider()
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Skor Dampak:", fontSize = 13.sp)
-                                Text(
-                                    "${risk.skorDampak} - ${getImpactLabel(risk.skorDampak)}",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Skor Kemungkinan:", fontSize = 13.sp)
-                                Text(
-                                    "${risk.skorKemungkinan} - ${getProbabilityLabel(risk.skorKemungkinan)}",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Skor Risiko:", fontSize = 13.sp)
-                                Text(
-                                    risk.skorRisiko.toString(),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Level Risiko:", fontSize = 13.sp)
+                            bitmap?.let {
                                 Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = getRiskLevelColor(risk.levelRisiko)
-                                    ),
-                                    shape = RoundedCornerShape(6.dp)
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    shape = RoundedCornerShape(8.dp),
+                                    onClick = { showFullImage = true }
                                 ) {
-                                    Text(
-                                        text = risk.levelRisiko,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    Image(
+                                        bitmap = it.asImageBitmap(),
+                                        contentDescription = "Foto Bukti",
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
                                     )
                                 }
-                            }
 
+                                Text(
+                                    text = "Ketuk untuk memperbesar",
+                                    fontSize = 11.sp,
+                                    color = Color.Gray,
+                                    modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
+                                )
+                            }
+                        } else {
                             Text(
-                                text = "Dinilai oleh: ${risk.teknisiName}",
-                                fontSize = 11.sp,
-                                color = Color.Gray
+                                text = "Foto tidak ditemukan",
+                                fontSize = 13.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.padding(8.dp)
                             )
                         }
                     }
                 }
             }
-
-            // Take Action Button (Hide if already Completed or Failed)
-            if (changeRequest.status !in listOf("Completed", "Failed", "Closed")) {
-                Button(
-                    onClick = {
-                        if (isEmergency) {
-                            showEmergencyDialog = true
-                        } else {
-                            showRiskDialog = true
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isEmergency) {
-                            Color(0xFFFF5722) // Orange-red for emergency
-                        } else if (existingRiskAssessment != null) {
-                            Color(0xFFFF9800)
-                        } else {
-                            Color(0xFF4CAF50)
-                        }
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Assessment,
-                        contentDescription = "Take Action",
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (isEmergency) {
-                            "Take Action - Emergency"
-                        } else if (existingRiskAssessment != null) {
-                            "Update Risk Assessment"
-                        } else {
-                            "Take Action - Risk Assessment"
-                        },
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(80.dp))
         }
-    }
-}
-
-@Composable
-fun DetailItem(label: String, value: String) {
-    Column(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            color = Color.Gray,
-            fontWeight = FontWeight.Medium
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = value,
-            fontSize = 14.sp,
-            color = Color.Black,
-            fontWeight = FontWeight.Normal
-        )
     }
 }
