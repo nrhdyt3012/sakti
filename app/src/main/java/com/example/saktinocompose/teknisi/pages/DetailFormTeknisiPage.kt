@@ -291,6 +291,241 @@ fun DetailFormTeknisiPage(
                     }
                 }
             }
+
+            // Status & Timeline Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Status & Waktu",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+                    HorizontalDivider()
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Status Saat Ini:",
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = when (changeRequest.status) {
+                                    "Submitted" -> Color(0xFF9E9E9E)
+                                    "In-Review" -> Color(0xFF2196F3)
+                                    "Approved" -> Color(0xFF4CAF50)
+                                    "Completed" -> Color(0xFF4CAF50)
+                                    "Failed" -> Color(0xFFD32F2F)
+                                    else -> Color.Gray
+                                }
+                            ),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text(
+                                text = changeRequest.status,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    DetailItem(label = "Dibuat pada", value = createdDate)
+                    DetailItem(label = "Diperbarui pada", value = updatedDate)
+                }
+            }
+
+            // Risk Assessment Card (if exists and not emergency)
+            if (!isEmergency) {
+                existingRiskAssessment?.let { risk ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = getRiskLevelColor(risk.levelRisiko).copy(alpha = 0.1f)
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Risk Assessment",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
+                                Icon(
+                                    imageVector = Icons.Default.Assessment,
+                                    contentDescription = "Risk",
+                                    tint = getRiskLevelColor(risk.levelRisiko)
+                                )
+                            }
+
+                            HorizontalDivider()
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Skor Dampak:", fontSize = 13.sp)
+                                Text(
+                                    "${risk.skorDampak} - ${getImpactLabel(risk.skorDampak)}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Skor Kemungkinan:", fontSize = 13.sp)
+                                Text(
+                                    "${risk.skorKemungkinan} - ${getProbabilityLabel(risk.skorKemungkinan)}",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Skor Risiko:", fontSize = 13.sp)
+                                Text(
+                                    risk.skorRisiko.toString(),
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Level Risiko:", fontSize = 13.sp)
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = getRiskLevelColor(risk.levelRisiko)
+                                    ),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = risk.levelRisiko,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "Dinilai oleh: ${risk.teknisiName}",
+                                fontSize = 11.sp,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Take Action Button (Hide if already Completed or Failed)
+            if (changeRequest.status !in listOf("Completed", "Failed", "Closed")) {
+                Button(
+                    onClick = {
+                        if (isEmergency) {
+                            showEmergencyDialog = true
+                        } else {
+                            showRiskDialog = true
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isEmergency) {
+                            Color(0xFFFF5722) // Orange-red for emergency
+                        } else if (existingRiskAssessment != null) {
+                            Color(0xFFFF9800)
+                        } else {
+                            Color(0xFF4CAF50)
+                        }
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Assessment,
+                        contentDescription = "Take Action",
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = if (isEmergency) {
+                            "Take Action - Emergency"
+                        } else if (existingRiskAssessment != null) {
+                            "Update Risk Assessment"
+                        } else {
+                            "Take Action - Risk Assessment"
+                        },
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(80.dp))
+        }
+    }
+
+    // Full Image Dialog
+    if (showFullImage && changeRequest.photoPath != null) {
+        val photoFile = File(changeRequest.photoPath)
+        if (photoFile.exists()) {
+            val bitmap = remember(changeRequest.photoPath) {
+                BitmapFactory.decodeFile(changeRequest.photoPath)
+            }
+
+            bitmap?.let {
+                AlertDialog(
+                    onDismissRequest = { showFullImage = false },
+                    confirmButton = {
+                        TextButton(onClick = { showFullImage = false }) {
+                            Text("Tutup")
+                        }
+                    },
+                    text = {
+                        Image(
+                            bitmap = it.asImageBitmap(),
+                            contentDescription = "Foto Bukti Full",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 500.dp),
+                            contentScale = ContentScale.Fit
+                        )
+                    }
+                )
+            }
         }
     }
 }

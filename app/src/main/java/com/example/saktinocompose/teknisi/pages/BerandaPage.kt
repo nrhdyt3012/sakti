@@ -257,7 +257,7 @@ fun BerandaPage(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(80.dp))
 
         // Recent Requests
 //        Row(
