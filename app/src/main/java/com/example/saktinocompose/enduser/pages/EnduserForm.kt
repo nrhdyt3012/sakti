@@ -32,7 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.saktinocompose.data.AppDatabase
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
+import kotlinx.coroutines.flow.first
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -50,6 +52,7 @@ fun EnduserForm(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+    val database = AppDatabase.getDatabase(context)
 
     var jenisPerubahan by remember { mutableStateOf("") }
     var showJenisDropdown by remember { mutableStateOf(false) }
@@ -57,7 +60,12 @@ fun EnduserForm(
     var tujuan by remember { mutableStateOf("") }
     var asetTerdampak by remember { mutableStateOf("") }
     var showAsetDropdown by remember { mutableStateOf(false) }
+    var rencanaImplementasi by remember { mutableStateOf("") }
     var usulanJadwal by remember { mutableStateOf("") }
+    var rencanaRollback by remember { mutableStateOf("") }
+    var selectedTeknisiId by remember { mutableStateOf<Int?>(null) }
+    var selectedTeknisiName by remember { mutableStateOf<String?>(null) }
+    var showTeknisiDropdown by remember { mutableStateOf(false) }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showImagePickerDialog by remember { mutableStateOf(false) }
@@ -66,6 +74,9 @@ fun EnduserForm(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+
+    // Load teknisi list
+    val teknisiList by database.userDao().getAllTeknisi().collectAsState(initial = emptyList())
 
     val jenisOptions = listOf("Standar", "Minor", "Major", "Emergency")
     val asetOptions = listOf(
@@ -106,7 +117,6 @@ fun EnduserForm(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            // Create temp file and launch camera
             val photoFile = createImageFile(context)
             tempPhotoUri = FileProvider.getUriForFile(
                 context,
@@ -171,11 +181,16 @@ fun EnduserForm(
                 Button(
                     onClick = {
                         showSuccessDialog = false
+                        // Reset form
                         jenisPerubahan = ""
                         alasan = ""
                         tujuan = ""
                         asetTerdampak = ""
+                        rencanaImplementasi = ""
                         usulanJadwal = ""
+                        rencanaRollback = ""
+                        selectedTeknisiId = null
+                        selectedTeknisiName = null
                         photoUri = null
                         photoBitmap = null
                         onFormSubmitted()
@@ -272,8 +287,6 @@ fun EnduserForm(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = Color.Black,
                                 unfocusedTextColor = Color.Black,
-                                focusedPlaceholderColor = Color.Black,
-                                unfocusedPlaceholderColor = Color.Black,
                                 focusedContainerColor = Color.White,
                                 unfocusedContainerColor = Color.White,
                                 focusedLabelColor = Color(0xFF384E66),
@@ -307,8 +320,6 @@ fun EnduserForm(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
-                            focusedPlaceholderColor = Color.Black,
-                            unfocusedPlaceholderColor = Color.Black,
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White,
                             focusedLabelColor = Color(0xFF384E66),
@@ -327,8 +338,6 @@ fun EnduserForm(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
-                            focusedPlaceholderColor = Color.Black,
-                            unfocusedPlaceholderColor = Color.Black,
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White,
                             focusedLabelColor = Color(0xFF384E66),
@@ -354,8 +363,6 @@ fun EnduserForm(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = Color.Black,
                                 unfocusedTextColor = Color.Black,
-                                focusedPlaceholderColor = Color.Black,
-                                unfocusedPlaceholderColor = Color.Black,
                                 focusedContainerColor = Color.White,
                                 unfocusedContainerColor = Color.White,
                                 focusedLabelColor = Color(0xFF384E66),
@@ -378,8 +385,26 @@ fun EnduserForm(
                         }
                     }
 
-                    // 5. Usulan Jadwal
-                    Text("5. Usulan Jadwal *", fontWeight = FontWeight.SemiBold)
+                    // 5. Rencana Implementasi
+                    Text("5. Rencana Implementasi *", fontWeight = FontWeight.SemiBold)
+                    OutlinedTextField(
+                        value = rencanaImplementasi,
+                        onValueChange = { rencanaImplementasi = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        placeholder = { Text("Jelaskan rencana implementasi perubahan") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedLabelColor = Color(0xFF384E66),
+                            unfocusedLabelColor = Color(0xFF384E66)
+                        )
+                    )
+
+                    // 6. Usulan Jadwal
+                    Text("6. Usulan Jadwal *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = usulanJadwal,
                         onValueChange = {},
@@ -398,8 +423,6 @@ fun EnduserForm(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
-                            focusedPlaceholderColor = Color.Black,
-                            unfocusedPlaceholderColor = Color.Black,
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White,
                             focusedLabelColor = Color(0xFF384E66),
@@ -407,8 +430,67 @@ fun EnduserForm(
                         )
                     )
 
-                    // 6. Foto Bukti (Opsional)
-                    Text("6. Foto Bukti (Opsional)", fontWeight = FontWeight.SemiBold)
+                    // 7. Rencana Rollback
+                    Text("7. Rencana Rollback *", fontWeight = FontWeight.SemiBold)
+                    OutlinedTextField(
+                        value = rencanaRollback,
+                        onValueChange = { rencanaRollback = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        placeholder = { Text("Jelaskan rencana rollback jika perubahan gagal") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            focusedLabelColor = Color(0xFF384E66),
+                            unfocusedLabelColor = Color(0xFF384E66)
+                        )
+                    )
+
+                    // 8. Pilih Teknisi
+                    Text("8. Pilih Teknisi *", fontWeight = FontWeight.SemiBold)
+                    ExposedDropdownMenuBox(
+                        expanded = showTeknisiDropdown,
+                        onExpandedChange = { showTeknisiDropdown = !showTeknisiDropdown }
+                    ) {
+                        OutlinedTextField(
+                            value = selectedTeknisiName ?: "",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Pilih Teknisi") },
+                            trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black,
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White,
+                                focusedLabelColor = Color(0xFF384E66),
+                                unfocusedLabelColor = Color(0xFF384E66)
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showTeknisiDropdown,
+                            onDismissRequest = { showTeknisiDropdown = false }
+                        ) {
+                            teknisiList.forEach { teknisi ->
+                                DropdownMenuItem(
+                                    text = { Text(teknisi.name) },
+                                    onClick = {
+                                        selectedTeknisiId = teknisi.id
+                                        selectedTeknisiName = teknisi.name
+                                        showTeknisiDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // 9. Foto Bukti (Opsional)
+                    Text("9. Foto Bukti (Opsional)", fontWeight = FontWeight.SemiBold)
 
                     if (photoBitmap != null) {
                         Card(
@@ -493,12 +575,23 @@ fun EnduserForm(
                                     errorMessage = "Aset Terdampak wajib diisi"
                                     showErrorDialog = true
                                 }
+                                rencanaImplementasi.isBlank() -> {
+                                    errorMessage = "Rencana Implementasi wajib diisi"
+                                    showErrorDialog = true
+                                }
                                 usulanJadwal.isBlank() -> {
                                     errorMessage = "Usulan Jadwal wajib diisi"
                                     showErrorDialog = true
                                 }
+                                rencanaRollback.isBlank() -> {
+                                    errorMessage = "Rencana Rollback wajib diisi"
+                                    showErrorDialog = true
+                                }
+                                selectedTeknisiId == null -> {
+                                    errorMessage = "Teknisi wajib dipilih"
+                                    showErrorDialog = true
+                                }
                                 else -> {
-                                    // Save photo to internal storage if exists
                                     val savedPhotoPath = photoUri?.let { uri ->
                                         savePhotoToInternalStorage(context, uri)
                                     }
@@ -509,7 +602,11 @@ fun EnduserForm(
                                         alasan = alasan,
                                         tujuan = tujuan,
                                         asetTerdampak = asetTerdampak,
+                                        rencanaImplementasi = rencanaImplementasi,
                                         usulanJadwal = usulanJadwal,
+                                        rencanaRollback = rencanaRollback,
+                                        assignedTeknisiId = selectedTeknisiId,
+                                        assignedTeknisiName = selectedTeknisiName,
                                         photoPath = savedPhotoPath
                                     )
                                     showSuccessDialog = true
@@ -546,7 +643,7 @@ fun EnduserForm(
     }
 }
 
-// Helper function to create image file
+// Helper functions
 private fun createImageFile(context: Context): File {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val storageDir = context.getExternalFilesDir(null)
@@ -557,7 +654,6 @@ private fun createImageFile(context: Context): File {
     )
 }
 
-// Helper function to load bitmap from URI
 private fun loadBitmapFromUri(context: Context, uri: Uri): Bitmap? {
     return try {
         context.contentResolver.openInputStream(uri)?.use { inputStream ->
@@ -569,7 +665,6 @@ private fun loadBitmapFromUri(context: Context, uri: Uri): Bitmap? {
     }
 }
 
-// Helper function to save photo to internal storage
 private fun savePhotoToInternalStorage(context: Context, uri: Uri): String? {
     return try {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())

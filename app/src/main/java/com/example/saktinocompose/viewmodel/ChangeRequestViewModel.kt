@@ -21,7 +21,11 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         alasan: String,
         tujuan: String,
         asetTerdampak: String,
+        rencanaImplementasi: String,
         usulanJadwal: String,
+        rencanaRollback: String,
+        assignedTeknisiId: Int?,
+        assignedTeknisiName: String?,
         photoPath: String? = null
     ) {
         viewModelScope.launch {
@@ -33,7 +37,11 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 alasan = alasan,
                 tujuan = tujuan,
                 asetTerdampak = asetTerdampak,
+                rencanaImplementasi = rencanaImplementasi,
                 usulanJadwal = usulanJadwal,
+                rencanaRollback = rencanaRollback,
+                assignedTeknisiId = assignedTeknisiId,
+                assignedTeknisiName = assignedTeknisiName,
                 photoPath = photoPath,
                 status = "Submitted"
             )

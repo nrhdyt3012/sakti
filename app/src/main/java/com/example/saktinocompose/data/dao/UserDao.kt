@@ -18,6 +18,9 @@ interface UserDao {
     @Query("SELECT * FROM users")
     fun getAllUsers(): Flow<List<User>>
 
+    @Query("SELECT * FROM users WHERE role = 'TEKNISI'")
+    fun getAllTeknisi(): Flow<List<User>>
+
     @Update
     suspend fun updateUser(user: User)
 

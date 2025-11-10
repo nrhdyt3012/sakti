@@ -118,7 +118,12 @@ fun FormDetailPage(
                     DetailItem(label = "Alasan", value = changeRequest.alasan)
                     DetailItem(label = "Tujuan", value = changeRequest.tujuan)
                     DetailItem(label = "Aset Terdampak", value = changeRequest.asetTerdampak)
+                    DetailItem(label = "Rencana Implementasi", value = changeRequest.rencanaImplementasi)
                     DetailItem(label = "Usulan Jadwal", value = changeRequest.usulanJadwal)
+                    DetailItem(label = "Rencana Rollback", value = changeRequest.rencanaRollback)
+                    if (changeRequest.assignedTeknisiName != null) {
+                        DetailItem(label = "Teknisi Ditugaskan", value = changeRequest.assignedTeknisiName)
+                    }
                 }
             }
 
