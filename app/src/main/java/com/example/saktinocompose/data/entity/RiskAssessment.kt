@@ -10,9 +10,9 @@ data class RiskAssessment(
     val changeRequestId: Int,
     val teknisiId: Int,
     val teknisiName: String,
-    val skorDampak: Int, // 1-5
-    val skorKemungkinan: Int, // 1-5
-    val skorRisiko: Int, // skorDampak * skorKemungkinan
-    val levelRisiko: String, // "Very Low", "Low", "Medium", "High", "Very High", "Extreme"
+    val skorDampak: Int,
+    val skorKemungkinan: Int,
+    val skorRisiko: Int,
+    val levelRisiko: String,
     val createdAt: Long = System.currentTimeMillis()
 )

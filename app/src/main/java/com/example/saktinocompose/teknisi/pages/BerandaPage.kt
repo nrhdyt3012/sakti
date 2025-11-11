@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -57,10 +55,6 @@ fun BerandaPage(
         val date = Date(cr.createdAt)
         date.after(thisWeek) || date == thisWeek
     }
-
-    // Ambil 5 pengajuan terbaru
-    val recentRequests = allChangeRequests.sortedByDescending { it.createdAt }.take(5)
-
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -319,87 +313,6 @@ fun BerandaPage(
 //        }
 //
 //        Spacer(modifier = Modifier.height(80.dp))
-    }
-}
-
-@Composable
-fun RecentRequestCard(
-    changeRequest: ChangeRequest,
-    onDetailClick: () -> Unit
-) {
-    val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-    val createdDate = dateFormat.format(Date(changeRequest.createdAt))
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = changeRequest.ticketId,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black
-                )
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = when (changeRequest.status) {
-                            "Submitted" -> Color(0xFF9E9E9E)
-                            "In-Review" -> Color(0xFF2196F3)
-                            "Approved" -> Color(0xFF4CAF50)
-                            else -> Color.Gray
-                        }
-                    ),
-                    shape = RoundedCornerShape(6.dp)
-                ) {
-                    Text(
-                        text = changeRequest.status,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = "Jenis: ${changeRequest.jenisPerubahan}",
-                fontSize = 12.sp,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = "Diajukan: $createdDate",
-                fontSize = 11.sp,
-                color = Color.Gray
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = onDetailClick,
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF384E66)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("Detail & Take Action", fontSize = 13.sp, color = Color.White)
-            }
-        }
     }
 }
 
