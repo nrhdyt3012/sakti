@@ -21,7 +21,7 @@ import java.security.MessageDigest
 
 @Database(
     entities = [User::class, ChangeRequest::class, ApprovalHistory::class, RiskAssessment::class],
-    version = 6,
+    version = 7,  // UPDATED VERSION
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -72,6 +72,15 @@ abstract class AppDatabase : RoomDatabase() {
                     email = "test@example.com",
                     name = "Budi",
                     passwordHash = hashPassword("password123"),
+                    role = "TEKNISI"
+                )
+            )
+
+            userDao.insertUser(
+                User(
+                    email = "teknisi@example.com",
+                    name = "Bahlil",
+                    passwordHash = hashPassword("password111"),
                     role = "TEKNISI"
                 )
             )

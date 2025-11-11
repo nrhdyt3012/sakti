@@ -24,6 +24,33 @@ import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+// Helper function untuk mendapatkan warna jenis perubahan
+fun getJenisPerubahanColor(jenis: String): Color {
+    return when (jenis) {
+        "Emergency" -> Color(0xFFD32F2F)  // Red
+        "Major" -> Color(0xFFFF9800)      // Orange
+        "Minor" -> Color(0xFF2196F3)      // Blue
+        "Standar" -> Color(0xFF4CAF50)    // Green
+        else -> Color.Gray
+    }
+}
+
+// Helper function untuk sorting priority
+fun getJenisPriority(jenis: String): Int {
+    return when (jenis) {
+        "Emergency" -> 1
+        "Major" -> 2
+        "Minor" -> 3
+        "Standar" -> 4
+        else -> 5
+    }
+}
+
+// Extension function untuk sorting ChangeRequest
+fun List<ChangeRequest>.sortedByJenisPriority(): List<ChangeRequest> {
+    return this.sortedBy { getJenisPriority(it.jenisPerubahan) }
+}
+
 @Composable
 fun EnduserBerandaPage(
     userId: Int,
@@ -34,7 +61,13 @@ fun EnduserBerandaPage(
     viewModel: ChangeRequestViewModel = viewModel()
 ) {
     val scrollState = rememberScrollState()
-    val changeRequests by viewModel.getChangeRequestsByUser(userId).collectAsState(initial = emptyList())
+    val changeRequestsRaw by viewModel.getChangeRequestsByUser(userId).collectAsState(initial = emptyList())
+
+    // SORT BY JENIS PERUBAHAN PRIORITY
+    val changeRequests = remember(changeRequestsRaw) {
+        changeRequestsRaw.sortedByJenisPriority()
+    }
+
     val context = LocalContext.current
 
     val thisMonth = remember {

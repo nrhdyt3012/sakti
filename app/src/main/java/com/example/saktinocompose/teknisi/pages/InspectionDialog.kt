@@ -51,11 +51,11 @@ fun InspectionDialog(
 ) {
     val context = LocalContext.current
 
-    // Form states
+    // Form states - POPULATED WITH EXISTING DATA
     var jenisPerubahan by remember { mutableStateOf(changeRequest.jenisPerubahan) }
     var showJenisDropdown by remember { mutableStateOf(false) }
-    var estimasiBiaya by remember { mutableStateOf("") }
-    var estimasiWaktu by remember { mutableStateOf("") }
+    var estimasiBiaya by remember { mutableStateOf(changeRequest.estimasiBiaya ?: "") }
+    var estimasiWaktu by remember { mutableStateOf(changeRequest.estimasiWaktu ?: "") }
     var skorDampak by remember { mutableIntStateOf(0) }
     var skorKemungkinan by remember { mutableIntStateOf(0) }
     var showDampakDropdown by remember { mutableStateOf(false) }
@@ -64,6 +64,17 @@ fun InspectionDialog(
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showImagePickerDialog by remember { mutableStateOf(false) }
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+
+    // Load existing photo if available
+    LaunchedEffect(changeRequest.photoPath) {
+        changeRequest.photoPath?.let { path ->
+            val file = File(path)
+            if (file.exists()) {
+                photoBitmap = BitmapFactory.decodeFile(path)
+                photoUri = Uri.fromFile(file)
+            }
+        }
+    }
 
     val skorRisiko = skorDampak * skorKemungkinan
     val levelRisiko = calculateRiskLevel(skorDampak, skorKemungkinan)
@@ -150,7 +161,7 @@ fun InspectionDialog(
                     tint = Color(0xFF384E66)
                 )
                 Text(
-                    text = "Inspeksi & Review",
+                    text = if (changeRequest.status == "Submitted") "Inspeksi & Review" else "Update Inspeksi",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -183,7 +194,10 @@ fun InspectionDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Lakukan inspeksi dan isi semua field untuk mengubah status menjadi 'Reviewed'",
+                            text = if (changeRequest.status == "Submitted")
+                                "Lakukan inspeksi dan isi semua field untuk mengubah status menjadi 'Reviewed'"
+                            else
+                                "Update data inspeksi yang sudah ada",
                             fontSize = 11.sp,
                             color = Color.Gray
                         )
@@ -194,7 +208,8 @@ fun InspectionDialog(
                 Text(
                     text = "1. Jenis Perubahan (dapat diedit)",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
                 )
                 ExposedDropdownMenuBox(
                     expanded = showJenisDropdown,
@@ -205,7 +220,7 @@ fun InspectionDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Jenis Perubahan") },
-                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
@@ -234,7 +249,8 @@ fun InspectionDialog(
                 Text(
                     text = "2. Estimasi Biaya *",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
                 )
                 OutlinedTextField(
                     value = estimasiBiaya,
@@ -242,7 +258,7 @@ fun InspectionDialog(
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Contoh: Rp 5.000.000") },
                     leadingIcon = {
-                        Icon(Icons.Default.AttachMoney, contentDescription = null)
+                        Icon(Icons.Default.AttachMoney, contentDescription = null,tint = Color.Black)
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
@@ -254,7 +270,8 @@ fun InspectionDialog(
                 Text(
                     text = "3. Estimasi Waktu *",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
                 )
                 OutlinedTextField(
                     value = estimasiWaktu,
@@ -262,7 +279,7 @@ fun InspectionDialog(
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Contoh: 2 hari / 4 jam") },
                     leadingIcon = {
-                        Icon(Icons.Default.Schedule, contentDescription = null)
+                        Icon(Icons.Default.Schedule, contentDescription = null,tint = Color.Black)
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
@@ -274,7 +291,8 @@ fun InspectionDialog(
                 Text(
                     text = "4. Skor Dampak (Impact) *",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
                 )
                 ExposedDropdownMenuBox(
                     expanded = showDampakDropdown,
@@ -285,7 +303,7 @@ fun InspectionDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Pilih Skor Dampak") },
-                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null,tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
@@ -314,7 +332,8 @@ fun InspectionDialog(
                 Text(
                     text = "5. Skor Kemungkinan (Probability) *",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
                 )
                 ExposedDropdownMenuBox(
                     expanded = showKemungkinanDropdown,
@@ -325,7 +344,7 @@ fun InspectionDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Pilih Skor Kemungkinan") },
-                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null,tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
@@ -411,7 +430,8 @@ fun InspectionDialog(
                 Text(
                     text = "6. Foto Bukti Lapangan *",
                     fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
                 )
 
                 if (photoBitmap != null) {
@@ -472,8 +492,9 @@ fun InspectionDialog(
                 Text(
                     text = "Foto bukti hasil inspeksi lapangan",
                     fontSize = 11.sp,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(start = 4.dp)
+                    color = Color.Black,
+                    modifier = Modifier.padding(start = 4.dp),
+
                 )
             }
         },
@@ -487,7 +508,12 @@ fun InspectionDialog(
                         photoUri != null
                     ) {
                         val savedPhotoPath = photoUri?.let { uri ->
-                            savePhotoToInternalStorage(context, uri)
+                            // If it's already saved, use existing path
+                            if (uri.toString().startsWith("file://")) {
+                                changeRequest.photoPath
+                            } else {
+                                savePhotoToInternalStorage(context, uri)
+                            }
                         }
 
                         onSave(

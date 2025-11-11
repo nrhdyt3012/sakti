@@ -22,6 +22,33 @@ import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+// Helper function untuk mendapatkan warna jenis perubahan
+fun getJenisPerubahanColor(jenis: String): Color {
+    return when (jenis) {
+        "Emergency" -> Color(0xFFD32F2F)  // Red
+        "Major" -> Color(0xFFFF9800)      // Orange
+        "Minor" -> Color(0xFF2196F3)      // Blue
+        "Standar" -> Color(0xFF4CAF50)    // Green
+        else -> Color.Gray
+    }
+}
+
+// Helper function untuk sorting priority
+fun getJenisPriority(jenis: String): Int {
+    return when (jenis) {
+        "Emergency" -> 1
+        "Major" -> 2
+        "Minor" -> 3
+        "Standar" -> 4
+        else -> 5
+    }
+}
+
+// Extension function untuk sorting ChangeRequest
+fun List<ChangeRequest>.sortedByJenisPriority(): List<ChangeRequest> {
+    return this.sortedBy { getJenisPriority(it.jenisPerubahan) }
+}
+
 @Composable
 fun BerandaPage(
     userName: String = "Teknisi",
@@ -30,7 +57,13 @@ fun BerandaPage(
     modifier: Modifier = Modifier,
     viewModel: ChangeRequestViewModel = viewModel()
 ) {
-    val allChangeRequests by viewModel.getAllChangeRequests().collectAsState(initial = emptyList())
+    val allChangeRequestsRaw by viewModel.getAllChangeRequests().collectAsState(initial = emptyList())
+
+    // SORT BY JENIS PERUBAHAN PRIORITY
+    val allChangeRequests = remember(allChangeRequestsRaw) {
+        allChangeRequestsRaw.sortedByJenisPriority()
+    }
+
     val context = LocalContext.current
 
     val thisMonth = remember {
@@ -55,6 +88,7 @@ fun BerandaPage(
         val date = Date(cr.createdAt)
         date.after(thisWeek) || date == thisWeek
     }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -252,67 +286,6 @@ fun BerandaPage(
         }
 
         Spacer(modifier = Modifier.height(80.dp))
-
-        // Recent Requests
-//        Row(
-//            modifier = Modifier.fillMaxWidth(),
-//            horizontalArrangement = Arrangement.SpaceBetween,
-//            verticalAlignment = Alignment.CenterVertically
-//        ) {
-//            Text(
-//                text = "Pengajuan Terbaru",
-//                fontSize = 18.sp,
-//                fontWeight = FontWeight.Bold,
-//                color = Color.Black
-//            )
-//            Text(
-//                text = "Maks 5 item",
-//                fontSize = 12.sp,
-//                color = Color.Gray
-//            )
-//        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-//        if (recentRequests.isEmpty()) {
-//            Card(
-//                modifier = Modifier
-//                    .fillMaxWidth()
-//                    .padding(vertical = 16.dp),
-//                colors = CardDefaults.cardColors(containerColor = Color.White),
-//                shape = RoundedCornerShape(12.dp)
-//            ) {
-//                Column(
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .padding(32.dp),
-//                    horizontalAlignment = Alignment.CenterHorizontally
-//                ) {
-//                    Icon(
-//                        imageVector = Icons.Default.Assessment,
-//                        contentDescription = "No Data",
-//                        modifier = Modifier.size(48.dp),
-//                        tint = Color.Gray
-//                    )
-//                    Spacer(modifier = Modifier.height(12.dp))
-//                    Text(
-//                        text = "Belum ada pengajuan",
-//                        fontSize = 14.sp,
-//                        color = Color.Gray
-//                    )
-//                }
-//            }
-//        } else {
-//            recentRequests.forEach { request ->
-//                RecentRequestCard(
-//                    changeRequest = request,
-//                    onDetailClick = { onDetailClick(request) }
-//                )
-//                Spacer(modifier = Modifier.height(8.dp))
-//            }
-//        }
-//
-//        Spacer(modifier = Modifier.height(80.dp))
     }
 }
 

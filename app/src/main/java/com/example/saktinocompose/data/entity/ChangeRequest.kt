@@ -21,6 +21,9 @@ data class ChangeRequest(
     val photoPath: String? = null,
     val estimasiBiaya: String? = null,
     val estimasiWaktu: String? = null,
+    val scheduledDate: String? = null,  // Format: yyyy-MM-dd
+    val scheduledTime: String? = null,  // Format: HH:mm
+    val scheduledTimestamp: Long? = null, // Timestamp for comparison
     val status: String = "Submitted",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()

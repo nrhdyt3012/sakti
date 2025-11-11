@@ -9,8 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Assessment
-import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -48,9 +47,11 @@ fun DetailFormTeknisiPage(
     val updatedDate = dateFormat.format(Date(changeRequest.updatedAt))
 
     var showInspectionDialog by remember { mutableStateOf(false) }
+    var showSchedulingDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showEmergencyDialog by remember { mutableStateOf(false) }
     var showFullImage by remember { mutableStateOf(false) }
+    var successMessage by remember { mutableStateOf("") }
 
     val existingRiskAssessment by riskAssessmentViewModel.getRiskAssessmentFlow(changeRequest.id)
         .collectAsState(initial = null)
@@ -58,6 +59,29 @@ fun DetailFormTeknisiPage(
     val isEmergency = changeRequest.jenisPerubahan == "Emergency"
     val isSubmitted = changeRequest.status == "Submitted"
     val isReviewed = changeRequest.status == "Reviewed"
+    val isScheduled = changeRequest.status == "Scheduled"
+
+    // Check if scheduled implementation time has passed
+    LaunchedEffect(changeRequest.scheduledTimestamp) {
+        if (isScheduled && changeRequest.scheduledTimestamp != null) {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime >= changeRequest.scheduledTimestamp) {
+                // Auto-update to Implementing
+                changeRequestViewModel.updateChangeRequestStatus(
+                    changeRequest = changeRequest,
+                    newStatus = "Implementing"
+                )
+                approvalHistoryViewModel.addApprovalHistory(
+                    changeRequestId = changeRequest.id,
+                    approverUserId = teknisiId,
+                    approverName = "System",
+                    fromStatus = "Scheduled",
+                    toStatus = "Implementing",
+                    notes = "Otomatis berubah ke Implementing sesuai jadwal"
+                )
+            }
+        }
+    }
 
     // Inspection Dialog
     if (showInspectionDialog) {
@@ -98,6 +122,45 @@ fun DetailFormTeknisiPage(
                 )
 
                 showInspectionDialog = false
+                successMessage = "Inspeksi berhasil! Status berubah menjadi 'Reviewed'"
+                showSuccessDialog = true
+            }
+        )
+    }
+
+    // Scheduling Dialog
+    if (showSchedulingDialog) {
+        SchedulingDialog(
+            changeRequest = changeRequest,
+            onDismiss = { showSchedulingDialog = false },
+            onSave = { scheduledDate, scheduledTime ->
+                // Parse to timestamp
+                val dateTimeString = "$scheduledDate $scheduledTime"
+                val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                val scheduledTimestamp = sdf.parse(dateTimeString)?.time ?: System.currentTimeMillis()
+
+                // Update ChangeRequest
+                val updatedRequest = changeRequest.copy(
+                    scheduledDate = scheduledDate,
+                    scheduledTime = scheduledTime,
+                    scheduledTimestamp = scheduledTimestamp,
+                    status = "Scheduled",
+                    updatedAt = System.currentTimeMillis()
+                )
+                changeRequestViewModel.updateFullChangeRequest(updatedRequest)
+
+                // Add Approval History
+                approvalHistoryViewModel.addApprovalHistory(
+                    changeRequestId = changeRequest.id,
+                    approverUserId = teknisiId,
+                    approverName = teknisiName,
+                    fromStatus = changeRequest.status,
+                    toStatus = "Scheduled",
+                    notes = "Implementasi dijadwalkan pada $scheduledDate pukul $scheduledTime"
+                )
+
+                showSchedulingDialog = false
+                successMessage = "Implementasi berhasil dijadwalkan!"
                 showSuccessDialog = true
             }
         )
@@ -111,6 +174,7 @@ fun DetailFormTeknisiPage(
             onDismiss = { showEmergencyDialog = false },
             onSuccess = {
                 showEmergencyDialog = false
+                successMessage = "Status emergency change request berhasil diupdate"
                 showSuccessDialog = true
             }
         )
@@ -120,16 +184,7 @@ fun DetailFormTeknisiPage(
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
             title = { Text("Berhasil!") },
-            text = {
-                Text(
-                    if (isEmergency)
-                        "Status emergency change request berhasil diupdate"
-                    else if (isSubmitted)
-                        "Inspeksi berhasil! Status berubah menjadi 'Reviewed'"
-                    else
-                        "Data berhasil diperbarui"
-                )
-            },
+            text = { Text(successMessage) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -259,7 +314,7 @@ fun DetailFormTeknisiPage(
             }
 
             // Inspection Result (if reviewed)
-            if (isReviewed && changeRequest.estimasiBiaya != null && changeRequest.estimasiWaktu != null) {
+            if ((isReviewed || isScheduled) && changeRequest.estimasiBiaya != null && changeRequest.estimasiWaktu != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f)),
@@ -299,7 +354,79 @@ fun DetailFormTeknisiPage(
                 }
             }
 
-            // Photo Card from Teknisi (if exists and reviewed)
+            // Schedule Info (if scheduled)
+            if (isScheduled && changeRequest.scheduledDate != null && changeRequest.scheduledTime != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Jadwal Implementasi",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Schedule,
+                                contentDescription = "Schedule",
+                                tint = Color(0xFFFF9800)
+                            )
+                        }
+
+                        HorizontalDivider()
+
+                        DetailItem(label = "Tanggal", value = changeRequest.scheduledDate ?: "-")
+                        DetailItem(label = "Waktu", value = changeRequest.scheduledTime ?: "-")
+
+                        // Countdown or status
+                        changeRequest.scheduledTimestamp?.let { timestamp ->
+                            val currentTime = System.currentTimeMillis()
+                            if (currentTime < timestamp) {
+                                val remainingHours = (timestamp - currentTime) / (1000 * 60 * 60)
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF2196F3).copy(alpha = 0.2f)
+                                    ),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "⏰ Implementasi dimulai dalam $remainingHours jam",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF2196F3),
+                                        modifier = Modifier.padding(8.dp)
+                                    )
+                                }
+                            } else {
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFFFF5722).copy(alpha = 0.2f)
+                                    ),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = "🚀 Waktunya implementasi! Status akan berubah otomatis.",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFFFF5722),
+                                        modifier = Modifier.padding(8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Photo Card from Teknisi (if exists and reviewed/scheduled)
             changeRequest.photoPath?.let { path ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -406,6 +533,8 @@ fun DetailFormTeknisiPage(
                                     "Submitted" -> Color(0xFF9E9E9E)
                                     "Reviewed" -> Color(0xFF2196F3)
                                     "Approved" -> Color(0xFF4CAF50)
+                                    "Scheduled" -> Color(0xFFFF9800)
+                                    "Implementing" -> Color(0xFFFF5722)
                                     "Completed" -> Color(0xFF4CAF50)
                                     "Failed" -> Color(0xFFD32F2F)
                                     else -> Color.Gray
@@ -531,39 +660,41 @@ fun DetailFormTeknisiPage(
             if (changeRequest.status !in listOf("Completed", "Failed", "Closed")) {
                 Button(
                     onClick = {
-                        if (isEmergency) {
-                            showEmergencyDialog = true
-                        } else {
-                            showInspectionDialog = true
+                        when {
+                            isEmergency -> showEmergencyDialog = true
+                            isSubmitted -> showInspectionDialog = true
+                            isReviewed -> showSchedulingDialog = true
+                            else -> showInspectionDialog = true
                         }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isEmergency) {
-                            Color(0xFFFF5722)
-                        } else if (isSubmitted) {
-                            Color(0xFF4CAF50)
-                        } else {
-                            Color(0xFFFF9800)
+                        containerColor = when {
+                            isEmergency -> Color(0xFFFF5722)
+                            isSubmitted -> Color(0xFF4CAF50)
+                            isReviewed -> Color(0xFFFF9800)
+                            else -> Color(0xFF2196F3)
                         }
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Assessment,
+                        imageVector = when {
+                            isReviewed -> Icons.Default.Schedule
+                            else -> Icons.Default.Assessment
+                        },
                         contentDescription = "Take Action",
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (isEmergency) {
-                            "Take Action - Emergency"
-                        } else if (isSubmitted) {
-                            "Lakukan Inspeksi"
-                        } else {
-                            "Update Inspeksi"
+                        text = when {
+                            isEmergency -> "Take Action - Emergency"
+                            isSubmitted -> "Lakukan Inspeksi"
+                            isReviewed -> "Jadwalkan Implementasi"
+                            else -> "Update Inspeksi"
                         },
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
