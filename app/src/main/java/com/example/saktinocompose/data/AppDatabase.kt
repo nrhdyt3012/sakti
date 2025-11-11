@@ -21,7 +21,7 @@ import java.security.MessageDigest
 
 @Database(
     entities = [User::class, ChangeRequest::class, ApprovalHistory::class, RiskAssessment::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

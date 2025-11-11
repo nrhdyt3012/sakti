@@ -18,8 +18,10 @@ data class ChangeRequest(
     val rencanaRollback: String,
     val assignedTeknisiId: Int? = null, // ID teknisi yang dipilih
     val assignedTeknisiName: String? = null, // Nama teknisi yang dipilih
-    val photoPath: String? = null, // Path foto bukti (opsional)
-    val status: String = "Submitted", // "Submitted", "In-Review", "Approved", "Scheduled", "Implementing", "Completed", "Failed", "Closed"
+    val photoPath: String? = null, // Path foto bukti dari teknisi (setelah inspeksi)
+    val estimasiBiaya: String? = null, // Estimasi biaya dari teknisi
+    val estimasiWaktu: String? = null, // Estimasi waktu dari teknisi
+    val status: String = "Submitted", // "Submitted", "Reviewed", "Approved", "Scheduled", "Implementing", "Completed", "Failed", "Closed"
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()
 )

@@ -23,7 +23,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.enduser.pages.DetailItem
+import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import com.example.saktinocompose.viewmodel.RiskAssessmentViewModel
+import com.example.saktinocompose.viewmodel.ApprovalHistoryViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -36,28 +38,46 @@ fun DetailFormTeknisiPage(
     teknisiName: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: RiskAssessmentViewModel = viewModel()
+    changeRequestViewModel: ChangeRequestViewModel = viewModel(),
+    riskAssessmentViewModel: RiskAssessmentViewModel = viewModel(),
+    approvalHistoryViewModel: ApprovalHistoryViewModel = viewModel()
 ) {
     val scrollState = rememberScrollState()
     val dateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale.getDefault())
     val createdDate = dateFormat.format(Date(changeRequest.createdAt))
     val updatedDate = dateFormat.format(Date(changeRequest.updatedAt))
 
-    var showRiskDialog by remember { mutableStateOf(false) }
+    var showInspectionDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showEmergencyDialog by remember { mutableStateOf(false) }
     var showFullImage by remember { mutableStateOf(false) }
 
-    val existingRiskAssessment by viewModel.getRiskAssessmentFlow(changeRequest.id)
+    val existingRiskAssessment by riskAssessmentViewModel.getRiskAssessmentFlow(changeRequest.id)
         .collectAsState(initial = null)
 
     val isEmergency = changeRequest.jenisPerubahan == "Emergency"
+    val isSubmitted = changeRequest.status == "Submitted"
+    val isReviewed = changeRequest.status == "Reviewed"
 
-    if (showRiskDialog) {
-        RiskAssessmentDialog(
-            onDismiss = { showRiskDialog = false },
-            onSave = { skorDampak, skorKemungkinan, skorRisiko, levelRisiko ->
-                viewModel.saveRiskAssessment(
+    // Inspection Dialog
+    if (showInspectionDialog) {
+        InspectionDialog(
+            changeRequest = changeRequest,
+            onDismiss = { showInspectionDialog = false },
+            onSave = { jenisPerubahan, estimasiBiaya, estimasiWaktu, skorDampak, skorKemungkinan, skorRisiko, levelRisiko, photoPath ->
+                // Update ChangeRequest dengan semua data baru
+                val updatedRequest = changeRequest.copy(
+                    jenisPerubahan = jenisPerubahan,
+                    estimasiBiaya = estimasiBiaya,
+                    estimasiWaktu = estimasiWaktu,
+                    photoPath = photoPath,
+                    status = "Reviewed",
+                    updatedAt = System.currentTimeMillis()
+                )
+                changeRequestViewModel.updateFullChangeRequest(updatedRequest)
+
+                // Save Risk Assessment
+                riskAssessmentViewModel.saveRiskAssessment(
                     changeRequestId = changeRequest.id,
                     teknisiId = teknisiId,
                     teknisiName = teknisiName,
@@ -66,7 +86,18 @@ fun DetailFormTeknisiPage(
                     skorRisiko = skorRisiko,
                     levelRisiko = levelRisiko
                 )
-                showRiskDialog = false
+
+                // Add Approval History
+                approvalHistoryViewModel.addApprovalHistory(
+                    changeRequestId = changeRequest.id,
+                    approverUserId = teknisiId,
+                    approverName = teknisiName,
+                    fromStatus = changeRequest.status,
+                    toStatus = "Reviewed",
+                    notes = "Inspeksi selesai. Estimasi biaya: $estimasiBiaya, Estimasi waktu: $estimasiWaktu, Level risiko: $levelRisiko"
+                )
+
+                showInspectionDialog = false
                 showSuccessDialog = true
             }
         )
@@ -93,8 +124,10 @@ fun DetailFormTeknisiPage(
                 Text(
                     if (isEmergency)
                         "Status emergency change request berhasil diupdate"
+                    else if (isSubmitted)
+                        "Inspeksi berhasil! Status berubah menjadi 'Reviewed'"
                     else
-                        "Risk Assessment berhasil disimpan"
+                        "Data berhasil diperbarui"
                 )
             },
             confirmButton = {
@@ -225,7 +258,48 @@ fun DetailFormTeknisiPage(
                 }
             }
 
-            // Photo Card (if exists)
+            // Inspection Result (if reviewed)
+            if (isReviewed && changeRequest.estimasiBiaya != null && changeRequest.estimasiWaktu != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f)),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Hasil Inspeksi",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Assessment,
+                                contentDescription = "Inspection",
+                                tint = Color(0xFF4CAF50)
+                            )
+                        }
+
+                        HorizontalDivider()
+
+                        changeRequest.estimasiBiaya?.let {
+                            DetailItem(label = "Estimasi Biaya", value = it)
+                        }
+                        changeRequest.estimasiWaktu?.let {
+                            DetailItem(label = "Estimasi Waktu", value = it)
+                        }
+                    }
+                }
+            }
+
+            // Photo Card from Teknisi (if exists and reviewed)
             changeRequest.photoPath?.let { path ->
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -247,7 +321,7 @@ fun DetailFormTeknisiPage(
                                 tint = Color(0xFF384E66)
                             )
                             Text(
-                                text = "Foto Bukti dari End User",
+                                text = "Foto Bukti Inspeksi Lapangan",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Black
@@ -330,7 +404,7 @@ fun DetailFormTeknisiPage(
                             colors = CardDefaults.cardColors(
                                 containerColor = when (changeRequest.status) {
                                     "Submitted" -> Color(0xFF9E9E9E)
-                                    "In-Review" -> Color(0xFF2196F3)
+                                    "Reviewed" -> Color(0xFF2196F3)
                                     "Approved" -> Color(0xFF4CAF50)
                                     "Completed" -> Color(0xFF4CAF50)
                                     "Failed" -> Color(0xFFD32F2F)
@@ -354,115 +428,113 @@ fun DetailFormTeknisiPage(
                 }
             }
 
-            // Risk Assessment Card (if exists and not emergency)
-            if (!isEmergency) {
-                existingRiskAssessment?.let { risk ->
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = getRiskLevelColor(risk.levelRisiko).copy(alpha = 0.1f)
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            // Risk Assessment Card (if exists)
+            existingRiskAssessment?.let { risk ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = getRiskLevelColor(risk.levelRisiko).copy(alpha = 0.1f)
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = "Risk Assessment",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Assessment,
-                                    contentDescription = "Risk",
-                                    tint = getRiskLevelColor(risk.levelRisiko)
-                                )
-                            }
-
-                            HorizontalDivider()
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Skor Dampak:", fontSize = 13.sp)
-                                Text(
-                                    "${risk.skorDampak} - ${getImpactLabel(risk.skorDampak)}",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Skor Kemungkinan:", fontSize = 13.sp)
-                                Text(
-                                    "${risk.skorKemungkinan} - ${getProbabilityLabel(risk.skorKemungkinan)}",
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Skor Risiko:", fontSize = 13.sp)
-                                Text(
-                                    risk.skorRisiko.toString(),
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Level Risiko:", fontSize = 13.sp)
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = getRiskLevelColor(risk.levelRisiko)
-                                    ),
-                                    shape = RoundedCornerShape(6.dp)
-                                ) {
-                                    Text(
-                                        text = risk.levelRisiko,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                                    )
-                                }
-                            }
-
                             Text(
-                                text = "Dinilai oleh: ${risk.teknisiName}",
-                                fontSize = 11.sp,
-                                color = Color.Gray
+                                text = "Risk Assessment",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Icon(
+                                imageVector = Icons.Default.Assessment,
+                                contentDescription = "Risk",
+                                tint = getRiskLevelColor(risk.levelRisiko)
                             )
                         }
+
+                        HorizontalDivider()
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Skor Dampak:", fontSize = 13.sp)
+                            Text(
+                                "${risk.skorDampak} - ${getImpactLabel(risk.skorDampak)}",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Skor Kemungkinan:", fontSize = 13.sp)
+                            Text(
+                                "${risk.skorKemungkinan} - ${getProbabilityLabel(risk.skorKemungkinan)}",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Skor Risiko:", fontSize = 13.sp)
+                            Text(
+                                risk.skorRisiko.toString(),
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text("Level Risiko:", fontSize = 13.sp)
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = getRiskLevelColor(risk.levelRisiko)
+                                ),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Text(
+                                    text = risk.levelRisiko,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        Text(
+                            text = "Dinilai oleh: ${risk.teknisiName}",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
                     }
                 }
             }
 
-            // Take Action Button (Hide if already Completed or Failed)
+            // Take Action Button
             if (changeRequest.status !in listOf("Completed", "Failed", "Closed")) {
                 Button(
                     onClick = {
                         if (isEmergency) {
                             showEmergencyDialog = true
                         } else {
-                            showRiskDialog = true
+                            showInspectionDialog = true
                         }
                     },
                     modifier = Modifier
@@ -470,11 +542,11 @@ fun DetailFormTeknisiPage(
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isEmergency) {
-                            Color(0xFFFF5722) // Orange-red for emergency
-                        } else if (existingRiskAssessment != null) {
-                            Color(0xFFFF9800)
-                        } else {
+                            Color(0xFFFF5722)
+                        } else if (isSubmitted) {
                             Color(0xFF4CAF50)
+                        } else {
+                            Color(0xFFFF9800)
                         }
                     ),
                     shape = RoundedCornerShape(12.dp)
@@ -488,10 +560,10 @@ fun DetailFormTeknisiPage(
                     Text(
                         text = if (isEmergency) {
                             "Take Action - Emergency"
-                        } else if (existingRiskAssessment != null) {
-                            "Update Risk Assessment"
+                        } else if (isSubmitted) {
+                            "Lakukan Inspeksi"
                         } else {
-                            "Take Action - Risk Assessment"
+                            "Update Inspeksi"
                         },
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold

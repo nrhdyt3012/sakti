@@ -232,7 +232,7 @@ fun FormDetailPage(
                             colors = CardDefaults.cardColors(
                                 containerColor = when (changeRequest.status) {
                                     "Submitted" -> Color(0xFF9E9E9E)
-                                    "In-Review" -> Color(0xFF2196F3)
+                                    "Reviewed" -> Color(0xFF2196F3)
                                     "Approved" -> Color(0xFF4CAF50)
                                     "Scheduled" -> Color(0xFFFF9800)
                                     "Implementing" -> Color(0xFFFF5722)

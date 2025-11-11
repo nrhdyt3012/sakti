@@ -1,18 +1,10 @@
 package com.example.saktinocompose.enduser.pages
 
 import android.app.DatePickerDialog
-import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -24,19 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.White
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.data.AppDatabase
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
-import kotlinx.coroutines.flow.first
-import java.io.File
-import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -66,10 +52,6 @@ fun EnduserForm(
     var selectedTeknisiId by remember { mutableStateOf<Int?>(null) }
     var selectedTeknisiName by remember { mutableStateOf<String?>(null) }
     var showTeknisiDropdown by remember { mutableStateOf(false) }
-    var photoUri by remember { mutableStateOf<Uri?>(null) }
-    var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
-    var showImagePickerDialog by remember { mutableStateOf(false) }
-    var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
 
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
@@ -90,43 +72,6 @@ fun EnduserForm(
         "Endpoint"
     )
 
-    // Gallery Launcher
-    val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
-    ) { uri: Uri? ->
-        uri?.let {
-            photoUri = it
-            photoBitmap = loadBitmapFromUri(context, it)
-        }
-    }
-
-    // Camera Launcher
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            tempPhotoUri?.let {
-                photoUri = it
-                photoBitmap = loadBitmapFromUri(context, it)
-            }
-        }
-    }
-
-    // Permission Launcher
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            val photoFile = createImageFile(context)
-            tempPhotoUri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.fileprovider",
-                photoFile
-            )
-            cameraLauncher.launch(tempPhotoUri!!)
-        }
-    }
-
     val calendar = Calendar.getInstance()
     val datePickerDialog = DatePickerDialog(
         context,
@@ -141,35 +86,6 @@ fun EnduserForm(
         calendar.get(Calendar.DAY_OF_MONTH)
     ).apply {
         datePicker.minDate = System.currentTimeMillis()
-    }
-
-    // Image Picker Dialog
-    if (showImagePickerDialog) {
-        AlertDialog(
-            onDismissRequest = { showImagePickerDialog = false },
-            title = { Text("Pilih Sumber Foto") },
-            text = { Text("Pilih dari mana Anda ingin mengambil foto bukti") },
-            confirmButton = {
-                TextButton(onClick = {
-                    showImagePickerDialog = false
-                    permissionLauncher.launch(android.Manifest.permission.CAMERA)
-                }) {
-                    Icon(Icons.Default.Camera, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Kamera")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    showImagePickerDialog = false
-                    galleryLauncher.launch("image/*")
-                }) {
-                    Icon(Icons.Default.PhotoLibrary, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Galeri")
-                }
-            }
-        )
     }
 
     if (showSuccessDialog) {
@@ -191,8 +107,6 @@ fun EnduserForm(
                         rencanaRollback = ""
                         selectedTeknisiId = null
                         selectedTeknisiName = null
-                        photoUri = null
-                        photoBitmap = null
                         onFormSubmitted()
                     },
                     colors = ButtonDefaults.buttonColors(
@@ -489,71 +403,6 @@ fun EnduserForm(
                         }
                     }
 
-                    // 9. Foto Bukti (Opsional)
-                    Text("9. Foto Bukti (Opsional)", fontWeight = FontWeight.SemiBold)
-
-                    if (photoBitmap != null) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                Image(
-                                    bitmap = photoBitmap!!.asImageBitmap(),
-                                    contentDescription = "Preview Foto",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
-
-                                IconButton(
-                                    onClick = {
-                                        photoUri = null
-                                        photoBitmap = null
-                                    },
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(8.dp)
-                                        .background(Color.Red.copy(alpha = 0.7f), CircleShape)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Close,
-                                        contentDescription = "Hapus Foto",
-                                        tint = Color.White
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        OutlinedButton(
-                            onClick = { showImagePickerDialog = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Ganti Foto")
-                        }
-                    } else {
-                        OutlinedButton(
-                            onClick = { showImagePickerDialog = true },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.AddAPhoto, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Tambah Foto Bukti")
-                        }
-                    }
-
-                    Text(
-                        text = "Foto bukti dapat membantu mempercepat proses review",
-                        fontSize = 11.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(start = 4.dp)
-                    )
-
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Button(
@@ -592,10 +441,6 @@ fun EnduserForm(
                                     showErrorDialog = true
                                 }
                                 else -> {
-                                    val savedPhotoPath = photoUri?.let { uri ->
-                                        savePhotoToInternalStorage(context, uri)
-                                    }
-
                                     viewModel.submitChangeRequest(
                                         userId = userId,
                                         jenisPerubahan = jenisPerubahan,
@@ -606,8 +451,7 @@ fun EnduserForm(
                                         usulanJadwal = usulanJadwal,
                                         rencanaRollback = rencanaRollback,
                                         assignedTeknisiId = selectedTeknisiId,
-                                        assignedTeknisiName = selectedTeknisiName,
-                                        photoPath = savedPhotoPath
+                                        assignedTeknisiName = selectedTeknisiName
                                     )
                                     showSuccessDialog = true
                                 }
@@ -640,46 +484,5 @@ fun EnduserForm(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
-    }
-}
-
-// Helper functions
-private fun createImageFile(context: Context): File {
-    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val storageDir = context.getExternalFilesDir(null)
-    return File.createTempFile(
-        "JPEG_${timeStamp}_",
-        ".jpg",
-        storageDir
-    )
-}
-
-private fun loadBitmapFromUri(context: Context, uri: Uri): Bitmap? {
-    return try {
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            BitmapFactory.decodeStream(inputStream)
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
-
-private fun savePhotoToInternalStorage(context: Context, uri: Uri): String? {
-    return try {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val fileName = "CR_${timeStamp}.jpg"
-        val file = File(context.filesDir, fileName)
-
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(file).use { output ->
-                input.copyTo(output)
-            }
-        }
-
-        file.absolutePath
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
     }
 }

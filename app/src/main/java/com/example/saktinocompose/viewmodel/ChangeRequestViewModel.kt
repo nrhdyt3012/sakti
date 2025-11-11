@@ -25,8 +25,7 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         usulanJadwal: String,
         rencanaRollback: String,
         assignedTeknisiId: Int?,
-        assignedTeknisiName: String?,
-        photoPath: String? = null
+        assignedTeknisiName: String?
     ) {
         viewModelScope.launch {
             val ticketId = generateTicketId()
@@ -42,7 +41,6 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 rencanaRollback = rencanaRollback,
                 assignedTeknisiId = assignedTeknisiId,
                 assignedTeknisiName = assignedTeknisiName,
-                photoPath = photoPath,
                 status = "Submitted"
             )
             changeRequestDao.insertChangeRequest(changeRequest)
@@ -77,4 +75,14 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             changeRequestDao.updateChangeRequest(updated)
         }
     }
+    fun updateFullChangeRequest(updatedRequest: ChangeRequest) {
+        viewModelScope.launch {
+            updatedRequest.copy(
+                updatedAt = System.currentTimeMillis()
+            ).let { updated ->
+                changeRequestDao.updateChangeRequest(updated)
+            }
+        }
+    }
+
 }
