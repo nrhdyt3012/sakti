@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import com.example.saktinocompose.viewmodel.ApprovalHistoryViewModel
+import com.example.saktinocompose.viewmodel.NotificationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,7 +30,8 @@ fun EmergencyActionDialog(
     onDismiss: () -> Unit,
     onSuccess: () -> Unit,
     changeRequestViewModel: ChangeRequestViewModel = viewModel(),
-    approvalHistoryViewModel: ApprovalHistoryViewModel = viewModel()
+    approvalHistoryViewModel: ApprovalHistoryViewModel = viewModel(),
+    notificationViewModel: NotificationViewModel = viewModel()
 ) {
     var selectedAction by remember { mutableStateOf<String?>(null) }
     var notes by remember { mutableStateOf("") }
@@ -222,6 +224,15 @@ fun EmergencyActionDialog(
                             fromStatus = changeRequest.status,
                             toStatus = selectedAction!!,
                             notes = "EMERGENCY: ${if (notes.isBlank()) "Tidak ada catatan" else notes}"
+                        )
+
+                        // Kirim notifikasi ke end user
+                        notificationViewModel.createNotification(
+                            userId = changeRequest.userId,
+                            changeRequestId = changeRequest.id,
+                            ticketId = changeRequest.ticketId,
+                            fromStatus = changeRequest.status,
+                            toStatus = selectedAction!!
                         )
 
                         onSuccess()

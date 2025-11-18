@@ -25,6 +25,7 @@ import com.example.saktinocompose.enduser.pages.DetailItem
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import com.example.saktinocompose.viewmodel.RiskAssessmentViewModel
 import com.example.saktinocompose.viewmodel.ApprovalHistoryViewModel
+import com.example.saktinocompose.viewmodel.NotificationViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -39,7 +40,9 @@ fun DetailFormTeknisiPage(
     modifier: Modifier = Modifier,
     changeRequestViewModel: ChangeRequestViewModel = viewModel(),
     riskAssessmentViewModel: RiskAssessmentViewModel = viewModel(),
-    approvalHistoryViewModel: ApprovalHistoryViewModel = viewModel()
+    approvalHistoryViewModel: ApprovalHistoryViewModel = viewModel(),
+    notificationViewModel: NotificationViewModel = viewModel()
+
 ) {
     val scrollState = rememberScrollState()
     val dateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale.getDefault())
@@ -48,6 +51,7 @@ fun DetailFormTeknisiPage(
 
     var showInspectionDialog by remember { mutableStateOf(false) }
     var showSchedulingDialog by remember { mutableStateOf(false) }
+    var showImplementationDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showEmergencyDialog by remember { mutableStateOf(false) }
     var showFullImage by remember { mutableStateOf(false) }
@@ -60,28 +64,9 @@ fun DetailFormTeknisiPage(
     val isSubmitted = changeRequest.status == "Submitted"
     val isReviewed = changeRequest.status == "Reviewed"
     val isScheduled = changeRequest.status == "Scheduled"
+    val isImplementing = changeRequest.status == "Implementing"
+    val isCompleted = changeRequest.status == "Completed"
 
-    // Check if scheduled implementation time has passed
-    LaunchedEffect(changeRequest.scheduledTimestamp) {
-        if (isScheduled && changeRequest.scheduledTimestamp != null) {
-            val currentTime = System.currentTimeMillis()
-            if (currentTime >= changeRequest.scheduledTimestamp) {
-                // Auto-update to Implementing
-                changeRequestViewModel.updateChangeRequestStatus(
-                    changeRequest = changeRequest,
-                    newStatus = "Implementing"
-                )
-                approvalHistoryViewModel.addApprovalHistory(
-                    changeRequestId = changeRequest.id,
-                    approverUserId = teknisiId,
-                    approverName = "System",
-                    fromStatus = "Scheduled",
-                    toStatus = "Implementing",
-                    notes = "Otomatis berubah ke Implementing sesuai jadwal"
-                )
-            }
-        }
-    }
 
     // Inspection Dialog
     if (showInspectionDialog) {
@@ -121,6 +106,15 @@ fun DetailFormTeknisiPage(
                     notes = "Inspeksi selesai. Estimasi biaya: $estimasiBiaya, Estimasi waktu: $estimasiWaktu, Level risiko: $levelRisiko"
                 )
 
+                // Kirim notifikasi ke end user
+                notificationViewModel.createNotification(
+                    userId = changeRequest.userId,
+                    changeRequestId = changeRequest.id,
+                    ticketId = changeRequest.ticketId,
+                    fromStatus = changeRequest.status,
+                    toStatus = "Reviewed"
+                )
+
                 showInspectionDialog = false
                 successMessage = "Inspeksi berhasil! Status berubah menjadi 'Reviewed'"
                 showSuccessDialog = true
@@ -133,16 +127,15 @@ fun DetailFormTeknisiPage(
         SchedulingDialog(
             changeRequest = changeRequest,
             onDismiss = { showSchedulingDialog = false },
-            onSave = { scheduledDate, scheduledTime ->
+            onSave = { scheduledDate ->
                 // Parse to timestamp
-                val dateTimeString = "$scheduledDate $scheduledTime"
-                val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+                val dateTimeString = "$scheduledDate"
+                val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val scheduledTimestamp = sdf.parse(dateTimeString)?.time ?: System.currentTimeMillis()
 
                 // Update ChangeRequest
                 val updatedRequest = changeRequest.copy(
                     scheduledDate = scheduledDate,
-                    scheduledTime = scheduledTime,
                     scheduledTimestamp = scheduledTimestamp,
                     status = "Scheduled",
                     updatedAt = System.currentTimeMillis()
@@ -156,7 +149,16 @@ fun DetailFormTeknisiPage(
                     approverName = teknisiName,
                     fromStatus = changeRequest.status,
                     toStatus = "Scheduled",
-                    notes = "Implementasi dijadwalkan pada $scheduledDate pukul $scheduledTime"
+                    notes = "Implementasi dijadwalkan pada $scheduledDate"
+                )
+
+                // Kirim notifikasi ke end user
+                notificationViewModel.createNotification(
+                    userId = changeRequest.userId,
+                    changeRequestId = changeRequest.id,
+                    ticketId = changeRequest.ticketId,
+                    fromStatus = changeRequest.status,
+                    toStatus = "Scheduled"
                 )
 
                 showSchedulingDialog = false
@@ -165,7 +167,48 @@ fun DetailFormTeknisiPage(
             }
         )
     }
+    // Implementation Result Dialog
+    if (showImplementationDialog) {
+        ImplementationResultDialog(
+            changeRequest = changeRequest,
+            onDismiss = { showImplementationDialog = false },
+            onSave = { dampakSetelahMitigasi, kemungkinanSetelahMitigasi, exposur, skorResidual, levelRisikoResidual, keteranganHasilImplementasi ->
+                val updatedRequest = changeRequest.copy(
+                    dampakSetelahMitigasi = dampakSetelahMitigasi,
+                    kemungkinanSetelahMitigasi = kemungkinanSetelahMitigasi,
+                    exposur = exposur,
+                    skorResidual = skorResidual,
+                    levelRisikoResidual = levelRisikoResidual,
+                    keteranganHasilImplementasi = keteranganHasilImplementasi,
+                    status = "Completed",
+                    updatedAt = System.currentTimeMillis()
+                )
+                changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
+                approvalHistoryViewModel.addApprovalHistory(
+                    changeRequestId = changeRequest.id,
+                    approverUserId = teknisiId,
+                    approverName = teknisiName,
+                    fromStatus = "Implementing",
+                    toStatus = "Completed",
+                    notes = "Implementasi selesai. Skor residual: $skorResidual, Level risiko residual: $levelRisikoResidual"
+                )
+
+                // Kirim notifikasi ke end user
+                notificationViewModel.createNotification(
+                    userId = changeRequest.userId,
+                    changeRequestId = changeRequest.id,
+                    ticketId = changeRequest.ticketId,
+                    fromStatus = "Implementing",
+                    toStatus = "Completed"
+                )
+
+                showImplementationDialog = false
+                successMessage = "Implementasi berhasil diselesaikan!"
+                showSuccessDialog = true
+            }
+        )
+    }
     if (showEmergencyDialog) {
         EmergencyActionDialog(
             changeRequest = changeRequest,
@@ -314,7 +357,8 @@ fun DetailFormTeknisiPage(
             }
 
             // Inspection Result (if reviewed)
-            if ((isReviewed || isScheduled) && changeRequest.estimasiBiaya != null && changeRequest.estimasiWaktu != null) {
+            if ((isReviewed || isScheduled || isImplementing || isCompleted)
+                && changeRequest.estimasiBiaya != null && changeRequest.estimasiWaktu != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f)),
@@ -355,7 +399,7 @@ fun DetailFormTeknisiPage(
             }
 
             // Schedule Info (if scheduled)
-            if (isScheduled && changeRequest.scheduledDate != null && changeRequest.scheduledTime != null) {
+            if ((isScheduled || isImplementing || isCompleted) && changeRequest.scheduledDate != null) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)),
@@ -386,46 +430,112 @@ fun DetailFormTeknisiPage(
                         HorizontalDivider()
 
                         DetailItem(label = "Tanggal", value = changeRequest.scheduledDate ?: "-")
-                        DetailItem(label = "Waktu", value = changeRequest.scheduledTime ?: "-")
 
-                        // Countdown or status
-                        changeRequest.scheduledTimestamp?.let { timestamp ->
-                            val currentTime = System.currentTimeMillis()
-                            if (currentTime < timestamp) {
-                                val remainingHours = (timestamp - currentTime) / (1000 * 60 * 60)
+                    }
+                }
+            }
+            // Implementation Result
+            if (isCompleted && changeRequest.keteranganHasilImplementasi != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFF2196F3).copy(alpha = 0.1f)),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Hasil Implementasi",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = "Result",
+                                tint = Color(0xFF2196F3)
+                            )
+                        }
+
+                        HorizontalDivider()
+
+                        changeRequest.dampakSetelahMitigasi?.let {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Dampak Setelah Mitigasi:", fontSize = 13.sp)
+                                Text("$it - ${getImpactLabel(it)}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+
+                        changeRequest.kemungkinanSetelahMitigasi?.let {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Kemungkinan Setelah Mitigasi:", fontSize = 13.sp)
+                                Text("$it - ${getProbabilityLabel(it)}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+
+                        changeRequest.exposur?.let {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Exposur:", fontSize = 13.sp)
+                                Text(it.toString(), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+
+                        changeRequest.skorResidual?.let {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Skor Residual:", fontSize = 13.sp)
+                                Text(it.toString(), fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+
+                        changeRequest.levelRisikoResidual?.let { level ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Level Risiko Residual:", fontSize = 13.sp)
                                 Card(
                                     colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFF2196F3).copy(alpha = 0.2f)
+                                        containerColor = getRiskLevelColor(level)
                                     ),
                                     shape = RoundedCornerShape(6.dp)
                                 ) {
                                     Text(
-                                        text = "⏰ Implementasi dimulai dalam $remainingHours jam",
+                                        text = level,
                                         fontSize = 12.sp,
-                                        color = Color(0xFF2196F3),
-                                        modifier = Modifier.padding(8.dp)
-                                    )
-                                }
-                            } else {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFFFF5722).copy(alpha = 0.2f)
-                                    ),
-                                    shape = RoundedCornerShape(6.dp)
-                                ) {
-                                    Text(
-                                        text = "🚀 Waktunya implementasi! Status akan berubah otomatis.",
-                                        fontSize = 12.sp,
-                                        color = Color(0xFFFF5722),
-                                        modifier = Modifier.padding(8.dp)
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                                     )
                                 }
                             }
                         }
+
+                        HorizontalDivider()
+
+                        changeRequest.keteranganHasilImplementasi?.let {
+                            DetailItem(label = "Keterangan Hasil", value = it)
+                        }
                     }
                 }
             }
-
             // Photo Card from Teknisi (if exists and reviewed/scheduled)
             changeRequest.photoPath?.let { path ->
                 Card(
@@ -656,49 +766,198 @@ fun DetailFormTeknisiPage(
                 }
             }
 
-            // Take Action Button
-            if (changeRequest.status !in listOf("Completed", "Failed", "Closed")) {
-                Button(
-                    onClick = {
-                        when {
-                            isEmergency -> showEmergencyDialog = true
-                            isSubmitted -> showInspectionDialog = true
-                            isReviewed -> showSchedulingDialog = true
-                            else -> showInspectionDialog = true
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = when {
-                            isEmergency -> Color(0xFFFF5722)
-                            isSubmitted -> Color(0xFF4CAF50)
-                            isReviewed -> Color(0xFFFF9800)
-                            else -> Color(0xFF2196F3)
-                        }
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = when {
-                            isReviewed -> Icons.Default.Schedule
-                            else -> Icons.Default.Assessment
+            // Action Buttons
+            when {
+                isEmergency && !isCompleted && changeRequest.status != "Closed" -> {
+                    Button(
+                        onClick = { showEmergencyDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFF5722)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Assessment,
+                            contentDescription = "Inspection",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Lakukan Inspeksi",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                isSubmitted -> {
+                    Button(
+                        onClick = { showInspectionDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.AssignmentTurnedIn,
+                            contentDescription = "Submitted",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Lakukan Inspeksi",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                isReviewed -> {
+                    Button(
+                        onClick = { showSchedulingDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFF9800)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Schedule,
+                            contentDescription = "Schedule",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Jadwalkan Implementasi",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                isScheduled -> {
+                    Button(
+                        onClick = {
+                            // Update ke Implementing
+                            changeRequestViewModel.updateChangeRequestStatus(
+                                changeRequest = changeRequest,
+                                newStatus = "Implementing"
+                            )
+                            approvalHistoryViewModel.addApprovalHistory(
+                                changeRequestId = changeRequest.id,
+                                approverUserId = teknisiId,
+                                approverName = teknisiName,
+                                fromStatus = "Scheduled",
+                                toStatus = "Implementing",
+                                notes = "Memulai implementasi"
+                            )
+                            // Kirim notifikasi ke end user
+                            notificationViewModel.createNotification(
+                                userId = changeRequest.userId,
+                                changeRequestId = changeRequest.id,
+                                ticketId = changeRequest.ticketId,
+                                fromStatus = "Scheduled",
+                                toStatus = "Implementing"
+                            )
+                            successMessage = "Status berubah menjadi 'Implementing'"
+                            showSuccessDialog = true
                         },
-                        contentDescription = "Take Action",
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = when {
-                            isEmergency -> "Take Action - Emergency"
-                            isSubmitted -> "Lakukan Inspeksi"
-                            isReviewed -> "Jadwalkan Implementasi"
-                            else -> "Update Inspeksi"
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFF5722)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "Start Implementation",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Mulai Implementasi",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                isImplementing -> {
+                    Button(
+                        onClick = { showImplementationDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF4CAF50)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = "Complete",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Selesaikan Implementasi",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                isCompleted -> {
+                    Button(
+                        onClick = {
+                            // Update ke Closed
+                            changeRequestViewModel.updateChangeRequestStatus(
+                                changeRequest = changeRequest,
+                                newStatus = "Closed"
+                            )
+                            approvalHistoryViewModel.addApprovalHistory(
+                                changeRequestId = changeRequest.id,
+                                approverUserId = teknisiId,
+                                approverName = teknisiName,
+                                fromStatus = "Completed",
+                                toStatus = "Closed",
+                                notes = "Change request ditutup"
+                            )
+                            // Kirim notifikasi ke end user
+                            notificationViewModel.createNotification(
+                                userId = changeRequest.userId,
+                                changeRequestId = changeRequest.id,
+                                ticketId = changeRequest.ticketId,
+                                fromStatus = "Completed",
+                                toStatus = "Closed"
+                            )
+                            successMessage = "Change request berhasil ditutup"
+                            showSuccessDialog = true
                         },
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF607D8B)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = "Close",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Tutup Change Request",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

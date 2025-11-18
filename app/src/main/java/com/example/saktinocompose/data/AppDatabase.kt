@@ -7,10 +7,12 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.saktinocompose.data.dao.ApprovalHistoryDao
 import com.example.saktinocompose.data.dao.ChangeRequestDao
+import com.example.saktinocompose.data.dao.NotificationDao
 import com.example.saktinocompose.data.dao.RiskAssessmentDao
 import com.example.saktinocompose.data.dao.UserDao
 import com.example.saktinocompose.data.entity.ApprovalHistory
 import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.entity.Notification
 import com.example.saktinocompose.data.entity.RiskAssessment
 import com.example.saktinocompose.data.entity.User
 import kotlinx.coroutines.CoroutineScope
@@ -20,8 +22,8 @@ import java.security.MessageDigest
 
 
 @Database(
-    entities = [User::class, ChangeRequest::class, ApprovalHistory::class, RiskAssessment::class],
-    version = 7,  // UPDATED VERSION
+    entities = [User::class, ChangeRequest::class, ApprovalHistory::class, RiskAssessment::class, Notification::class],
+    version = 8,  // UPDATED VERSION
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -29,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun changeRequestDao(): ChangeRequestDao
     abstract fun approvalHistoryDao(): ApprovalHistoryDao
     abstract fun riskAssessmentDao(): RiskAssessmentDao
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
         @Volatile

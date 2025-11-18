@@ -22,8 +22,16 @@ data class ChangeRequest(
     val estimasiBiaya: String? = null,
     val estimasiWaktu: String? = null,
     val scheduledDate: String? = null,  // Format: yyyy-MM-dd
-    val scheduledTime: String? = null,  // Format: HH:mm
     val scheduledTimestamp: Long? = null, // Timestamp for comparison
+
+    // Field untuk hasil implementasi
+    val dampakSetelahMitigasi: Int? = null,
+    val kemungkinanSetelahMitigasi: Int? = null,
+    val exposur: Int? = null,
+    val skorResidual: Int? = null,
+    val levelRisikoResidual: String? = null,
+    val keteranganHasilImplementasi: String? = null,
+
     val status: String = "Submitted",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis()

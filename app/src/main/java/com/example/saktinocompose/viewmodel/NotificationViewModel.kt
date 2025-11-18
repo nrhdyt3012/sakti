@@ -1,0 +1,65 @@
+package com.example.saktinocompose.viewmodel
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.saktinocompose.data.AppDatabase
+import com.example.saktinocompose.data.entity.Notification
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+
+class NotificationViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val database = AppDatabase.getDatabase(application)
+    private val notificationDao = database.notificationDao()
+
+    fun getNotificationsByUser(userId: Int): Flow<List<Notification>> {
+        return notificationDao.getNotificationsByUser(userId)
+    }
+
+    fun getUnreadCount(userId: Int): Flow<Int> {
+        return notificationDao.getUnreadCount(userId)
+    }
+
+    fun createNotification(
+        userId: Int,
+        changeRequestId: Int,
+        ticketId: String,
+        fromStatus: String,
+        toStatus: String
+    ) {
+        viewModelScope.launch {
+            val title = "Status Update: $ticketId"
+            val message = "Status berubah dari '$fromStatus' menjadi '$toStatus'"
+
+            val notification = Notification(
+                userId = userId,
+                changeRequestId = changeRequestId,
+                ticketId = ticketId,
+                title = title,
+                message = message,
+                fromStatus = fromStatus,
+                toStatus = toStatus
+            )
+            notificationDao.insertNotification(notification)
+        }
+    }
+
+    fun markAsRead(notificationId: Int) {
+        viewModelScope.launch {
+            notificationDao.markAsRead(notificationId)
+        }
+    }
+
+    fun markAllAsRead(userId: Int) {
+        viewModelScope.launch {
+            notificationDao.markAllAsRead(userId)
+        }
+    }
+
+    fun deleteNotification(notification: Notification) {
+        viewModelScope.launch {
+            notificationDao.deleteNotification(notification)
+        }
+    }
+}

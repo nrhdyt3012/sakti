@@ -1,7 +1,6 @@
 package com.example.saktinocompose.teknisi.pages
 
 import android.app.DatePickerDialog
-import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,11 +25,10 @@ import java.util.*
 fun SchedulingDialog(
     changeRequest: ChangeRequest,
     onDismiss: () -> Unit,
-    onSave: (scheduledDate: String, scheduledTime: String) -> Unit
+    onSave: (scheduledDate: String) -> Unit
 ) {
     val context = LocalContext.current
     var scheduledDate by remember { mutableStateOf("") }
-    var scheduledTime by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
 
     val calendar = Calendar.getInstance()
@@ -49,16 +47,6 @@ fun SchedulingDialog(
     ).apply {
         datePicker.minDate = System.currentTimeMillis()
     }
-
-    val timePickerDialog = TimePickerDialog(
-        context,
-        { _, hourOfDay, minute ->
-            scheduledTime = String.format("%02d:%02d", hourOfDay, minute)
-        },
-        calendar.get(Calendar.HOUR_OF_DAY),
-        calendar.get(Calendar.MINUTE),
-        true
-    )
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -106,7 +94,7 @@ fun SchedulingDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Tentukan tanggal dan waktu implementasi perubahan",
+                            text = "Tentukan tanggal implementasi perubahan",
                             fontSize = 11.sp,
                             color = Color.Gray
                         )
@@ -166,32 +154,6 @@ fun SchedulingDialog(
                     )
                 )
 
-                // Waktu Implementasi
-                Text(
-                    text = "Waktu Implementasi *",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                OutlinedTextField(
-                    value = scheduledTime,
-                    onValueChange = {},
-                    readOnly = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Pilih waktu") },
-                    leadingIcon = {
-                        Icon(Icons.Default.AccessTime, contentDescription = null)
-                    },
-                    trailingIcon = {
-                        IconButton(onClick = { timePickerDialog.show() }) {
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                        }
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-
                 // Catatan
                 Text(
                     text = "Catatan (Opsional)",
@@ -211,7 +173,7 @@ fun SchedulingDialog(
                 )
 
                 // Info peringatan
-                if (scheduledDate.isNotEmpty() && scheduledTime.isNotEmpty()) {
+                if (scheduledDate.isNotEmpty()) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -237,7 +199,7 @@ fun SchedulingDialog(
                                     color = Color(0xFF2196F3)
                                 )
                                 Text(
-                                    text = "$scheduledDate pukul $scheduledTime",
+                                    text = scheduledDate,
                                     fontSize = 11.sp,
                                     color = Color.Gray
                                 )
@@ -250,11 +212,11 @@ fun SchedulingDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (scheduledDate.isNotBlank() && scheduledTime.isNotBlank()) {
-                        onSave(scheduledDate, scheduledTime)
+                    if (scheduledDate.isNotBlank()) {
+                        onSave(scheduledDate)
                     }
                 },
-                enabled = scheduledDate.isNotBlank() && scheduledTime.isNotBlank(),
+                enabled = scheduledDate.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFFF9800)
                 )
