@@ -21,8 +21,11 @@ data class ChangeRequest(
     val photoPath: String? = null,
     val estimasiBiaya: String? = null,
     val estimasiWaktu: String? = null,
-    val scheduledDate: String? = null,  // Format: yyyy-MM-dd
-    val scheduledTimestamp: Long? = null, // Timestamp for comparison
+    val scheduledDate: String? = null,
+    val scheduledTimestamp: Long? = null,
+
+    // Field untuk skor eksposur awal (dari inspeksi)
+    val skorEksposur: Int? = null,
 
     // Field untuk hasil implementasi
     val dampakSetelahMitigasi: Int? = null,
@@ -31,6 +34,10 @@ data class ChangeRequest(
     val skorResidual: Int? = null,
     val levelRisikoResidual: String? = null,
     val keteranganHasilImplementasi: String? = null,
+
+    // Field untuk revisi
+    val revisionNotes: String? = null,
+    val revisionCount: Int = 0,
 
     val status: String = "Submitted",
     val createdAt: Long = System.currentTimeMillis(),

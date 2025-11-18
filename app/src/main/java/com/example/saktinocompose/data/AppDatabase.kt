@@ -23,7 +23,7 @@ import java.security.MessageDigest
 
 @Database(
     entities = [User::class, ChangeRequest::class, ApprovalHistory::class, RiskAssessment::class, Notification::class],
-    version = 8,  // UPDATED VERSION
+    version = 9,  // UPDATED VERSION untuk field baru
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import com.example.saktinocompose.data.entity.ChangeRequest
 import java.io.File
@@ -33,33 +34,43 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
+enum class InspectionAction {
+    APPROVE, REJECT, REVISE
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InspectionDialog(
     changeRequest: ChangeRequest,
     onDismiss: () -> Unit,
     onSave: (
+        action: InspectionAction,
         jenisPerubahan: String,
         estimasiBiaya: String,
         estimasiWaktu: String,
         skorDampak: Int,
         skorKemungkinan: Int,
+        skorEksposur: Int,
         skorRisiko: Int,
         levelRisiko: String,
-        photoPath: String?
+        photoPath: String?,
+        notes: String
     ) -> Unit
 ) {
     val context = LocalContext.current
 
-    // Form states - POPULATED WITH EXISTING DATA
+    // Form states
     var jenisPerubahan by remember { mutableStateOf(changeRequest.jenisPerubahan) }
     var showJenisDropdown by remember { mutableStateOf(false) }
     var estimasiBiaya by remember { mutableStateOf(changeRequest.estimasiBiaya ?: "") }
     var estimasiWaktu by remember { mutableStateOf(changeRequest.estimasiWaktu ?: "") }
     var skorDampak by remember { mutableIntStateOf(0) }
     var skorKemungkinan by remember { mutableIntStateOf(0) }
+    var skorEksposur by remember { mutableIntStateOf(0) }
+    var notes by remember { mutableStateOf("") }
     var showDampakDropdown by remember { mutableStateOf(false) }
     var showKemungkinanDropdown by remember { mutableStateOf(false) }
+    var showEksposurDropdown by remember { mutableStateOf(false) }
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showImagePickerDialog by remember { mutableStateOf(false) }
@@ -76,7 +87,7 @@ fun InspectionDialog(
         }
     }
 
-    val skorRisiko = skorDampak * skorKemungkinan
+    val skorRisiko = skorDampak * skorKemungkinan * skorEksposur
     val levelRisiko = calculateRiskLevel(skorDampak, skorKemungkinan)
     val levelColor = getRiskLevelColor(levelRisiko)
 
@@ -161,7 +172,7 @@ fun InspectionDialog(
                     tint = Color(0xFF384E66)
                 )
                 Text(
-                    text = if (changeRequest.status == "Submitted") "Inspeksi & Review" else "Update Inspeksi",
+                    text = "Inspeksi & Review",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -171,7 +182,7 @@ fun InspectionDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 500.dp)
+                    .heightIn(max = 550.dp)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -194,10 +205,7 @@ fun InspectionDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = if (changeRequest.status == "Submitted")
-                                "Lakukan inspeksi dan isi semua field untuk mengubah status menjadi 'Reviewed'"
-                            else
-                                "Update data inspeksi yang sudah ada",
+                            text = "Lakukan inspeksi dan pilih tindakan: Setuju, Reject, atau Revisi",
                             fontSize = 11.sp,
                             color = Color.Gray
                         )
@@ -258,7 +266,7 @@ fun InspectionDialog(
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Contoh: Rp 5.000.000") },
                     leadingIcon = {
-                        Icon(Icons.Default.AttachMoney, contentDescription = null,tint = Color.Black)
+                        Icon(Icons.Default.AttachMoney, contentDescription = null, tint = Color.Black)
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
@@ -279,7 +287,7 @@ fun InspectionDialog(
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text("Contoh: 2 hari / 4 jam") },
                     leadingIcon = {
-                        Icon(Icons.Default.Schedule, contentDescription = null,tint = Color.Black)
+                        Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.Black)
                     },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
@@ -303,7 +311,7 @@ fun InspectionDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Pilih Skor Dampak") },
-                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null,tint = Color.Black) },
+                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
@@ -344,7 +352,7 @@ fun InspectionDialog(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Pilih Skor Kemungkinan") },
-                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null,tint = Color.Black) },
+                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .menuAnchor(),
@@ -369,8 +377,49 @@ fun InspectionDialog(
                     }
                 }
 
+                // 6. Skor Eksposur (BARU)
+                Text(
+                    text = "6. Skor Eksposur *",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+                ExposedDropdownMenuBox(
+                    expanded = showEksposurDropdown,
+                    onExpandedChange = { showEksposurDropdown = !showEksposurDropdown }
+                ) {
+                    OutlinedTextField(
+                        value = if (skorEksposur == 0) "" else skorEksposur.toString(),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Pilih Skor Eksposur (1-5)") },
+                        trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = showEksposurDropdown,
+                        onDismissRequest = { showEksposurDropdown = false }
+                    ) {
+                        (1..5).forEach { score ->
+                            DropdownMenuItem(
+                                text = { Text(score.toString()) },
+                                onClick = {
+                                    skorEksposur = score
+                                    showEksposurDropdown = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 // Risk Result (Auto calculated)
-                if (skorDampak > 0 && skorKemungkinan > 0) {
+                if (skorDampak > 0 && skorKemungkinan > 0 && skorEksposur > 0) {
                     HorizontalDivider()
 
                     Card(
@@ -426,9 +475,9 @@ fun InspectionDialog(
                     }
                 }
 
-                // 6. Foto Bukti Lapangan
+                // 7. Foto Bukti Lapangan
                 Text(
-                    text = "6. Foto Bukti Lapangan *",
+                    text = "7. Foto Bukti Lapangan *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -489,66 +538,155 @@ fun InspectionDialog(
                     }
                 }
 
+                // 8. Catatan
                 Text(
-                    text = "Foto bukti hasil inspeksi lapangan",
-                    fontSize = 11.sp,
-                    color = Color.Black,
-                    modifier = Modifier.padding(start = 4.dp),
-
+                    text = "8. Catatan (untuk Reject/Revisi)",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    placeholder = { Text("Jelaskan alasan reject atau revisi jika diperlukan...") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
                 )
             }
         },
         confirmButton = {
-            Button(
-                onClick = {
-                    if (estimasiBiaya.isNotBlank() &&
-                        estimasiWaktu.isNotBlank() &&
-                        skorDampak > 0 &&
-                        skorKemungkinan > 0 &&
-                        photoUri != null
-                    ) {
-                        val savedPhotoPath = photoUri?.let { uri ->
-                            // If it's already saved, use existing path
-                            if (uri.toString().startsWith("file://")) {
-                                changeRequest.photoPath
-                            } else {
-                                savePhotoToInternalStorage(context, uri)
-                            }
-                        }
-
-                        onSave(
-                            jenisPerubahan,
-                            estimasiBiaya,
-                            estimasiWaktu,
-                            skorDampak,
-                            skorKemungkinan,
-                            skorRisiko,
-                            levelRisiko,
-                            savedPhotoPath
-                        )
-                    }
-                },
-                enabled = estimasiBiaya.isNotBlank() &&
-                        estimasiWaktu.isNotBlank() &&
-                        skorDampak > 0 &&
-                        skorKemungkinan > 0 &&
-                        photoUri != null,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF4CAF50)
-                )
+            // 3 Tombol Aksi
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text("Simpan & Update Status")
+                // Tombol SETUJU (Approve)
+                Button(
+                    onClick = {
+                        if (estimasiBiaya.isNotBlank() &&
+                            estimasiWaktu.isNotBlank() &&
+                            skorDampak > 0 &&
+                            skorKemungkinan > 0 &&
+                            skorEksposur > 0 &&
+                            photoUri != null
+                        ) {
+                            val savedPhotoPath = photoUri?.let { uri ->
+                                if (uri.toString().startsWith("file://")) {
+                                    changeRequest.photoPath
+                                } else {
+                                    savePhotoToInternalStorage(context, uri)
+                                }
+                            }
+
+                            onSave(
+                                InspectionAction.APPROVE,
+                                jenisPerubahan,
+                                estimasiBiaya,
+                                estimasiWaktu,
+                                skorDampak,
+                                skorKemungkinan,
+                                skorEksposur,
+                                skorRisiko,
+                                levelRisiko,
+                                savedPhotoPath,
+                                ""
+                            )
+                        }
+                    },
+                    enabled = estimasiBiaya.isNotBlank() &&
+                            estimasiWaktu.isNotBlank() &&
+                            skorDampak > 0 &&
+                            skorKemungkinan > 0 &&
+                            skorEksposur > 0 &&
+                            photoUri != null,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4CAF50)
+                    )
+                ) {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Setuju (Approve)")
+                }
+
+                // Tombol REVISI
+                OutlinedButton(
+                    onClick = {
+                        if (notes.isNotBlank()) {
+                            onSave(
+                                InspectionAction.REVISE,
+                                jenisPerubahan,
+                                estimasiBiaya,
+                                estimasiWaktu,
+                                skorDampak,
+                                skorKemungkinan,
+                                skorEksposur,
+                                skorRisiko,
+                                levelRisiko,
+                                null,
+                                notes
+                            )
+                        }
+                    },
+                    enabled = notes.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFFF9800)
+                    )
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Minta Revisi")
+                }
+
+                // Tombol REJECT
+                OutlinedButton(
+                    onClick = {
+                        if (notes.isNotBlank()) {
+                            onSave(
+                                InspectionAction.REJECT,
+                                jenisPerubahan,
+                                estimasiBiaya,
+                                estimasiWaktu,
+                                skorDampak,
+                                skorKemungkinan,
+                                skorEksposur,
+                                skorRisiko,
+                                levelRisiko,
+                                null,
+                                notes
+                            )
+                        }
+                    },
+                    enabled = notes.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color(0xFFD32F2F)
+                    )
+                ) {
+                    Icon(Icons.Default.Cancel, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Reject")
+                }
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("Batal")
             }
-        }
+        },
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier
+            .fillMaxWidth(0.95f)
+            .padding(16.dp)
     )
 }
 
-// Helper functions
+// Helper functions tetap sama
 private fun createImageFile(context: Context): File {
     val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
     val storageDir = context.getExternalFilesDir(null)
