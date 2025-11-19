@@ -68,56 +68,129 @@ fun DetailFormTeknisiPage(
     val isCompleted = changeRequest.status == "Completed"
 
 
-    // Inspection Dialog
+    // Inspection Dialog dengan 3 tombol
     if (showInspectionDialog) {
         InspectionDialog(
             changeRequest = changeRequest,
             onDismiss = { showInspectionDialog = false },
-            onSave = { jenisPerubahan, estimasiBiaya, estimasiWaktu, skorDampak, skorKemungkinan, skorRisiko, levelRisiko, photoPath ->
-                // Update ChangeRequest dengan semua data baru
-                val updatedRequest = changeRequest.copy(
-                    jenisPerubahan = jenisPerubahan,
-                    estimasiBiaya = estimasiBiaya,
-                    estimasiWaktu = estimasiWaktu,
-                    photoPath = photoPath,
-                    status = "Reviewed",
-                    updatedAt = System.currentTimeMillis()
-                )
-                changeRequestViewModel.updateFullChangeRequest(updatedRequest)
+            onSave = { action, jenisPerubahan, estimasiBiaya, estimasiWaktu, skorDampak, skorKemungkinan, skorEksposur, skorRisiko, levelRisiko, photoPath, notes ->
+                when (action) {
+                    InspectionAction.APPROVE -> {
+                        // Update ChangeRequest dengan semua data baru
+                        val updatedRequest = changeRequest.copy(
+                            jenisPerubahan = jenisPerubahan,
+                            estimasiBiaya = estimasiBiaya,
+                            estimasiWaktu = estimasiWaktu,
+                            skorEksposur = skorEksposur,
+                            photoPath = photoPath,
+                            status = "Reviewed",
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
-                // Save Risk Assessment
-                riskAssessmentViewModel.saveRiskAssessment(
-                    changeRequestId = changeRequest.id,
-                    teknisiId = teknisiId,
-                    teknisiName = teknisiName,
-                    skorDampak = skorDampak,
-                    skorKemungkinan = skorKemungkinan,
-                    skorRisiko = skorRisiko,
-                    levelRisiko = levelRisiko
-                )
+                        // Save Risk Assessment
+                        riskAssessmentViewModel.saveRiskAssessment(
+                            changeRequestId = changeRequest.id,
+                            teknisiId = teknisiId,
+                            teknisiName = teknisiName,
+                            skorDampak = skorDampak,
+                            skorKemungkinan = skorKemungkinan,
+                            skorEksposur = skorEksposur,
+                            skorRisiko = skorRisiko,
+                            levelRisiko = levelRisiko
+                        )
 
-                // Add Approval History
-                approvalHistoryViewModel.addApprovalHistory(
-                    changeRequestId = changeRequest.id,
-                    approverUserId = teknisiId,
-                    approverName = teknisiName,
-                    fromStatus = changeRequest.status,
-                    toStatus = "Reviewed",
-                    notes = "Inspeksi selesai. Estimasi biaya: $estimasiBiaya, Estimasi waktu: $estimasiWaktu, Level risiko: $levelRisiko"
-                )
+                        // Add Approval History
+                        approvalHistoryViewModel.addApprovalHistory(
+                            changeRequestId = changeRequest.id,
+                            approverUserId = teknisiId,
+                            approverName = teknisiName,
+                            fromStatus = changeRequest.status,
+                            toStatus = "Reviewed",
+                            notes = "Inspeksi selesai. Estimasi biaya: $estimasiBiaya, Estimasi waktu: $estimasiWaktu, Level risiko: $levelRisiko"
+                        )
 
-                // Kirim notifikasi ke end user
-                notificationViewModel.createNotification(
-                    userId = changeRequest.userId,
-                    changeRequestId = changeRequest.id,
-                    ticketId = changeRequest.ticketId,
-                    fromStatus = changeRequest.status,
-                    toStatus = "Reviewed"
-                )
+                        // Kirim notifikasi ke end user
+                        notificationViewModel.createNotification(
+                            userId = changeRequest.userId,
+                            changeRequestId = changeRequest.id,
+                            ticketId = changeRequest.ticketId,
+                            fromStatus = changeRequest.status,
+                            toStatus = "Reviewed"
+                        )
 
-                showInspectionDialog = false
-                successMessage = "Inspeksi berhasil! Status berubah menjadi 'Reviewed'"
-                showSuccessDialog = true
+                        showInspectionDialog = false
+                        successMessage = "Inspeksi berhasil! Status berubah menjadi 'Reviewed'"
+                        showSuccessDialog = true
+                    }
+
+                    InspectionAction.REVISE -> {
+                        // Update ke status Revision dengan notes
+                        val updatedRequest = changeRequest.copy(
+                            status = "Revision",
+                            revisionNotes = notes,
+                            revisionCount = changeRequest.revisionCount + 1,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        changeRequestViewModel.updateFullChangeRequest(updatedRequest)
+
+                        // Add Approval History
+                        approvalHistoryViewModel.addApprovalHistory(
+                            changeRequestId = changeRequest.id,
+                            approverUserId = teknisiId,
+                            approverName = teknisiName,
+                            fromStatus = changeRequest.status,
+                            toStatus = "Revision",
+                            notes = "Meminta revisi: $notes"
+                        )
+
+                        // Kirim notifikasi ke end user
+                        notificationViewModel.createNotification(
+                            userId = changeRequest.userId,
+                            changeRequestId = changeRequest.id,
+                            ticketId = changeRequest.ticketId,
+                            fromStatus = changeRequest.status,
+                            toStatus = "Revision"
+                        )
+
+                        showInspectionDialog = false
+                        successMessage = "Permintaan revisi berhasil dikirim ke End User"
+                        showSuccessDialog = true
+                    }
+
+                    InspectionAction.REJECT -> {
+                        // Update ke status Failed
+                        val updatedRequest = changeRequest.copy(
+                            status = "Failed",
+                            revisionNotes = notes,
+                            updatedAt = System.currentTimeMillis()
+                        )
+                        changeRequestViewModel.updateFullChangeRequest(updatedRequest)
+
+                        // Add Approval History
+                        approvalHistoryViewModel.addApprovalHistory(
+                            changeRequestId = changeRequest.id,
+                            approverUserId = teknisiId,
+                            approverName = teknisiName,
+                            fromStatus = changeRequest.status,
+                            toStatus = "Failed",
+                            notes = "Ditolak: $notes"
+                        )
+
+                        // Kirim notifikasi ke end user
+                        notificationViewModel.createNotification(
+                            userId = changeRequest.userId,
+                            changeRequestId = changeRequest.id,
+                            ticketId = changeRequest.ticketId,
+                            fromStatus = changeRequest.status,
+                            toStatus = "Failed"
+                        )
+
+                        showInspectionDialog = false
+                        successMessage = "Permohonan berhasil ditolak"
+                        showSuccessDialog = true
+                    }
+                }
             }
         )
     }

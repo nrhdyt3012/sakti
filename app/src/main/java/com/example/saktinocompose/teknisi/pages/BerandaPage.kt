@@ -218,6 +218,7 @@ fun BerandaPage(
         val statusCounts = allChangeRequests.groupingBy { it.status }.eachCount()
         val allStatuses = listOf(
             "Submitted" to Color(0xFF9E9E9E),
+            "Revision" to Color(0xFFFF9800),      // BARU: Status Revision
             "Reviewed" to Color(0xFF2196F3),
             "Approved" to Color(0xFF4CAF50),
             "Scheduled" to Color(0xFFFF9800),

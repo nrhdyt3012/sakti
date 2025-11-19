@@ -6,7 +6,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
@@ -277,15 +279,18 @@ fun ChangeRequestCard(
     }
 }
 
+// Update untuk StatusProgressIndicator di EnduserStatusPage.kt
+
 @Composable
 fun StatusProgressIndicator(currentStatus: String) {
     val statuses = listOf(
-        "Submitted", "In-Review", "Approved", "Scheduled",
+        "Submitted", "Reviewed", "Approved", "Scheduled",
         "Implementing", "Completed", "Closed"
     )
 
     val currentIndex = statuses.indexOf(currentStatus)
     val isFailed = currentStatus == "Failed"
+    val isRevision = currentStatus == "Revision"
 
     Column {
         Row(
@@ -295,6 +300,8 @@ fun StatusProgressIndicator(currentStatus: String) {
             statuses.take(5).forEachIndexed { index, _ ->
                 val isActive = if (isFailed && index >= currentIndex) {
                     false
+                } else if (isRevision) {
+                    index <= 0 // Hanya Submitted yang aktif
                 } else {
                     index <= currentIndex
                 }
@@ -303,7 +310,11 @@ fun StatusProgressIndicator(currentStatus: String) {
                 Card(
                     modifier = Modifier.size(12.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = if (isActive) Color(0xFF4CAF50) else Color.LightGray
+                        containerColor = when {
+                            isRevision && index == 0 -> Color(0xFFFF9800) // Orange untuk revision
+                            isActive -> Color(0xFF4CAF50)
+                            else -> Color.LightGray
+                        }
                     ),
                     shape = RoundedCornerShape(50)
                 ) {}
@@ -322,14 +333,47 @@ fun StatusProgressIndicator(currentStatus: String) {
             }
         }
 
-        if (isFailed) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "⚠️ Gagal diimplementasi",
-                fontSize = 11.sp,
-                color = Color(0xFFD32F2F),
-                fontWeight = FontWeight.Medium
-            )
+        Spacer(modifier = Modifier.height(8.dp))
+
+        when {
+            isFailed -> {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Cancel,
+                        contentDescription = "Failed",
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Permohonan ditolak",
+                        fontSize = 11.sp,
+                        color = Color(0xFFD32F2F),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+            isRevision -> {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Revision",
+                        tint = Color(0xFFFF9800),
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Text(
+                        text = "Memerlukan revisi",
+                        fontSize = 11.sp,
+                        color = Color(0xFFFF9800),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
         }
     }
 }

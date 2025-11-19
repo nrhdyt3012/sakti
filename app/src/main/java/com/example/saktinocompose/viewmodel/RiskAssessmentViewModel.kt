@@ -27,6 +27,7 @@ class RiskAssessmentViewModel(application: Application) : AndroidViewModel(appli
         teknisiName: String,
         skorDampak: Int,
         skorKemungkinan: Int,
+        skorEksposur: Int,
         skorRisiko: Int,
         levelRisiko: String
     ) {
@@ -40,6 +41,7 @@ class RiskAssessmentViewModel(application: Application) : AndroidViewModel(appli
                     teknisiName = teknisiName,
                     skorDampak = skorDampak,
                     skorKemungkinan = skorKemungkinan,
+                    skorEksposur = skorEksposur,
                     skorRisiko = skorRisiko,
                     levelRisiko = levelRisiko,
                     createdAt = System.currentTimeMillis()
@@ -53,6 +55,7 @@ class RiskAssessmentViewModel(application: Application) : AndroidViewModel(appli
                     teknisiName = teknisiName,
                     skorDampak = skorDampak,
                     skorKemungkinan = skorKemungkinan,
+                    skorEksposur = skorEksposur,
                     skorRisiko = skorRisiko,
                     levelRisiko = levelRisiko
                 )

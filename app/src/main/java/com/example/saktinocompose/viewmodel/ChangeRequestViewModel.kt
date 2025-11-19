@@ -47,6 +47,38 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    fun updateChangeRequestForRevision(
+        existingRequest: ChangeRequest,
+        jenisPerubahan: String,
+        alasan: String,
+        tujuan: String,
+        asetTerdampak: String,
+        rencanaImplementasi: String,
+        usulanJadwal: String,
+        rencanaRollback: String,
+        assignedTeknisiId: Int?,
+        assignedTeknisiName: String?
+    ) {
+        viewModelScope.launch {
+            val updated = existingRequest.copy(
+                jenisPerubahan = jenisPerubahan,
+                alasan = alasan,
+                tujuan = tujuan,
+                asetTerdampak = asetTerdampak,
+                rencanaImplementasi = rencanaImplementasi,
+                usulanJadwal = usulanJadwal,
+                rencanaRollback = rencanaRollback,
+                assignedTeknisiId = assignedTeknisiId,
+                assignedTeknisiName = assignedTeknisiName,
+                status = "Submitted", // Kembali ke Submitted
+                revisionNotes = null, // Clear revision notes
+                revisionCount = existingRequest.revisionCount + 1,
+                updatedAt = System.currentTimeMillis()
+            )
+            changeRequestDao.updateChangeRequest(updated)
+        }
+    }
+
     fun getChangeRequestsByUser(userId: Int): Flow<List<ChangeRequest>> {
         return changeRequestDao.getChangeRequestsByUser(userId)
     }
@@ -57,6 +89,10 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
 
     fun getChangeRequestsByStatus(status: String): Flow<List<ChangeRequest>> {
         return changeRequestDao.getChangeRequestsByStatus(status)
+    }
+
+    suspend fun getChangeRequestById(id: Int): ChangeRequest? {
+        return changeRequestDao.getChangeRequestById(id)
     }
 
     private suspend fun generateTicketId(): String {
@@ -75,6 +111,7 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             changeRequestDao.updateChangeRequest(updated)
         }
     }
+
     fun updateFullChangeRequest(updatedRequest: ChangeRequest) {
         viewModelScope.launch {
             updatedRequest.copy(
@@ -84,5 +121,4 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             }
         }
     }
-
 }

@@ -24,6 +24,8 @@ import com.example.saktinocompose.R
 import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.enduser.pages.*
 import com.example.saktinocompose.viewmodel.NotificationViewModel
+import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -39,6 +41,8 @@ fun EnduserScreen(
     )
 
     val notificationViewModel: NotificationViewModel = viewModel()
+    val changeRequestViewModel: ChangeRequestViewModel = viewModel()
+    val scope = rememberCoroutineScope()
     val unreadCount by notificationViewModel.getUnreadCount(userId).collectAsState(initial = 0)
 
     var selectedIndex by remember { mutableIntStateOf(0) }
@@ -52,12 +56,16 @@ fun EnduserScreen(
     var filteredRequests by remember { mutableStateOf<List<ChangeRequest>>(emptyList()) }
     var filterType by remember { mutableStateOf<FilterType?>(null) }
     var showExitDialog by remember { mutableStateOf(false) }
+    var revisionChangeRequest by remember { mutableStateOf<ChangeRequest?>(null) }
+    var showRevisionForm by remember { mutableStateOf(false) }
+
 
     // Back Handler
     BackHandler {
         when {
             showProfile -> showProfile = false
             showNotification -> showNotification = false
+            showRevisionForm -> showRevisionForm = false
             showFilteredList -> {
                 showFilteredList = false
                 filterType = null
@@ -118,9 +126,37 @@ fun EnduserScreen(
                 userId = userId,
                 onBackClick = { showNotification = false },
                 onNotificationClick = { changeRequestId ->
-                    // Find the change request and show detail
+                    // Load change request dan cek status
                     showNotification = false
-                    // TODO: Load and show the specific change request
+                    scope.launch {
+                        val request = changeRequestViewModel.getChangeRequestById(changeRequestId)
+                        if (request?.status == "Revision") {
+                            // Buka form revision dengan data existing
+                            revisionChangeRequest = request
+                            showRevisionForm = true
+                        } else {
+                            // Buka detail biasa
+                            selectedChangeRequest = request
+                            showDetailForm = true
+                        }
+                    }
+                }
+            )
+        }
+        showRevisionForm && revisionChangeRequest != null -> {
+            // Form untuk revisi dengan data pre-populated
+            EnduserForm(
+                userId = userId,
+                userName = userName,
+                existingRequest = revisionChangeRequest,
+                onFormSubmitted = {
+                    showRevisionForm = false
+                    revisionChangeRequest = null
+                    selectedIndex = 1 // Ke halaman status
+                },
+                onBackClick = {
+                    showRevisionForm = false
+                    revisionChangeRequest = null
                 }
             )
         }

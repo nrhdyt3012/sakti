@@ -30,7 +30,7 @@ import java.util.*
 fun NotificationPage(
     userId: Int,
     onBackClick: () -> Unit,
-    onNotificationClick: (Int) -> Unit = {},
+    onNotificationClick: (Int) -> Unit = {}, // Callback dengan changeRequestId
     modifier: Modifier = Modifier,
     viewModel: NotificationViewModel = viewModel()
 ) {
@@ -142,6 +142,7 @@ fun NotificationPage(
                             if (!notification.isRead) {
                                 viewModel.markAsRead(notification.id)
                             }
+                            // Callback ke parent dengan changeRequestId
                             onNotificationClick(notification.changeRequestId)
                         }
                     )
@@ -161,6 +162,7 @@ fun NotificationCard(
 
     val statusColor = when (notification.toStatus) {
         "Reviewed" -> Color(0xFF2196F3)
+        "Revision" -> Color(0xFFFF9800)
         "Scheduled" -> Color(0xFFFF9800)
         "Implementing" -> Color(0xFFFF5722)
         "Completed" -> Color(0xFF4CAF50)
@@ -265,6 +267,27 @@ fun NotificationCard(
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                // Special indicator for Revision
+                if (notification.toStatus == "Revision") {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Revisi",
+                            tint = Color(0xFFFF9800),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = "Klik untuk melakukan revisi",
+                            fontSize = 11.sp,
+                            color = Color(0xFFFF9800),
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }

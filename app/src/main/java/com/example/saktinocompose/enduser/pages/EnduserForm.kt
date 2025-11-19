@@ -591,18 +591,18 @@ fun EnduserForm(
                                 else -> {
                                     if (existingRequest != null) {
                                         // Update untuk revisi
-//                                        viewModel.updateChangeRequestForRevision(
-//                                            existingRequest = existingRequest,
-//                                            jenisPerubahan = jenisPerubahan,
-//                                            alasan = alasan,
-//                                            tujuan = tujuan,
-//                                            asetTerdampak = asetTerdampak,
-//                                            rencanaImplementasi = rencanaImplementasi,
-//                                            usulanJadwal = usulanJadwal,
-//                                            rencanaRollback = rencanaRollback,
-//                                            assignedTeknisiId = selectedTeknisiId,
-//                                            assignedTeknisiName = selectedTeknisiName
-//                                        )
+                                        viewModel.updateChangeRequestForRevision(
+                                            existingRequest = existingRequest,
+                                            jenisPerubahan = jenisPerubahan,
+                                            alasan = alasan,
+                                            tujuan = tujuan,
+                                            asetTerdampak = asetTerdampak,
+                                            rencanaImplementasi = rencanaImplementasi,
+                                            usulanJadwal = usulanJadwal,
+                                            rencanaRollback = rencanaRollback,
+                                            assignedTeknisiId = selectedTeknisiId,
+                                            assignedTeknisiName = selectedTeknisiName
+                                        )
                                     } else {
                                         // Submit baru
                                         viewModel.submitChangeRequest(

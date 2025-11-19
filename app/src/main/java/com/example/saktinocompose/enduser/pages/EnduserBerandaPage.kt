@@ -222,7 +222,8 @@ fun EnduserBerandaPage(
         val statusCounts = changeRequests.groupingBy { it.status }.eachCount()
         val allStatuses = listOf(
             "Submitted" to Color(0xFF9E9E9E),
-            "In-Review" to Color(0xFF2196F3),
+            "Revision" to  Color(0xFFFF9800) ,   // BARU
+        "In-Review" to Color(0xFF2196F3),
             "Approved" to Color(0xFF4CAF50),
             "Scheduled" to Color(0xFFFF9800),
             "Implementing" to Color(0xFFFF5722),
