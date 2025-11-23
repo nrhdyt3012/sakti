@@ -33,7 +33,7 @@ import java.util.*
 fun EnduserForm(
     userId: Int,
     userName: String,
-    existingRequest: com.example.saktinocompose.data.entity.ChangeRequest? = null, // Untuk revisi
+    existingRequest: com.example.saktinocompose.data.entity.ChangeRequest? = null,
     onFormSubmitted: () -> Unit = {},
     onBackClick: () -> Unit = {},
     modifier: Modifier = Modifier,
@@ -43,7 +43,6 @@ fun EnduserForm(
     val scrollState = rememberScrollState()
     val database = AppDatabase.getDatabase(context)
 
-    // Pre-populate jika ada existingRequest (untuk revisi)
     var jenisPerubahan by remember { mutableStateOf(existingRequest?.jenisPerubahan ?: "") }
     var showJenisDropdown by remember { mutableStateOf(false) }
     var alasan by remember { mutableStateOf(existingRequest?.alasan ?: "") }
@@ -61,12 +60,11 @@ fun EnduserForm(
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    // Load teknisi list
     val teknisiList by database.userDao().getAllTeknisi().collectAsState(initial = emptyList())
 
     val jenisOptions = listOf("Standar", "Minor", "Major", "Emergency")
 
-    // Daftar aset terdampak untuk autocomplete
+    // DAFTAR ASET - MASIH ADA DI SINI!
     val asetOptions = listOf(
         "Aset Perangkat Keras",
         "Aplikasi/Service",
@@ -94,6 +92,7 @@ fun EnduserForm(
         datePicker.minDate = System.currentTimeMillis()
     }
 
+    // Success Dialog
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
@@ -120,6 +119,7 @@ fun EnduserForm(
         )
     }
 
+    // Error Dialog
     if (showErrorDialog) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = false },
@@ -138,7 +138,7 @@ fun EnduserForm(
         )
     }
 
-    // Dialog Pencarian Aset dengan filter realtime
+    // Dialog Pencarian Aset
     if (showAsetSearchDialog) {
         var searchQuery by remember { mutableStateOf("") }
         val filteredAsets = remember(searchQuery) {
@@ -155,21 +155,30 @@ fun EnduserForm(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 500.dp),
+                    .heightIn(max = 550.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp)
                 ) {
-                    Text(
-                        text = "Cari Aset Terdampak",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Cari Aset Terdampak",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        IconButton(onClick = { showAsetSearchDialog = false }) {
+                            Icon(Icons.Default.Close, contentDescription = "Tutup")
+                        }
+                    }
 
-                    // Search Field
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     OutlinedTextField(
                         value = searchQuery,
                         onValueChange = { searchQuery = it },
@@ -187,6 +196,8 @@ fun EnduserForm(
                         },
                         singleLine = true,
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
                             focusedContainerColor = Color.White,
                             unfocusedContainerColor = Color.White
                         )
@@ -194,7 +205,13 @@ fun EnduserForm(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Results List
+                    Text(
+                        text = "Daftar Aset (${filteredAsets.size})",
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+
                     if (filteredAsets.isEmpty()) {
                         Box(
                             modifier = Modifier
@@ -202,11 +219,16 @@ fun EnduserForm(
                                 .padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                text = "Tidak ada hasil",
-                                color = Color.Gray,
-                                fontSize = 14.sp
-                            )
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    Icons.Default.SearchOff,
+                                    contentDescription = "No Result",
+                                    modifier = Modifier.size(48.dp),
+                                    tint = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("Tidak ada hasil", color = Color.Gray, fontSize = 14.sp)
+                            }
                         }
                     } else {
                         LazyColumn(
@@ -214,6 +236,8 @@ fun EnduserForm(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(filteredAsets) { aset ->
+                                val isSelected = asetTerdampak == aset
+
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -222,8 +246,8 @@ fun EnduserForm(
                                             showAsetSearchDialog = false
                                         },
                                     colors = CardDefaults.cardColors(
-                                        containerColor = if (asetTerdampak == aset)
-                                            Color(0xFF384E66).copy(alpha = 0.1f)
+                                        containerColor = if (isSelected)
+                                            Color(0xFF384E66).copy(alpha = 0.15f)
                                         else
                                             Color(0xFFF5F5F5)
                                     ),
@@ -236,39 +260,36 @@ fun EnduserForm(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Text(
-                                            text = aset,
-                                            fontSize = 14.sp,
-                                            fontWeight = if (asetTerdampak == aset)
-                                                FontWeight.Bold
-                                            else
-                                                FontWeight.Normal,
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                        if (asetTerdampak == aset) {
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
                                             Icon(
-                                                Icons.Default.Check,
+                                                Icons.Default.Inventory,
+                                                contentDescription = null,
+                                                tint = if (isSelected) Color(0xFF384E66) else Color.Gray,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Text(
+                                                text = aset,
+                                                fontSize = 14.sp,
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                color = Color.Black
+                                            )
+                                        }
+                                        if (isSelected) {
+                                            Icon(
+                                                Icons.Default.CheckCircle,
                                                 contentDescription = "Selected",
                                                 tint = Color(0xFF384E66),
-                                                modifier = Modifier.size(20.dp)
+                                                modifier = Modifier.size(24.dp)
                                             )
                                         }
                                     }
                                 }
                             }
                         }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { showAsetSearchDialog = false },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF384E66)
-                        )
-                    ) {
-                        Text("Tutup")
                     }
                 }
             }
@@ -280,7 +301,6 @@ fun EnduserForm(
             .fillMaxSize()
             .background(Color(0xFFF5F5F5))
     ) {
-        // Top App Bar
         TopAppBar(
             title = {
                 Text(
@@ -434,35 +454,82 @@ fun EnduserForm(
                         )
                     )
 
-                    // 4. Aset Terdampak dengan Search
+                    // 4. Aset Terdampak dengan Search Button
                     Text("4. Aset Terdampak (CI) *", fontWeight = FontWeight.SemiBold)
-                    OutlinedTextField(
-                        value = asetTerdampak,
-                        onValueChange = {},
-                        readOnly = true,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showAsetSearchDialog = true },
-                        label = { Text("Pilih Aset") },
-                        trailingIcon = {
-                            Icon(Icons.Default.Search, null, tint = Color.Black)
-                        },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
-                        )
-                    )
 
-                    // 5. Rencana Implementasi
+                    if (asetTerdampak.isNotBlank()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF384E66).copy(alpha = 0.1f)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Aset yang dipilih:",
+                                        fontSize = 11.sp,
+                                        color = Color.Gray
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = asetTerdampak,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = Color.Black
+                                    )
+                                }
+                                IconButton(onClick = { showAsetSearchDialog = true }) {
+                                    Icon(
+                                        Icons.Default.Edit,
+                                        contentDescription = "Ganti",
+                                        tint = Color(0xFF384E66)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    OutlinedButton(
+                        onClick = { showAsetSearchDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = Color(0xFF384E66)
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Cari",
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (asetTerdampak.isBlank())
+                                "Cari Aset Terdampak"
+                            else
+                                "Ganti Aset Terdampak",
+                            fontSize = 14.sp
+                        )
+                    }
+
+                    // 5-8 tetap sama seperti sebelumnya...
+                    // (Rencana Implementasi, Usulan Jadwal, Rencana Rollback, Pilih Teknisi)
+
                     Text("5. Rencana Implementasi *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = rencanaImplementasi,
                         onValueChange = { rencanaImplementasi = it },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        placeholder = { Text("Jelaskan rencana implementasi perubahan") },
+                        placeholder = { Text("Jelaskan rencana implementasi") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
@@ -471,7 +538,6 @@ fun EnduserForm(
                         )
                     )
 
-                    // 6. Usulan Jadwal
                     Text("6. Usulan Jadwal *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = usulanJadwal,
@@ -496,14 +562,13 @@ fun EnduserForm(
                         )
                     )
 
-                    // 7. Rencana Rollback
                     Text("7. Rencana Rollback *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = rencanaRollback,
                         onValueChange = { rencanaRollback = it },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        placeholder = { Text("Jelaskan rencana rollback jika perubahan gagal") },
+                        placeholder = { Text("Jelaskan rencana rollback") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
@@ -512,7 +577,6 @@ fun EnduserForm(
                         )
                     )
 
-                    // 8. Pilih Teknisi
                     Text("8. Pilih Teknisi *", fontWeight = FontWeight.SemiBold)
                     ExposedDropdownMenuBox(
                         expanded = showTeknisiDropdown,
@@ -590,7 +654,6 @@ fun EnduserForm(
                                 }
                                 else -> {
                                     if (existingRequest != null) {
-                                        // Update untuk revisi
                                         viewModel.updateChangeRequestForRevision(
                                             existingRequest = existingRequest,
                                             jenisPerubahan = jenisPerubahan,
@@ -604,7 +667,6 @@ fun EnduserForm(
                                             assignedTeknisiName = selectedTeknisiName
                                         )
                                     } else {
-                                        // Submit baru
                                         viewModel.submitChangeRequest(
                                             userId = userId,
                                             jenisPerubahan = jenisPerubahan,
