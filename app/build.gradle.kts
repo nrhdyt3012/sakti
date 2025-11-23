@@ -75,6 +75,30 @@ dependencies {
     implementation("androidx.room:room-ktx:$room_version")
     ksp("androidx.room:room-compiler:$room_version")
 
+    // Retrofit untuk REST API
+    implementation("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.squareup.retrofit2:converter-gson:3.0.0")
+
+    // OkHttp untuk HTTP client & logging
+    implementation("com.squareup.okhttp3:okhttp:5.3.2")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.3.2")
+
+    // Gson untuk JSON parsing
+    implementation("com.google.code.gson:gson:2.13.2")
+
+    // ===== COROUTINES (sudah ada, pastikan versi terbaru) =====
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+
+
+    // ===== IMAGE LOADING (untuk load foto dari URL) =====
+
+    // Coil untuk load image dari URL
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
+    // ===== WORK MANAGER (untuk background sync) =====
+    implementation("androidx.work:work-runtime-ktx:2.11.0")
+
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.7.0")
 

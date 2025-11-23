@@ -1,3 +1,6 @@
+// ===== Updated LoginScreen untuk handle token =====
+// File: app/src/main/java/com/example/saktinocompose/login/LoginScreen.kt
+
 package com.example.saktinocompose.login
 
 import androidx.compose.animation.core.*
@@ -41,7 +44,7 @@ val Black = Color(0xFF000000)
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModelCompose = viewModel(),
-    onLoginSuccess: (userId: Int, email: String, name: String, role: String) -> Unit
+    onLoginSuccess: (userId: Int, email: String, name: String, role: String, token: String?) -> Unit
 ) {
     val uiState by loginViewModel.uiState.collectAsState()
     var showSuccessDialog by remember { mutableStateOf(false) }
@@ -50,6 +53,7 @@ fun LoginScreen(
     var successEmail by remember { mutableStateOf("") }
     var successName by remember { mutableStateOf("") }
     var successRole by remember { mutableStateOf("") }
+    var successToken by remember { mutableStateOf<String?>(null) }
 
     // Listener untuk event dari ViewModel
     LaunchedEffect(Unit) {
@@ -60,6 +64,7 @@ fun LoginScreen(
                     successEmail = event.user.email
                     successName = event.user.name
                     successRole = event.user.role
+                    successToken = event.token
                     showSuccessDialog = true
                 }
                 is LoginEvent.LoginError -> {
@@ -80,11 +85,26 @@ fun LoginScreen(
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
             title = { Text("Selamat Datang!") },
-            text = { Text("Login berhasil.\n\nNama: $successName\nRole: $roleText") },
+            text = {
+                Column {
+                    Text("Login berhasil.")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Nama: $successName")
+                    Text("Role: $roleText")
+                    if (successToken != null) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            "✓ Tersambung ke server",
+                            fontSize = 12.sp,
+                            color = Color(0xFF4CAF50)
+                        )
+                    }
+                }
+            },
             confirmButton = {
                 Button(onClick = {
                     showSuccessDialog = false
-                    onLoginSuccess(successUserId, successEmail, successName, successRole)
+                    onLoginSuccess(successUserId, successEmail, successName, successRole, successToken)
                 }) {
                     Text("Lanjut")
                 }
@@ -106,7 +126,7 @@ fun LoginScreen(
         )
     }
 
-    // Animasi
+    // Animasi (sama seperti sebelumnya)
     val viewAlphas = List(7) { remember { Animatable(0f) } }
     LaunchedEffect(Unit) {
         launch {

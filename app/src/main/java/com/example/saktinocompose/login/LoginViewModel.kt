@@ -1,3 +1,6 @@
+// Updated LoginViewModel untuk support API
+// File: app/src/main/java/com/example/saktinocompose/login/LoginViewModel.kt
+
 package com.example.saktinocompose.login
 
 import android.app.Application
@@ -5,6 +8,9 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.saktinocompose.data.AppDatabase
 import com.example.saktinocompose.data.entity.User
+import com.example.saktinocompose.network.Result
+import com.example.saktinocompose.network.RetrofitClient
+import com.example.saktinocompose.repository.AuthRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,7 +18,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.security.MessageDigest
 
 enum class UserRole {
     TEKNISI,
@@ -27,7 +32,7 @@ data class LoginUiState(
 )
 
 sealed interface LoginEvent {
-    data class LoginSuccess(val user: User) : LoginEvent
+    data class LoginSuccess(val user: User, val token: String? = null) : LoginEvent
     data class LoginError(val message: String) : LoginEvent
 }
 
@@ -35,6 +40,9 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
 
     private val database = AppDatabase.getDatabase(application)
     private val userDao = database.userDao()
+
+    // Repository untuk handle offline/online login
+    private val authRepository = AuthRepository(userDao)
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState = _uiState.asStateFlow()
@@ -48,11 +56,6 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
 
     fun onPasswordChange(password: String) {
         _uiState.update { it.copy(password = password) }
-    }
-
-    private fun hashPassword(password: String): String {
-        val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
-        return bytes.joinToString("") { "%02x".format(it) }
     }
 
     fun login() {
@@ -70,13 +73,27 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
             delay(1000) // Simulasi network delay
 
             try {
-                val user = userDao.getUserByEmail(email)
-                val hashedPassword = hashPassword(password)
+                // Gunakan repository yang sudah handle offline/online
+                when (val result = authRepository.login(email, password)) {
+                    is Result.Success -> {
+                        val user = result.data
 
-                if (user != null && user.passwordHash == hashedPassword) {
-                    _loginEvent.emit(LoginEvent.LoginSuccess(user))
-                } else {
-                    _loginEvent.emit(LoginEvent.LoginError("Email atau password tidak valid"))
+                        // Set token ke RetrofitClient jika ada
+                        // Token akan di-set di AuthRepository jika login online berhasil
+                        val token = RetrofitClient.authToken
+
+                        _loginEvent.emit(LoginEvent.LoginSuccess(user, token))
+                    }
+                    is Result.Error -> {
+                        _loginEvent.emit(
+                            LoginEvent.LoginError(
+                                result.message ?: "Login gagal"
+                            )
+                        )
+                    }
+                    else -> {
+                        _loginEvent.emit(LoginEvent.LoginError("Login gagal"))
+                    }
                 }
             } catch (e: Exception) {
                 _loginEvent.emit(LoginEvent.LoginError("Terjadi kesalahan: ${e.message}"))

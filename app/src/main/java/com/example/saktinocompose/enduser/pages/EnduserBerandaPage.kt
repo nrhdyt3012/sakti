@@ -1,3 +1,6 @@
+// 1. Updated EnduserBerandaPage dengan Network Status
+// File: app/src/main/java/com/example/saktinocompose/enduser/pages/EnduserBerandaPage.kt
+
 package com.example.saktinocompose.enduser.pages
 
 import android.widget.Toast
@@ -9,6 +12,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,36 +25,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.network.ApiConfig
+import com.example.saktinocompose.utils.NetworkMonitor
+import com.example.saktinocompose.utils.NetworkStatus
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-
-// Helper function untuk mendapatkan warna jenis perubahan
-fun getJenisPerubahanColor(jenis: String): Color {
-    return when (jenis) {
-        "Emergency" -> Color(0xFFD32F2F)  // Red
-        "Major" -> Color(0xFFFF9800)      // Orange
-        "Minor" -> Color(0xFF2196F3)      // Blue
-        "Standar" -> Color(0xFF4CAF50)    // Green
-        else -> Color.Gray
-    }
-}
-
-// Helper function untuk sorting priority
-fun getJenisPriority(jenis: String): Int {
-    return when (jenis) {
-        "Emergency" -> 1
-        "Major" -> 2
-        "Minor" -> 3
-        "Standar" -> 4
-        else -> 5
-    }
-}
-
-// Extension function untuk sorting ChangeRequest
-fun List<ChangeRequest>.sortedByJenisPriority(): List<ChangeRequest> {
-    return this.sortedBy { getJenisPriority(it.jenisPerubahan) }
-}
 
 @Composable
 fun EnduserBerandaPage(
@@ -62,13 +43,18 @@ fun EnduserBerandaPage(
 ) {
     val scrollState = rememberScrollState()
     val changeRequestsRaw by viewModel.getChangeRequestsByUser(userId).collectAsState(initial = emptyList())
+    val context = LocalContext.current
 
-    // SORT BY JENIS PERUBAHAN PRIORITY
+    // ===== BARU: Network Status =====
+    val networkMonitor = remember { NetworkMonitor(context) }
+    val networkStatus by networkMonitor.observeNetworkStatus()
+        .collectAsState(initial = NetworkStatus.Unavailable)
+
+    val isOnline = networkStatus is NetworkStatus.Available && !ApiConfig.IS_OFFLINE_MODE
+
     val changeRequests = remember(changeRequestsRaw) {
         changeRequestsRaw.sortedByJenisPriority()
     }
-
-    val context = LocalContext.current
 
     val thisMonth = remember {
         val calendar = Calendar.getInstance()
@@ -102,11 +88,53 @@ fun EnduserBerandaPage(
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Greeting
+        // ===== BARU: Network Status Indicator =====
+        if (!isOnline) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 70.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudOff,
+                        contentDescription = null,
+                        tint = Color(0xFFFF9800),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "Mode Offline",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFF9800)
+                        )
+                        Text(
+                            text = "Data akan disinkronkan saat online",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        // Greeting Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 70.dp),
+                .padding(top = if (isOnline) 70.dp else 0.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66)),
             shape = RoundedCornerShape(12.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -114,24 +142,42 @@ fun EnduserBerandaPage(
             Column(
                 modifier = Modifier.padding(20.dp)
             ) {
-                Text(
-                    text = "Hai, $userName!",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Selamat datang di Sistem Manajemen Perubahan",
-                    fontSize = 14.sp,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = "Hai, $userName!",
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Selamat datang di Sistem Manajemen Perubahan",
+                            fontSize = 14.sp,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
+
+                    // ===== BARU: Online Indicator Icon =====
+                    if (isOnline) {
+                        Icon(
+                            imageVector = Icons.Default.CloudDone,
+                            contentDescription = "Online",
+                            tint = Color(0xFF4CAF50),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
             }
         }
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Summary Section
+        // Summary Section (sama seperti sebelumnya)
         Text(
             text = "Summary Perubahan",
             fontSize = 18.sp,
@@ -210,6 +256,7 @@ fun EnduserBerandaPage(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Status Perubahan (sama seperti sebelumnya)
         Text(
             text = "Status Perubahan",
             fontSize = 18.sp,
@@ -222,8 +269,8 @@ fun EnduserBerandaPage(
         val statusCounts = changeRequests.groupingBy { it.status }.eachCount()
         val allStatuses = listOf(
             "Submitted" to Color(0xFF9E9E9E),
-            "Revision" to  Color(0xFFFF9800) ,   // BARU
-        "In-Review" to Color(0xFF2196F3),
+            "Revision" to Color(0xFFFF9800),
+            "In-Review" to Color(0xFF2196F3),
             "Approved" to Color(0xFF4CAF50),
             "Scheduled" to Color(0xFFFF9800),
             "Implementing" to Color(0xFFFF5722),
@@ -244,8 +291,13 @@ fun EnduserBerandaPage(
                         if (count > 0) {
                             onFilterClick(FilterType.STATUS(status), statusRequests)
                         } else {
-                            Toast.makeText(context, "Tidak ada pengajuan dengan status $status",
-                                Toast.LENGTH_SHORT).show()
+                            Toast
+                                .makeText(
+                                    context,
+                                    "Tidak ada pengajuan dengan status $status",
+                                    Toast.LENGTH_SHORT
+                                )
+                                .show()
                         }
                     },
                 colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -287,6 +339,7 @@ fun EnduserBerandaPage(
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        // Create Button
         Button(
             onClick = onCreateFormClick,
             modifier = Modifier
@@ -316,7 +369,31 @@ fun EnduserBerandaPage(
     }
 }
 
-// Enum untuk tipe filter
+// Helper functions tetap sama
+fun getJenisPerubahanColor(jenis: String): Color {
+    return when (jenis) {
+        "Emergency" -> Color(0xFFD32F2F)
+        "Major" -> Color(0xFFFF9800)
+        "Minor" -> Color(0xFF2196F3)
+        "Standar" -> Color(0xFF4CAF50)
+        else -> Color.Gray
+    }
+}
+
+fun getJenisPriority(jenis: String): Int {
+    return when (jenis) {
+        "Emergency" -> 1
+        "Major" -> 2
+        "Minor" -> 3
+        "Standar" -> 4
+        else -> 5
+    }
+}
+
+fun List<ChangeRequest>.sortedByJenisPriority(): List<ChangeRequest> {
+    return this.sortedBy { getJenisPriority(it.jenisPerubahan) }
+}
+
 sealed class FilterType {
     object MONTHLY : FilterType()
     object WEEKLY : FilterType()
