@@ -384,6 +384,21 @@ fun EnduserForm(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    // 1. Id Perubahan
+                    Text("1. Id Perubahan *", fontWeight = FontWeight.SemiBold)
+                    OutlinedTextField(
+                        value = alasan,
+                        onValueChange = { alasan = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        placeholder = { Text("Buat Id perubahan") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
                     // 1. Jenis Perubahan
                     Text("1. Jenis Perubahan *", fontWeight = FontWeight.SemiBold)
                     ExposedDropdownMenuBox(
