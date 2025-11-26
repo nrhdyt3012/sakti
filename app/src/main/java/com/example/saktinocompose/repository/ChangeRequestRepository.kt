@@ -198,6 +198,7 @@ class ChangeRequestRepository(
         return ChangeRequestApiRequest(
             ticketId = cr.ticketId,
             userId = cr.userId,
+            idPerubahan = cr.idPerubahan,
             jenisPerubahan = cr.jenisPerubahan,
             alasan = cr.alasan,
             tujuan = cr.tujuan,
@@ -218,6 +219,7 @@ class ChangeRequestRepository(
         return ChangeRequest(
             ticketId = dto.ticketId,
             userId = dto.userId,
+            idPerubahan = dto.idPerubahan,
             jenisPerubahan = dto.jenisPerubahan,
             alasan = dto.alasan,
             tujuan = dto.tujuan,

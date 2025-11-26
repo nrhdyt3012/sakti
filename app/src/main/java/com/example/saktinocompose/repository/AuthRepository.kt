@@ -65,7 +65,7 @@ class AuthRepository(
 
                 if (userData != null) {
                     // Save token untuk request selanjutnya
-                    RetrofitClient.setAuthToken(userData.token)
+                    RetrofitClient.updateAuthToken(userData.token)
 
                     // Convert API response ke local User entity
                     val user = User(

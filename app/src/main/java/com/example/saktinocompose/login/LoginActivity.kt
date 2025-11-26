@@ -38,7 +38,7 @@ class LoginActivity: ComponentActivity(){
 
                 // Set token jika ada
                 userSession.authToken?.let { token ->
-                    RetrofitClient.setAuthToken(token)
+                    RetrofitClient.updateAuthToken(token)
                 }
 
                 // Initialize sync
@@ -73,7 +73,7 @@ class LoginActivity: ComponentActivity(){
                         )
 
                         // Set token ke RetrofitClient
-                        token?.let { RetrofitClient.setAuthToken(it) }
+                        token?.let { RetrofitClient.updateAuthToken(it) }
 
                         // Initialize sync
                         syncManager.initializeSync()

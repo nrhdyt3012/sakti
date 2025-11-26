@@ -9,7 +9,7 @@ data class ChangeRequest(
     val id: Int = 0,
     val ticketId: String,
     val userId: Int,
-    val idPerubahan: String,
+    val idPerubahan: String,  // ✅ UUID-based ID Perubahan
     val jenisPerubahan: String,
     val alasan: String,
     val tujuan: String,

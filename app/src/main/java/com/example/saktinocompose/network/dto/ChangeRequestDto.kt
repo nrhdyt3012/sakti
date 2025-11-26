@@ -11,6 +11,8 @@ data class ChangeRequestApiRequest(
     val ticketId: String,
     @SerializedName("user_id")
     val userId: Int,
+    @SerializedName("id_perubahan")
+    val idPerubahan: String,
     @SerializedName("jenis_perubahan")
     val jenisPerubahan: String,
     @SerializedName("alasan")

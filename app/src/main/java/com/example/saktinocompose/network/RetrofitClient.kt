@@ -86,7 +86,7 @@ object RetrofitClient {
     }
 
     // Function untuk set auth token
-    fun setAuthToken(token: String?) {
+    fun updateAuthToken(token: String?) {
         authToken = token
     }
 

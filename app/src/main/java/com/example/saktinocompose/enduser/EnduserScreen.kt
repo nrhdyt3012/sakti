@@ -300,16 +300,20 @@ fun EnduserScreen(
                                         painter = painterResource(id = navItem.icon),
                                         contentDescription = navItem.label,
                                         modifier = Modifier.size(24.dp),
-                                        tint = if (isSelected) Color(0xFF121524) else Color(0xFFB0BEC5)
+                                        tint = if (isSelected) Color(0xFFB0BEC5) else Color(0xFF121524)
                                     )
                                 },
                                 label = {
                                     Text(
                                         text = navItem.label,
-                                        color = if (isSelected) Color(0xFF121524) else Color(0xFFCFD8DC)
+                                        color = if (isSelected) Color(0xFFCFD8DC) else Color(0xFF121524)
                                     )
                                 },
-                                alwaysShowLabel = true
+                                alwaysShowLabel = true,
+
+                                colors = NavigationBarItemDefaults.colors(
+                                    indicatorColor = Color.Transparent
+                                )
                             )
                         }
                     }

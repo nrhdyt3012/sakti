@@ -43,6 +43,11 @@ fun EnduserForm(
     val scrollState = rememberScrollState()
     val database = AppDatabase.getDatabase(context)
 
+    // ✅ ID Perubahan - auto-generated atau dari existing
+    val idPerubahan = remember {
+        existingRequest?.idPerubahan ?: UUID.randomUUID().toString()
+    }
+
     var jenisPerubahan by remember { mutableStateOf(existingRequest?.jenisPerubahan ?: "") }
     var showJenisDropdown by remember { mutableStateOf(false) }
     var alasan by remember { mutableStateOf(existingRequest?.alasan ?: "") }
@@ -64,7 +69,6 @@ fun EnduserForm(
 
     val jenisOptions = listOf("Standar", "Minor", "Major", "Emergency")
 
-    // DAFTAR ASET - MASIH ADA DI SINI!
     val asetOptions = listOf(
         "Aset Perangkat Keras",
         "Aplikasi/Service",
@@ -384,21 +388,48 @@ fun EnduserForm(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // 1. Id Perubahan
-                    Text("1. Id Perubahan *", fontWeight = FontWeight.SemiBold)
-                    OutlinedTextField(
-                        value = alasan,
-                        onValueChange = { alasan = it },
+                    // ✅ 0. ID Perubahan (Read-only, Auto-generated)
+                    Text("ID Perubahan (Auto-generated)", fontWeight = FontWeight.SemiBold)
+                    Card(
                         modifier = Modifier.fillMaxWidth(),
-                        minLines = 3,
-                        placeholder = { Text("Buat Id perubahan") },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
-                        )
-                    )
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFE3F2FD)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.Fingerprint,
+                                    contentDescription = "ID",
+                                    tint = Color(0xFF2196F3)
+                                )
+                                Column {
+                                    Text(
+                                        text = "ID Unik Perubahan:",
+                                        fontSize = 11.sp,
+                                        color = Color.Gray
+                                    )
+                                    Text(
+                                        text = idPerubahan,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2196F3)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     // 1. Jenis Perubahan
                     Text("1. Jenis Perubahan *", fontWeight = FontWeight.SemiBold)
                     ExposedDropdownMenuBox(
@@ -535,9 +566,7 @@ fun EnduserForm(
                         )
                     }
 
-                    // 5-8 tetap sama seperti sebelumnya...
-                    // (Rencana Implementasi, Usulan Jadwal, Rencana Rollback, Pilih Teknisi)
-
+                    // 5. Rencana Implementasi
                     Text("5. Rencana Implementasi *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = rencanaImplementasi,
@@ -553,6 +582,7 @@ fun EnduserForm(
                         )
                     )
 
+                    // 6. Usulan Jadwal
                     Text("6. Usulan Jadwal *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = usulanJadwal,
@@ -577,6 +607,7 @@ fun EnduserForm(
                         )
                     )
 
+                    // 7. Rencana Rollback
                     Text("7. Rencana Rollback *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = rencanaRollback,
@@ -592,6 +623,7 @@ fun EnduserForm(
                         )
                     )
 
+                    // 8. Pilih Teknisi
                     Text("8. Pilih Teknisi *", fontWeight = FontWeight.SemiBold)
                     ExposedDropdownMenuBox(
                         expanded = showTeknisiDropdown,
@@ -671,6 +703,7 @@ fun EnduserForm(
                                     if (existingRequest != null) {
                                         viewModel.updateChangeRequestForRevision(
                                             existingRequest = existingRequest,
+                                            idPerubahan = idPerubahan, // ✅ Pass ID Perubahan
                                             jenisPerubahan = jenisPerubahan,
                                             alasan = alasan,
                                             tujuan = tujuan,
@@ -684,13 +717,13 @@ fun EnduserForm(
                                     } else {
                                         viewModel.submitChangeRequest(
                                             userId = userId,
+                                            idPerubahan = idPerubahan, // ✅ Pass ID Perubahan
                                             jenisPerubahan = jenisPerubahan,
                                             alasan = alasan,
                                             tujuan = tujuan,
                                             asetTerdampak = asetTerdampak,
                                             rencanaImplementasi = rencanaImplementasi,
-                                            usulanJadwal = usulanJadwal,
-                                            rencanaRollback = rencanaRollback,
+                                            usulanJadwal = usulanJadwal,rencanaRollback = rencanaRollback,
                                             assignedTeknisiId = selectedTeknisiId,
                                             assignedTeknisiName = selectedTeknisiName
                                         )

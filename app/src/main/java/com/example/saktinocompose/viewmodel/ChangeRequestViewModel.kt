@@ -37,6 +37,7 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
      */
     fun submitChangeRequest(
         userId: Int,
+        idPerubahan: String,  // ✅ UUID parameter
         jenisPerubahan: String,
         alasan: String,
         tujuan: String,
@@ -52,6 +53,7 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             val changeRequest = ChangeRequest(
                 ticketId = ticketId,
                 userId = userId,
+                idPerubahan = idPerubahan,  // ✅ Set ID Perubahan
                 jenisPerubahan = jenisPerubahan,
                 alasan = alasan,
                 tujuan = tujuan,
@@ -64,16 +66,13 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 status = "Submitted"
             )
 
-            // Submit via repository (otomatis sync jika online)
             repository.submitChangeRequest(changeRequest)
         }
     }
 
-    /**
-     * Update Change Request untuk Revision
-     */
     fun updateChangeRequestForRevision(
         existingRequest: ChangeRequest,
+        idPerubahan: String,  // ✅ UUID parameter
         jenisPerubahan: String,
         alasan: String,
         tujuan: String,
@@ -86,6 +85,7 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
     ) {
         viewModelScope.launch {
             val updated = existingRequest.copy(
+                idPerubahan = idPerubahan,  // ✅ Keep same ID Perubahan
                 jenisPerubahan = jenisPerubahan,
                 alasan = alasan,
                 tujuan = tujuan,
@@ -101,7 +101,6 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 updatedAt = System.currentTimeMillis()
             )
 
-            // Update via repository
             repository.updateChangeRequest(updated)
         }
     }
