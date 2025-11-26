@@ -19,8 +19,12 @@ data class ChangeRequestApiRequest(
     val alasan: String,
     @SerializedName("tujuan")
     val tujuan: String,
+    @SerializedName("idAset")
+    val idAset: String,
     @SerializedName("aset_terdampak")
     val asetTerdampak: String,
+    @SerializedName("relasiConfigurationItem")
+    val relasiConfigurationItem: String,
     @SerializedName("rencana_implementasi")
     val rencanaImplementasi: String,
     @SerializedName("usulan_jadwal")

@@ -192,7 +192,7 @@ fun ImplementationResultDialog(
                         value = if (exposur == 0) "" else exposur.toString(),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Pilih Exposur (1-5)") },
+                        label = { Text("Pilih Exposur (1-4)") },
                         trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -206,7 +206,7 @@ fun ImplementationResultDialog(
                         expanded = showExposurDropdown,
                         onDismissRequest = { showExposurDropdown = false }
                     ) {
-                        (1..5).forEach { score ->
+                        (1..4).forEach { score ->
                             DropdownMenuItem(
                                 text = { Text(score.toString()) },
                                 onClick = {

@@ -392,7 +392,7 @@ fun InspectionDialog(
                         value = if (skorEksposur == 0) "" else skorEksposur.toString(),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Pilih Skor Eksposur (1-5)") },
+                        label = { Text("Pilih Skor Eksposur (1-4)") },
                         trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -406,7 +406,7 @@ fun InspectionDialog(
                         expanded = showEksposurDropdown,
                         onDismissRequest = { showEksposurDropdown = false }
                     ) {
-                        (1..5).forEach { score ->
+                        (1..4).forEach { score ->
                             DropdownMenuItem(
                                 text = { Text(score.toString()) },
                                 onClick = {

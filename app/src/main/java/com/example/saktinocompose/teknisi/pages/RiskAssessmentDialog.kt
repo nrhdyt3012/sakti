@@ -8,10 +8,10 @@ fun calculateRiskLevel(impact: Int, probability: Int): String {
     val riskScore = impact * probability
     return when {
         riskScore <= 3 -> "Very Low"
-        riskScore <= 5 -> "Low"
-        riskScore <= 10 -> "Medium"
-        riskScore <= 15 -> "High"
-        riskScore <= 19 -> "Very High"
+        riskScore <= 6 -> "Low"
+        riskScore <= 12 -> "Medium"
+        riskScore <= 18 -> "High"
+        riskScore <= 23 -> "Very High"
         else -> "Extreme"
     }
 }
@@ -46,6 +46,16 @@ fun getProbabilityLabel(score: Int): String {
         3 -> "Moderate"
         4 -> "Likely"
         5 -> "Almost Certain"
+        else -> ""
+    }
+
+}
+fun getExposurLabel(score: Int): String {
+    return when (score) {
+        1 -> "Minimal"
+        2 -> "Low"
+        3 -> "Moderate"
+        4 -> "High"
         else -> ""
     }
 }

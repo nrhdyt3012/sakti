@@ -1,6 +1,3 @@
-// 1. Updated ChangeRequestViewModel dengan Repository
-// File: app/src/main/java/com/example/saktinocompose/viewmodel/ChangeRequestViewModel.kt
-
 package com.example.saktinocompose.viewmodel
 
 import android.app.Application
@@ -21,11 +18,8 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
 
     private val database = AppDatabase.getDatabase(application)
     private val changeRequestDao = database.changeRequestDao()
-
-    // ===== BARU: Repository untuk handle API =====
     private val repository = ChangeRequestRepository(changeRequestDao)
 
-    // State untuk tracking sync
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing = _isSyncing.asStateFlow()
 
@@ -33,15 +27,17 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
     val syncError = _syncError.asStateFlow()
 
     /**
-     * Submit Change Request - Auto sync ke API jika online
+     * ✅ UPDATED: Submit Change Request dengan 3 field aset
      */
     fun submitChangeRequest(
         userId: Int,
-        idPerubahan: String,  // ✅ UUID parameter
+        idPerubahan: String,
         jenisPerubahan: String,
         alasan: String,
         tujuan: String,
-        asetTerdampak: String,
+        idAset: String,                    // ✅ BARU
+        asetTerdampak: String,              // ✅ UPDATED
+        relasiConfigurationItem: String,    // ✅ BARU
         rencanaImplementasi: String,
         usulanJadwal: String,
         rencanaRollback: String,
@@ -53,11 +49,13 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             val changeRequest = ChangeRequest(
                 ticketId = ticketId,
                 userId = userId,
-                idPerubahan = idPerubahan,  // ✅ Set ID Perubahan
+                idPerubahan = idPerubahan,
                 jenisPerubahan = jenisPerubahan,
                 alasan = alasan,
                 tujuan = tujuan,
+                idAset = idAset,
                 asetTerdampak = asetTerdampak,
+                relasiConfigurationItem = relasiConfigurationItem,
                 rencanaImplementasi = rencanaImplementasi,
                 usulanJadwal = usulanJadwal,
                 rencanaRollback = rencanaRollback,
@@ -70,13 +68,18 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
+    /**
+     * ✅ UPDATED: Update untuk revisi dengan 3 field aset
+     */
     fun updateChangeRequestForRevision(
         existingRequest: ChangeRequest,
-        idPerubahan: String,  // ✅ UUID parameter
+        idPerubahan: String,
         jenisPerubahan: String,
         alasan: String,
         tujuan: String,
-        asetTerdampak: String,
+        idAset: String,                    // ✅ BARU
+        asetTerdampak: String,              // ✅ UPDATED
+        relasiConfigurationItem: String,    // ✅ BARU
         rencanaImplementasi: String,
         usulanJadwal: String,
         rencanaRollback: String,
@@ -85,11 +88,13 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
     ) {
         viewModelScope.launch {
             val updated = existingRequest.copy(
-                idPerubahan = idPerubahan,  // ✅ Keep same ID Perubahan
+                idPerubahan = idPerubahan,
                 jenisPerubahan = jenisPerubahan,
                 alasan = alasan,
                 tujuan = tujuan,
+                idAset = idAset,
                 asetTerdampak = asetTerdampak,
+                relasiConfigurationItem = relasiConfigurationItem,
                 rencanaImplementasi = rencanaImplementasi,
                 usulanJadwal = usulanJadwal,
                 rencanaRollback = rencanaRollback,
@@ -105,37 +110,22 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    /**
-     * Get Change Requests by User
-     */
     fun getChangeRequestsByUser(userId: Int): Flow<List<ChangeRequest>> {
         return repository.getChangeRequestsByUser(userId)
     }
 
-    /**
-     * Get All Change Requests (untuk Teknisi)
-     */
     fun getAllChangeRequests(): Flow<List<ChangeRequest>> {
         return repository.getAllChangeRequests()
     }
 
-    /**
-     * Get Change Requests by Status
-     */
     fun getChangeRequestsByStatus(status: String): Flow<List<ChangeRequest>> {
         return changeRequestDao.getChangeRequestsByStatus(status)
     }
 
-    /**
-     * Get Change Request by ID
-     */
     suspend fun getChangeRequestById(id: Int): ChangeRequest? {
         return repository.getChangeRequestById(id)
     }
 
-    /**
-     * Update Status - dengan sync ke API
-     */
     fun updateChangeRequestStatus(
         changeRequest: ChangeRequest,
         newStatus: String,
@@ -144,7 +134,6 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         notes: String? = null
     ) {
         viewModelScope.launch {
-            // Update via repository dengan sync ke API
             repository.updateStatus(
                 changeRequest = changeRequest,
                 newStatus = newStatus,
@@ -155,23 +144,15 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    /**
-     * Update Full Change Request (untuk inspection, scheduling, dll)
-     */
     fun updateFullChangeRequest(updatedRequest: ChangeRequest) {
         viewModelScope.launch {
             val updated = updatedRequest.copy(
                 updatedAt = System.currentTimeMillis()
             )
-
-            // Update via repository
             repository.updateChangeRequest(updated)
         }
     }
 
-    /**
-     * Manual Sync dari API
-     */
     fun syncFromApi() {
         viewModelScope.launch {
             _isSyncing.value = true
@@ -180,8 +161,6 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             when (val result = repository.syncFromApi()) {
                 is Result.Success -> {
                     _syncError.value = null
-                    // Data sudah ter-update di local DB
-                    // Flow otomatis emit data baru
                 }
                 is Result.Error -> {
                     _syncError.value = result.message
@@ -195,14 +174,10 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    /**
-     * Clear sync error
-     */
     fun clearSyncError() {
         _syncError.value = null
     }
 
-    // Private helper
     private suspend fun generateTicketId(): String {
         val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
         val today = dateFormat.format(Date())

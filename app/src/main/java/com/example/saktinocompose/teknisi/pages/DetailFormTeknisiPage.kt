@@ -419,7 +419,61 @@ fun DetailFormTeknisiPage(
                     DetailItem(label = "Jenis Perubahan", value = changeRequest.jenisPerubahan)
                     DetailItem(label = "Alasan", value = changeRequest.alasan)
                     DetailItem(label = "Tujuan", value = changeRequest.tujuan)
-                    DetailItem(label = "Aset Terdampak", value = changeRequest.asetTerdampak)
+                    HorizontalDivider()
+
+// ✅ ID Aset
+                    DetailItem(label = "ID Aset", value = changeRequest.idAset)
+
+// ✅ Aset yang Diperbaiki
+                    DetailItem(label = "Aset yang Diperbaiki", value = changeRequest.asetTerdampak)
+
+// ✅ Relasi Configuration Item
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Relasi Configuration Item",
+                            fontSize = 13.sp,
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        // Split relasi by comma and display as chips
+                        val relasiList = changeRequest.relasiConfigurationItem.split(", ").filter { it.isNotBlank() }
+
+                        if (relasiList.isNotEmpty()) {
+                            FlowRow(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                relasiList.forEach { relasi ->
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color(0xFF384E66).copy(alpha = 0.1f)
+                                        ),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            text = relasi,
+                                            fontSize = 12.sp,
+                                            color = Color(0xFF384E66),
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = "-",
+                                fontSize = 14.sp,
+                                color = Color.Black,
+                                fontWeight = FontWeight.Normal
+                            )
+                        }
+                    }
                     DetailItem(label = "Rencana Implementasi", value = changeRequest.rencanaImplementasi)
                     DetailItem(label = "Usulan Jadwal", value = changeRequest.usulanJadwal)
                     DetailItem(label = "Rencana Rollback", value = changeRequest.rencanaRollback)
