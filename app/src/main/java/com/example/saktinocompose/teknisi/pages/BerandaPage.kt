@@ -91,107 +91,107 @@ fun BerandaPage(
         Spacer(modifier = Modifier.height(50.dp))
 
         // ===== BARU: Network Status Banner =====
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 40.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isOnline) Color(0xFF4CAF50).copy(alpha = 0.1f)
-                else Color(0xFFFF9800).copy(alpha = 0.1f)
-            ),
-            shape = RoundedCornerShape(8.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
-                        contentDescription = null,
-                        tint = if (isOnline) Color(0xFF4CAF50) else Color(0xFFFF9800),
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Column {
-                        Text(
-                            text = if (isOnline) "Online Mode" else "Offline Mode",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (isOnline) Color(0xFF4CAF50) else Color(0xFFFF9800)
-                        )
-                        Text(
-                            text = if (isOnline) "Terhubung ke server" else "Menggunakan data lokal",
-                            fontSize = 11.sp,
-                            color = Color.Gray
-                        )
-                    }
-                }
-
-                // Sync Button (hanya muncul jika online)
-                if (isOnline) {
-                    IconButton(
-                        onClick = {
-                            if (!isSyncing) {
-                                viewModel.syncFromApi()
-                            }
-                        },
-                        enabled = !isSyncing
-                    ) {
-                        if (isSyncing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp,
-                                color = Color(0xFF4CAF50)
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Refresh,
-                                contentDescription = "Sync",
-                                tint = Color(0xFF4CAF50)
-                            )
-                        }
-                    }
-                }
-            }
-        }
+//        Card(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .padding(top = 40.dp),
+//            colors = CardDefaults.cardColors(
+//                containerColor = if (isOnline) Color(0xFF4CAF50).copy(alpha = 0.1f)
+//                else Color(0xFFFF9800).copy(alpha = 0.1f)
+//            ),
+//            shape = RoundedCornerShape(8.dp)
+//        ) {
+//            Row(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(12.dp),
+//                horizontalArrangement = Arrangement.SpaceBetween,
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//                Row(
+//                    verticalAlignment = Alignment.CenterVertically,
+//                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                ) {
+//                    Icon(
+//                        imageVector = if (isOnline) Icons.Default.CloudDone else Icons.Default.CloudOff,
+//                        contentDescription = null,
+//                        tint = if (isOnline) Color(0xFF4CAF50) else Color(0xFFFF9800),
+//                        modifier = Modifier.size(20.dp)
+//                    )
+//                    Column {
+//                        Text(
+//                            text = if (isOnline) "Online Mode" else "Offline Mode",
+//                            fontSize = 13.sp,
+//                            fontWeight = FontWeight.Bold,
+//                            color = if (isOnline) Color(0xFF4CAF50) else Color(0xFFFF9800)
+//                        )
+//                        Text(
+//                            text = if (isOnline) "Terhubung ke server" else "Menggunakan data lokal",
+//                            fontSize = 11.sp,
+//                            color = Color.Gray
+//                        )
+//                    }
+//                }
+//
+//                // Sync Button (hanya muncul jika online)
+//                if (isOnline) {
+//                    IconButton(
+//                        onClick = {
+//                            if (!isSyncing) {
+//                                viewModel.syncFromApi()
+//                            }
+//                        },
+//                        enabled = !isSyncing
+//                    ) {
+//                        if (isSyncing) {
+//                            CircularProgressIndicator(
+//                                modifier = Modifier.size(20.dp),
+//                                strokeWidth = 2.dp,
+//                                color = Color(0xFF4CAF50)
+//                            )
+//                        } else {
+//                            Icon(
+//                                imageVector = Icons.Default.Refresh,
+//                                contentDescription = "Sync",
+//                                tint = Color(0xFF4CAF50)
+//                            )
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
         // ===== BARU: Sync Error Message =====
-        syncError?.let { error ->
-            Spacer(modifier = Modifier.height(8.dp))
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFD32F2F).copy(alpha = 0.1f)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Sync Error: $error",
-                        fontSize = 12.sp,
-                        color = Color(0xFFD32F2F),
-                        modifier = Modifier.weight(1f)
-                    )
-                    TextButton(onClick = { viewModel.clearSyncError() }) {
-                        Text("OK", fontSize = 12.sp)
-                    }
-                }
-            }
-        }
+//        syncError?.let { error ->
+//            Spacer(modifier = Modifier.height(8.dp))
+//            Card(
+//                modifier = Modifier.fillMaxWidth(),
+//                colors = CardDefaults.cardColors(
+//                    containerColor = Color(0xFFD32F2F).copy(alpha = 0.1f)
+//                ),
+//                shape = RoundedCornerShape(8.dp)
+//            ) {
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(12.dp),
+//                    horizontalArrangement = Arrangement.SpaceBetween,
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Text(
+//                        text = "Sync Error: $error",
+//                        fontSize = 12.sp,
+//                        color = Color(0xFFD32F2F),
+//                        modifier = Modifier.weight(1f)
+//                    )
+//                    TextButton(onClick = { viewModel.clearSyncError() }) {
+//                        Text("OK", fontSize = 12.sp)
+//                    }
+//                }
+//            }
+//        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(50.dp))
 
         // Greeting (sama seperti sebelumnya)
         Card(

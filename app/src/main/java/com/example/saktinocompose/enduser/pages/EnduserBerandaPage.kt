@@ -50,7 +50,7 @@ fun EnduserBerandaPage(
     val networkStatus by networkMonitor.observeNetworkStatus()
         .collectAsState(initial = NetworkStatus.Unavailable)
 
-    val isOnline = networkStatus is NetworkStatus.Available && !ApiConfig.IS_OFFLINE_MODE
+//    val isOnline = networkStatus is NetworkStatus.Available && !ApiConfig.IS_OFFLINE_MODE
 
     val changeRequests = remember(changeRequestsRaw) {
         changeRequestsRaw.sortedByJenisPriority()
@@ -89,52 +89,52 @@ fun EnduserBerandaPage(
         Spacer(modifier = Modifier.height(16.dp))
 
         // ===== BARU: Network Status Indicator =====
-        if (!isOnline) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 70.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudOff,
-                        contentDescription = null,
-                        tint = Color(0xFFFF9800),
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Column {
-                        Text(
-                            text = "Mode Offline",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFF9800)
-                        )
-                        Text(
-                            text = "Data akan disinkronkan saat online",
-                            fontSize = 11.sp,
-                            color = Color.Gray
-                        )
-                    }
-                }
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-        }
+//        if (!isOnline) {
+//            Card(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(top = 70.dp),
+//                colors = CardDefaults.cardColors(
+//                    containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)
+//                ),
+//                shape = RoundedCornerShape(8.dp)
+//            ) {
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(12.dp),
+//                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    Icon(
+//                        imageVector = Icons.Default.CloudOff,
+//                        contentDescription = null,
+//                        tint = Color(0xFFFF9800),
+//                        modifier = Modifier.size(20.dp)
+//                    )
+//                    Column {
+//                        Text(
+//                            text = "Mode Offline",
+//                            fontSize = 13.sp,
+//                            fontWeight = FontWeight.Bold,
+//                            color = Color(0xFFFF9800)
+//                        )
+//                        Text(
+//                            text = "Data akan disinkronkan saat online",
+//                            fontSize = 11.sp,
+//                            color = Color.Gray
+//                        )
+//                    }
+//                }
+//            }
+//            Spacer(modifier = Modifier.height(8.dp))
+//        }
 
         // Greeting Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = if (isOnline) 70.dp else 0.dp),
+                .padding(top =  0.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66)),
             shape = RoundedCornerShape(12.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
@@ -163,14 +163,14 @@ fun EnduserBerandaPage(
                     }
 
                     // ===== BARU: Online Indicator Icon =====
-                    if (isOnline) {
-                        Icon(
-                            imageVector = Icons.Default.CloudDone,
-                            contentDescription = "Online",
-                            tint = Color(0xFF4CAF50),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
+//                    if (isOnline) {
+//                        Icon(
+//                            imageVector = Icons.Default.CloudDone,
+//                            contentDescription = "Online",
+//                            tint = Color(0xFF4CAF50),
+//                            modifier = Modifier.size(24.dp)
+//                        )
+//                    }
                 }
             }
         }
