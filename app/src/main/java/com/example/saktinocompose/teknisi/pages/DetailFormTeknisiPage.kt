@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -29,6 +30,8 @@ import com.example.saktinocompose.viewmodel.NotificationViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.saktinocompose.ui.components.RelatedCITable
+import com.example.saktinocompose.ui.components.AsetTerdampakDisplay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -424,12 +427,29 @@ fun DetailFormTeknisiPage(
 // ✅ ID Aset
                     DetailItem(label = "ID Aset", value = changeRequest.idAset)
 
-// ✅ Aset yang Diperbaiki
-                    DetailItem(label = "Aset yang Diperbaiki", value = changeRequest.asetTerdampak)
+// ✅ Ganti bagian Aset yang Diperbaiki
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = "Aset yang Diperbaiki",
+                                fontSize = 13.sp,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            AsetTerdampakDisplay(asetTerdampak = changeRequest.asetTerdampak)
+                        }
+                    }
+
+                    HorizontalDivider()
 
 // ✅ Relasi Configuration Item
                     Column(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
                             text = "Relasi Configuration Item",
@@ -437,42 +457,10 @@ fun DetailFormTeknisiPage(
                             color = Color.Gray,
                             fontWeight = FontWeight.Medium
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
 
-                        // Split relasi by comma and display as chips
-                        val relasiList = changeRequest.relasiConfigurationItem.split(", ").filter { it.isNotBlank() }
-
-                        if (relasiList.isNotEmpty()) {
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                relasiList.forEach { relasi ->
-                                    Card(
-                                        colors = CardDefaults.cardColors(
-                                            containerColor = Color(0xFF384E66).copy(alpha = 0.1f)
-                                        ),
-                                        shape = RoundedCornerShape(6.dp)
-                                    ) {
-                                        Text(
-                                            text = relasi,
-                                            fontSize = 12.sp,
-                                            color = Color(0xFF384E66),
-                                            fontWeight = FontWeight.Medium,
-                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        } else {
-                            Text(
-                                text = "-",
-                                fontSize = 14.sp,
-                                color = Color.Black,
-                                fontWeight = FontWeight.Normal
-                            )
-                        }
+                        RelatedCITable(
+                            relasiConfigurationItem = changeRequest.relasiConfigurationItem
+                        )
                     }
                     DetailItem(label = "Rencana Implementasi", value = changeRequest.rencanaImplementasi)
                     DetailItem(label = "Usulan Jadwal", value = changeRequest.usulanJadwal)

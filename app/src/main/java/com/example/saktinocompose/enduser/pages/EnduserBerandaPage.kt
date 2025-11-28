@@ -86,7 +86,7 @@ fun EnduserBerandaPage(
             .verticalScroll(scrollState)
             .padding(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(100.dp))
 
         // ===== BARU: Network Status Indicator =====
 //        if (!isOnline) {

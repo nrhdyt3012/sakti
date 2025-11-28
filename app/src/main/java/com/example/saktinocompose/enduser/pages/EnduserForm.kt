@@ -27,6 +27,8 @@ import com.example.saktinocompose.data.AppDatabase
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.saktinocompose.data.model.AsetData
+import com.example.saktinocompose.data.model.AsetHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,7 +57,40 @@ fun EnduserForm(
 
     // ✅ BARU: 3 Field Aset
     var idAset by remember { mutableStateOf(existingRequest?.idAset ?: "") }
-    var asetTerdampak by remember { mutableStateOf(existingRequest?.asetTerdampak ?: "") }
+    var asetTerdampakId by remember { mutableStateOf("") }
+    var asetTerdampakNama by remember { mutableStateOf("") }
+
+    var selectedRelasiCI by remember {
+        mutableStateOf<List<AsetData>>(
+            existingRequest?.let {
+                AsetHelper.parseRelatedCI(it.relasiConfigurationItem)
+            } ?: emptyList()
+        )
+    }
+    // Format asetTerdampak as "id:nama"
+    val formattedAsetTerdampak = "$asetTerdampakId:$asetTerdampakNama"
+
+    // Format relasiCI as "id1:nama1, id2:nama2, ..."
+    val formattedRelasiCI = AsetHelper.formatRelatedCI(selectedRelasiCI)
+
+    // Load existing data
+    LaunchedEffect(existingRequest) {
+        existingRequest?.let { request ->
+            // Parse aset terdampak dari format "id:nama"
+            val parts = request.asetTerdampak.split(":")
+            if (parts.size == 2) {
+                asetTerdampakId = parts[0]
+                asetTerdampakNama = parts[1]
+            } else {
+                asetTerdampakNama = request.asetTerdampak
+                asetTerdampakId = AsetHelper.generateAsetId(request.asetTerdampak)
+            }
+        }
+    }
+
+    // ✅ UPDATED: State untuk Related CI (multiple selection dengan ID)
+
+
     var relasiConfigurationItem by remember { mutableStateOf(existingRequest?.relasiConfigurationItem ?: "") }
 
     var showAsetSearchDialog by remember { mutableStateOf(false) }
@@ -152,6 +187,7 @@ fun EnduserForm(
     // Dialog Pencarian Aset yang Diperbaiki
     if (showAsetSearchDialog) {
         var searchQuery by remember { mutableStateOf("") }
+        val asetOptions = AsetHelper.getAllAsetKategori()
         val filteredAsets = remember(searchQuery) {
             if (searchQuery.isBlank()) {
                 asetOptions
@@ -170,9 +206,7 @@ fun EnduserForm(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -205,23 +239,10 @@ fun EnduserForm(
                                 }
                             }
                         },
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
-                        )
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Daftar Aset (${filteredAsets.size})",
-                        fontSize = 12.sp,
-                        color = Color.Gray,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
 
                     if (filteredAsets.isEmpty()) {
                         Box(
@@ -230,16 +251,7 @@ fun EnduserForm(
                                 .padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                    Icons.Default.SearchOff,
-                                    contentDescription = "No Result",
-                                    modifier = Modifier.size(48.dp),
-                                    tint = Color.Gray
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text("Tidak ada hasil", color = Color.Gray, fontSize = 14.sp)
-                            }
+                            Text("Tidak ada hasil", color = Color.Gray)
                         }
                     } else {
                         LazyColumn(
@@ -247,13 +259,15 @@ fun EnduserForm(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             items(filteredAsets) { aset ->
-                                val isSelected = asetTerdampak == aset
+                                val isSelected = asetTerdampakNama == aset
+                                val generatedId = AsetHelper.generateAsetId(aset)
 
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            asetTerdampak = aset
+                                            asetTerdampakId = generatedId
+                                            asetTerdampakNama = aset
                                             showAsetSearchDialog = false
                                         },
                                     colors = CardDefaults.cardColors(
@@ -276,18 +290,30 @@ fun EnduserForm(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            Icon(
-                                                Icons.Default.Inventory,
-                                                contentDescription = null,
-                                                tint = if (isSelected) Color(0xFF384E66) else Color.Gray,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                            Text(
-                                                text = aset,
-                                                fontSize = 14.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                color = Color.Black
-                                            )
+                                            // ID Badge
+                                            Card(
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = Color(0xFF384E66)
+                                                ),
+                                                shape = RoundedCornerShape(4.dp)
+                                            ) {
+                                                Text(
+                                                    text = generatedId,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                                )
+                                            }
+
+                                            Column {
+                                                Text(
+                                                    text = aset,
+                                                    fontSize = 14.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                                    color = Color.Black
+                                                )
+                                            }
                                         }
                                         if (isSelected) {
                                             Icon(
@@ -310,10 +336,9 @@ fun EnduserForm(
     // ✅ BARU: Dialog Relasi Configuration Item (Multiple Selection)
     if (showRelasiDialog) {
         var searchQuery by remember { mutableStateOf("") }
-        val selectedRelasi = remember {
-            mutableStateListOf<String>().apply {
-                addAll(relasiConfigurationItem.split(", ").filter { it.isNotBlank() })
-            }
+        val asetOptions = AsetHelper.getAllAsetKategori()
+        val tempSelectedRelasi = remember {
+            mutableStateListOf<AsetData>().apply { addAll(selectedRelasiCI) }
         }
 
         val filteredAsets = remember(searchQuery) {
@@ -334,9 +359,7 @@ fun EnduserForm(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -349,7 +372,7 @@ fun EnduserForm(
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "${selectedRelasi.size} dipilih",
+                                text = "${tempSelectedRelasi.size} dipilih",
                                 fontSize = 12.sp,
                                 color = Color.Gray
                             )
@@ -376,13 +399,7 @@ fun EnduserForm(
                                 }
                             }
                         },
-                        singleLine = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.Black,
-                            unfocusedTextColor = Color.Black,
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
-                        )
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -393,17 +410,19 @@ fun EnduserForm(
                             .weight(1f),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(filteredAsets) { aset ->
-                            val isSelected = selectedRelasi.contains(aset)
+                        items(filteredAsets) { asetNama ->
+                            val generatedId = AsetHelper.generateAsetId(asetNama)
+                            val asetData = AsetData(generatedId, asetNama)
+                            val isSelected = tempSelectedRelasi.any { it.nama == asetNama }
 
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
                                         if (isSelected) {
-                                            selectedRelasi.remove(aset)
+                                            tempSelectedRelasi.removeAll { it.nama == asetNama }
                                         } else {
-                                            selectedRelasi.add(aset)
+                                            tempSelectedRelasi.add(asetData)
                                         }
                                     },
                                 colors = CardDefaults.cardColors(
@@ -430,8 +449,25 @@ fun EnduserForm(
                                             checked = isSelected,
                                             onCheckedChange = null
                                         )
+
+                                        // ID Badge
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color(0xFF384E66)
+                                            ),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = generatedId,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+
                                         Text(
-                                            text = aset,
+                                            text = asetNama,
                                             fontSize = 14.sp,
                                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                             color = Color.Black
@@ -446,7 +482,7 @@ fun EnduserForm(
 
                     Button(
                         onClick = {
-                            relasiConfigurationItem = selectedRelasi.joinToString(", ")
+                            selectedRelasiCI = tempSelectedRelasi.toList()
                             showRelasiDialog = false
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -454,7 +490,7 @@ fun EnduserForm(
                             containerColor = Color(0xFF384E66)
                         )
                     ) {
-                        Text("Simpan (${selectedRelasi.size} dipilih)")
+                        Text("Simpan (${tempSelectedRelasi.size} dipilih)")
                     }
                 }
             }
@@ -682,7 +718,7 @@ fun EnduserForm(
                     // ✅ 5. Aset yang Diperbaiki (dari list)
                     Text("5. Aset yang Diperbaiki (CI) *", fontWeight = FontWeight.SemiBold)
 
-                    if (asetTerdampak.isNotBlank()) {
+                    if (asetTerdampakNama.isNotBlank()) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
@@ -697,19 +733,40 @@ fun EnduserForm(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Text(
-                                        text = "Aset yang dipilih:",
-                                        fontSize = 11.sp,
-                                        color = Color.Gray
-                                    )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = asetTerdampak,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color.Black
-                                    )
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    // ID Badge
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color(0xFF384E66)
+                                        ),
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            text = asetTerdampakId,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+
+                                    Column {
+                                        Text(
+                                            text = "Aset yang dipilih:",
+                                            fontSize = 11.sp,
+                                            color = Color.Gray
+                                        )
+                                        Text(
+                                            text = asetTerdampakNama,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = Color.Black
+                                        )
+                                    }
                                 }
                                 IconButton(onClick = { showAsetSearchDialog = true }) {
                                     Icon(
@@ -717,6 +774,72 @@ fun EnduserForm(
                                         contentDescription = "Ganti",
                                         tint = Color(0xFF384E66)
                                     )
+                                }
+                            }
+                        }
+                    }
+                    if (selectedRelasiCI.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF384E66).copy(alpha = 0.1f)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Relasi yang dipilih:",
+                                        fontSize = 11.sp,
+                                        color = Color.Gray
+                                    )
+                                    IconButton(onClick = { showRelasiDialog = true }) {
+                                        Icon(
+                                            Icons.Default.Edit,
+                                            contentDescription = "Edit",
+                                            tint = Color(0xFF384E66)
+                                        )
+                                    }
+                                }
+
+                                selectedRelasiCI.forEach { aset ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        // ID Badge
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color(0xFF384E66)
+                                            ),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = aset.id,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+
+                                        Text(
+                                            text = aset.nama,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color.Black
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -737,7 +860,7 @@ fun EnduserForm(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (asetTerdampak.isBlank())
+                            text = if (asetTerdampakNama.isBlank())
                                 "Cari Aset yang Diperbaiki"
                             else
                                 "Ganti Aset yang Diperbaiki",
@@ -933,14 +1056,15 @@ fun EnduserForm(
                                     errorMessage = "ID Aset wajib diisi"
                                     showErrorDialog = true
                                 }
-                                asetTerdampak.isBlank() -> {
+                                asetTerdampakNama.isBlank() -> {
                                     errorMessage = "Aset yang Diperbaiki wajib diisi"
                                     showErrorDialog = true
                                 }
-                                relasiConfigurationItem.isBlank() -> {
+                                selectedRelasiCI.isEmpty() -> {
                                     errorMessage = "Relasi Configuration Item wajib diisi"
                                     showErrorDialog = true
                                 }
+
                                 rencanaImplementasi.isBlank() -> {
                                     errorMessage = "Rencana Implementasi wajib diisi"
                                     showErrorDialog = true
@@ -966,8 +1090,8 @@ fun EnduserForm(
                                             alasan = alasan,
                                             tujuan = tujuan,
                                             idAset = idAset,
-                                            asetTerdampak = asetTerdampak,
-                                            relasiConfigurationItem = relasiConfigurationItem,
+                                            asetTerdampak = formattedAsetTerdampak,
+                                            relasiConfigurationItem = formattedRelasiCI,
                                             rencanaImplementasi = rencanaImplementasi,
                                             usulanJadwal = usulanJadwal,
                                             rencanaRollback = rencanaRollback,
@@ -982,8 +1106,8 @@ fun EnduserForm(
                                             alasan = alasan,
                                             tujuan = tujuan,
                                             idAset = idAset,
-                                            asetTerdampak = asetTerdampak,
-                                            relasiConfigurationItem = relasiConfigurationItem,
+                                            asetTerdampak = formattedAsetTerdampak,
+                                            relasiConfigurationItem = formattedRelasiCI,
                                             rencanaImplementasi = rencanaImplementasi,
                                             usulanJadwal = usulanJadwal,
                                             rencanaRollback = rencanaRollback,
