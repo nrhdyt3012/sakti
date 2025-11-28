@@ -35,7 +35,17 @@ fun CMDBCategoryListPage(
     viewModel: ChangeRequestViewModel = viewModel()
 ) {
     val allChangeRequests by viewModel.getAllChangeRequests().collectAsState(initial = emptyList())
-    val filteredRequests = allChangeRequests.filter { it.asetTerdampak == categoryName }
+
+    // ✅ FIXED: Filter berdasarkan asetTerdampak dengan mempertimbangkan format "id:nama"
+    val filteredRequests = allChangeRequests.filter { cr ->
+        // Parse asetTerdampak yang mungkin dalam format "id:nama"
+        val asetNama = if (cr.asetTerdampak.contains(":")) {
+            cr.asetTerdampak.split(":").getOrNull(1)?.trim() ?: cr.asetTerdampak
+        } else {
+            cr.asetTerdampak
+        }
+        asetNama == categoryName
+    }
 
     Column(
         modifier = modifier

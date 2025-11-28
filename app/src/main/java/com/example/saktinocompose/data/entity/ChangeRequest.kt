@@ -16,7 +16,8 @@ data class ChangeRequest(
     // ✅ BARU: 3 Field untuk Aset
     val idAset: String,                    // ID Aset (manual input)
     val asetTerdampak: String,              // Aset yang Diperbaiki (dari list)
-    val relasiConfigurationItem: String,     val rencanaImplementasi: String,
+    val relasiConfigurationItem: String,
+    val rencanaImplementasi: String,
     val usulanJadwal: String,
     val rencanaRollback: String,
     val assignedTeknisiId: Int? = null,

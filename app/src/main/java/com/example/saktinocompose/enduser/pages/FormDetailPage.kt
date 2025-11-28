@@ -117,8 +117,8 @@ fun FormDetailPage(
 
                     HorizontalDivider()
                     DetailItem(label = "ID Perubahan", value = changeRequest.idPerubahan)
-                    DetailItem(label = "Jenis Perubahan", value = changeRequest.jenisPerubahan)
-                    DetailItem(label = "Alasan", value = changeRequest.alasan)
+                    DetailItem(label = "Judul Permintaan Perubahan", value = changeRequest.alasan)
+                    DetailItem(label = "Deskripsi", value = changeRequest.tujuan)
                     DetailItem(label = "Tujuan", value = changeRequest.tujuan)
                     HorizontalDivider()
 

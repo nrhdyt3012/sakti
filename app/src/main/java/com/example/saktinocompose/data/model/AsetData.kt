@@ -3,9 +3,13 @@ package com.example.saktinocompose.data.model
 /**
  * Data class untuk Aset dengan ID otomatis
  */
+/**
+ * Data class untuk Aset dengan ID otomatis dan tipe relasi
+ */
 data class AsetData(
     val id: String,
-    val nama: String
+    val nama: String,
+    val tipeRelasi: String = "" // INSTALLED_ON, DEPENDS_ON, CONNECTED_TO, RUNS_ON
 )
 
 /**
@@ -50,26 +54,36 @@ object AsetHelper {
      * Parse related CI string menjadi list AsetData
      * Format input: "id1:nama1, id2:nama2, id3:nama3"
      */
+
     fun parseRelatedCI(relatedCIString: String): List<AsetData> {
         if (relatedCIString.isBlank()) return emptyList()
 
         return relatedCIString.split(",").mapNotNull { item ->
             val parts = item.trim().split(":")
-            if (parts.size == 2) {
-                AsetData(
+            when (parts.size) {
+                // Format BARU: "id:nama:tipeRelasi"
+                3 -> AsetData(
                     id = parts[0].trim(),
-                    nama = parts[1].trim()
+                    nama = parts[1].trim(),
+                    tipeRelasi = parts[2].trim()
                 )
-            } else null
+                // Format LAMA: "id:nama"
+                2 -> AsetData(
+                    id = parts[0].trim(),
+                    nama = parts[1].trim(),
+                    tipeRelasi = "" // Beri nilai default karena tipe relasi tidak ada di data lama
+                )
+                // Format tidak valid, buang
+                else -> null
+            }
         }
     }
-
     /**
      * Convert list AsetData menjadi string untuk disimpan
      * Format output: "id1:nama1, id2:nama2, id3:nama3"
      */
     fun formatRelatedCI(asetList: List<AsetData>): String {
-        return asetList.joinToString(", ") { "${it.id}:${it.nama}" }
+        return asetList.joinToString(", ") { "${it.id}:${it.nama}:${it.tipeRelasi}" }
     }
 
     /**

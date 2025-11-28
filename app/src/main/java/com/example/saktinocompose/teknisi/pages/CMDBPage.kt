@@ -70,7 +70,15 @@ fun CMDBPage(
         )
 
         categories.forEach { category ->
-            val count = allChangeRequests.count { it.asetTerdampak == category.name }
+            // ✅ FIXED: Hitung dengan mempertimbangkan format "id:nama"
+            val count = allChangeRequests.count { cr ->
+                val asetNama = if (cr.asetTerdampak.contains(":")) {
+                    cr.asetTerdampak.split(":").getOrNull(1)?.trim() ?: cr.asetTerdampak
+                } else {
+                    cr.asetTerdampak
+                }
+                asetNama == category.name
+            }
 
             CMDBCategoryCard(
                 category = category,

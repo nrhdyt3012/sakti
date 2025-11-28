@@ -420,8 +420,8 @@ fun DetailFormTeknisiPage(
                     HorizontalDivider()
                     DetailItem(label = "Id Perubahan", value = changeRequest.idPerubahan)
                     DetailItem(label = "Jenis Perubahan", value = changeRequest.jenisPerubahan)
-                    DetailItem(label = "Alasan", value = changeRequest.alasan)
-                    DetailItem(label = "Tujuan", value = changeRequest.tujuan)
+                    DetailItem(label = "Judul Permintaan Perubahan", value = changeRequest.alasan)
+                    DetailItem(label = "Deskripsi", value = changeRequest.tujuan)
                     HorizontalDivider()
 
 // ✅ ID Aset

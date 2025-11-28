@@ -55,7 +55,7 @@ fun EnduserForm(
     var alasan by remember { mutableStateOf(existingRequest?.alasan ?: "") }
     var tujuan by remember { mutableStateOf(existingRequest?.tujuan ?: "") }
 
-    // ✅ BARU: 3 Field Aset
+    // ✅ Field Aset
     var idAset by remember { mutableStateOf(existingRequest?.idAset ?: "") }
     var asetTerdampakId by remember { mutableStateOf("") }
     var asetTerdampakNama by remember { mutableStateOf("") }
@@ -67,16 +67,13 @@ fun EnduserForm(
             } ?: emptyList()
         )
     }
-    // Format asetTerdampak as "id:nama"
-    val formattedAsetTerdampak = "$asetTerdampakId:$asetTerdampakNama"
 
-    // Format relasiCI as "id1:nama1, id2:nama2, ..."
+    val formattedAsetTerdampak = "$asetTerdampakId:$asetTerdampakNama"
     val formattedRelasiCI = AsetHelper.formatRelatedCI(selectedRelasiCI)
 
     // Load existing data
     LaunchedEffect(existingRequest) {
         existingRequest?.let { request ->
-            // Parse aset terdampak dari format "id:nama"
             val parts = request.asetTerdampak.split(":")
             if (parts.size == 2) {
                 asetTerdampakId = parts[0]
@@ -87,11 +84,6 @@ fun EnduserForm(
             }
         }
     }
-
-    // ✅ UPDATED: State untuk Related CI (multiple selection dengan ID)
-
-
-    var relasiConfigurationItem by remember { mutableStateOf(existingRequest?.relasiConfigurationItem ?: "") }
 
     var showAsetSearchDialog by remember { mutableStateOf(false) }
     var showRelasiDialog by remember { mutableStateOf(false) }
@@ -110,17 +102,6 @@ fun EnduserForm(
     val teknisiList by database.userDao().getAllTeknisi().collectAsState(initial = emptyList())
 
     val jenisOptions = listOf("Standar", "Minor", "Major", "Emergency")
-
-    val asetOptions = listOf(
-        "Aset Perangkat Keras",
-        "Aplikasi/Service",
-        "OS/Build",
-        "Jaringan (switch/router/AP)",
-        "Database/Instance",
-        "Sertifikat",
-        "VM/Container",
-        "Endpoint"
-    )
 
     val calendar = Calendar.getInstance()
     val datePickerDialog = DatePickerDialog(
@@ -184,317 +165,29 @@ fun EnduserForm(
         )
     }
 
-    // Dialog Pencarian Aset yang Diperbaiki
+    // ✅ UPDATED: Dialog Pencarian Aset yang Diperbaiki
     if (showAsetSearchDialog) {
-        var searchQuery by remember { mutableStateOf("") }
-        val asetOptions = AsetHelper.getAllAsetKategori()
-        val filteredAsets = remember(searchQuery) {
-            if (searchQuery.isBlank()) {
-                asetOptions
-            } else {
-                asetOptions.filter {
-                    it.contains(searchQuery, ignoreCase = true)
-                }
+        AsetSearchDialog(
+            selectedAsetNama = asetTerdampakNama,
+            onDismiss = { showAsetSearchDialog = false },
+            onSelect = { id, nama ->
+                asetTerdampakId = id
+                asetTerdampakNama = nama
+                showAsetSearchDialog = false
             }
-        }
-
-        Dialog(onDismissRequest = { showAsetSearchDialog = false }) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 550.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Pilih Aset yang Diperbaiki",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        IconButton(onClick = { showAsetSearchDialog = false }) {
-                            Icon(Icons.Default.Close, contentDescription = "Tutup")
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Ketik untuk mencari...") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null)
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotBlank()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
-                                }
-                            }
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    if (filteredAsets.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Tidak ada hasil", color = Color.Gray)
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            items(filteredAsets) { aset ->
-                                val isSelected = asetTerdampakNama == aset
-                                val generatedId = AsetHelper.generateAsetId(aset)
-
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            asetTerdampakId = generatedId
-                                            asetTerdampakNama = aset
-                                            showAsetSearchDialog = false
-                                        },
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = if (isSelected)
-                                            Color(0xFF384E66).copy(alpha = 0.15f)
-                                        else
-                                            Color(0xFFF5F5F5)
-                                    ),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.weight(1f),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            // ID Badge
-                                            Card(
-                                                colors = CardDefaults.cardColors(
-                                                    containerColor = Color(0xFF384E66)
-                                                ),
-                                                shape = RoundedCornerShape(4.dp)
-                                            ) {
-                                                Text(
-                                                    text = generatedId,
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                                )
-                                            }
-
-                                            Column {
-                                                Text(
-                                                    text = aset,
-                                                    fontSize = 14.sp,
-                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                                    color = Color.Black
-                                                )
-                                            }
-                                        }
-                                        if (isSelected) {
-                                            Icon(
-                                                Icons.Default.CheckCircle,
-                                                contentDescription = "Selected",
-                                                tint = Color(0xFF384E66),
-                                                modifier = Modifier.size(24.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        )
     }
 
-    // ✅ BARU: Dialog Relasi Configuration Item (Multiple Selection)
+    // ✅ UPDATED: Dialog Relasi Configuration Item dengan Tipe Relasi
     if (showRelasiDialog) {
-        var searchQuery by remember { mutableStateOf("") }
-        val asetOptions = AsetHelper.getAllAsetKategori()
-        val tempSelectedRelasi = remember {
-            mutableStateListOf<AsetData>().apply { addAll(selectedRelasiCI) }
-        }
-
-        val filteredAsets = remember(searchQuery) {
-            if (searchQuery.isBlank()) {
-                asetOptions
-            } else {
-                asetOptions.filter {
-                    it.contains(searchQuery, ignoreCase = true)
-                }
+        RelasiCIDialog(
+            selectedRelasi = selectedRelasiCI,
+            onDismiss = { showRelasiDialog = false },
+            onSave = { relasiList ->
+                selectedRelasiCI = relasiList
+                showRelasiDialog = false
             }
-        }
-
-        Dialog(onDismissRequest = { showRelasiDialog = false }) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 600.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = "Relasi Configuration Item",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold
-                            )
-                            Text(
-                                text = "${tempSelectedRelasi.size} dipilih",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
-                        }
-                        IconButton(onClick = { showRelasiDialog = false }) {
-                            Icon(Icons.Default.Close, contentDescription = "Tutup")
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { searchQuery = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Ketik untuk mencari...") },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null)
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotBlank()) {
-                                IconButton(onClick = { searchQuery = "" }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
-                                }
-                            }
-                        },
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(filteredAsets) { asetNama ->
-                            val generatedId = AsetHelper.generateAsetId(asetNama)
-                            val asetData = AsetData(generatedId, asetNama)
-                            val isSelected = tempSelectedRelasi.any { it.nama == asetNama }
-
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        if (isSelected) {
-                                            tempSelectedRelasi.removeAll { it.nama == asetNama }
-                                        } else {
-                                            tempSelectedRelasi.add(asetData)
-                                        }
-                                    },
-                                colors = CardDefaults.cardColors(
-                                    containerColor = if (isSelected)
-                                        Color(0xFF384E66).copy(alpha = 0.15f)
-                                    else
-                                        Color(0xFFF5F5F5)
-                                ),
-                                shape = RoundedCornerShape(8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                                ) {
-                                    Row(
-                                        modifier = Modifier.weight(1f),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                    ) {
-                                        Checkbox(
-                                            checked = isSelected,
-                                            onCheckedChange = null
-                                        )
-
-                                        // ID Badge
-                                        Card(
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = Color(0xFF384E66)
-                                            ),
-                                            shape = RoundedCornerShape(4.dp)
-                                        ) {
-                                            Text(
-                                                text = generatedId,
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                            )
-                                        }
-
-                                        Text(
-                                            text = asetNama,
-                                            fontSize = 14.sp,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                            color = Color.Black
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            selectedRelasiCI = tempSelectedRelasi.toList()
-                            showRelasiDialog = false
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF384E66)
-                        )
-                    ) {
-                        Text("Simpan (${tempSelectedRelasi.size} dipilih)")
-                    }
-                }
-            }
-        }
+        )
     }
 
     Column(
@@ -585,7 +278,7 @@ fun EnduserForm(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // ✅ 0. ID Perubahan (Read-only, Auto-generated)
+                    // 0. ID Perubahan
                     Text("ID Perubahan (Auto-generated)", fontWeight = FontWeight.SemiBold)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -665,14 +358,14 @@ fun EnduserForm(
                         }
                     }
 
-                    // 2. Alasan
-                    Text("2. Alasan *", fontWeight = FontWeight.SemiBold)
+                    // 2. Judul Permintaan Perubahan
+                    Text("2. Judul Permintaan Perubahan *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = alasan,
                         onValueChange = { alasan = it },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        placeholder = { Text("Jelaskan alasan perubahan") },
+                        placeholder = { Text("Jelaskan judul permintaan perubahan") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
@@ -681,14 +374,14 @@ fun EnduserForm(
                         )
                     )
 
-                    // 3. Tujuan
-                    Text("3. Tujuan *", fontWeight = FontWeight.SemiBold)
+                    // 3. Deskripsi
+                    Text("3. Deskripsi *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = tujuan,
                         onValueChange = { tujuan = it },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        placeholder = { Text("Jelaskan tujuan perubahan") },
+                        placeholder = { Text("Jelaskan deskripsi perubahan") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
@@ -697,7 +390,7 @@ fun EnduserForm(
                         )
                     )
 
-                    // ✅ 4. ID Aset (Manual Input)
+                    // 4. ID Aset
                     Text("4. ID Aset *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = idAset,
@@ -715,7 +408,7 @@ fun EnduserForm(
                         )
                     )
 
-                    // ✅ 5. Aset yang Diperbaiki (dari list)
+                    // 5. Aset yang Diperbaiki
                     Text("5. Aset yang Diperbaiki (CI) *", fontWeight = FontWeight.SemiBold)
 
                     if (asetTerdampakNama.isNotBlank()) {
@@ -738,7 +431,6 @@ fun EnduserForm(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    // ID Badge
                                     Card(
                                         colors = CardDefaults.cardColors(
                                             containerColor = Color(0xFF384E66)
@@ -778,72 +470,6 @@ fun EnduserForm(
                             }
                         }
                     }
-                    if (selectedRelasiCI.isNotEmpty()) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF384E66).copy(alpha = 0.1f)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "Relasi yang dipilih:",
-                                        fontSize = 11.sp,
-                                        color = Color.Gray
-                                    )
-                                    IconButton(onClick = { showRelasiDialog = true }) {
-                                        Icon(
-                                            Icons.Default.Edit,
-                                            contentDescription = "Edit",
-                                            tint = Color(0xFF384E66)
-                                        )
-                                    }
-                                }
-
-                                selectedRelasiCI.forEach { aset ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        // ID Badge
-                                        Card(
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = Color(0xFF384E66)
-                                            ),
-                                            shape = RoundedCornerShape(4.dp)
-                                        ) {
-                                            Text(
-                                                text = aset.id,
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                            )
-                                        }
-
-                                        Text(
-                                            text = aset.nama,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            color = Color.Black
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
 
                     OutlinedButton(
                         onClick = { showAsetSearchDialog = true },
@@ -868,7 +494,7 @@ fun EnduserForm(
                         )
                     }
 
-                    // ✅ 6. Relasi Configuration Item (Multiple Selection)
+                    // 6. Relasi Configuration Item
                     Text("6. Relasi Configuration Item *", fontWeight = FontWeight.SemiBold)
                     Text(
                         text = "Pilih aset lain yang terpengaruh oleh perbaikan aset ini",
@@ -876,7 +502,7 @@ fun EnduserForm(
                         color = Color.Gray
                     )
 
-                    if (relasiConfigurationItem.isNotBlank()) {
+                    if (selectedRelasiCI.isNotEmpty()) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
@@ -884,33 +510,80 @@ fun EnduserForm(
                             ),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Row(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Column(modifier = Modifier.weight(1f)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     Text(
-                                        text = "Relasi yang dipilih:",
-                                        fontSize = 11.sp,
-                                        color = Color.Gray
+                                        text = "${selectedRelasiCI.size} relasi dipilih",
+                                        fontSize = 12.sp,
+                                        color = Color.Gray,
+                                        fontWeight = FontWeight.Medium
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = relasiConfigurationItem,
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = Color.Black
-                                    )
+                                    IconButton(onClick = { showRelasiDialog = true }) {
+                                        Icon(
+                                            Icons.Default.Edit,
+                                            contentDescription = "Edit",
+                                            tint = Color(0xFF384E66)
+                                        )
+                                    }
                                 }
-                                IconButton(onClick = { showRelasiDialog = true }) {
-                                    Icon(
-                                        Icons.Default.Edit,
-                                        contentDescription = "Edit",
-                                        tint = Color(0xFF384E66)
-                                    )
+
+                                selectedRelasiCI.forEach { aset ->
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color.White
+                                        ),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(10.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Card(
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = Color(0xFF384E66)
+                                                ),
+                                                shape = RoundedCornerShape(4.dp)
+                                            ) {
+                                                Text(
+                                                    text = aset.id,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                                                )
+                                            }
+
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = aset.nama,
+                                                    fontSize = 12.sp,
+                                                    fontWeight = FontWeight.Medium,
+                                                    color = Color.Black
+                                                )
+                                                if (aset.tipeRelasi.isNotBlank()) {
+                                                    Text(
+                                                        text = aset.tipeRelasi,
+                                                        fontSize = 10.sp,
+                                                        color = Color(0xFF2196F3),
+                                                        fontWeight = FontWeight.Medium
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -931,10 +604,10 @@ fun EnduserForm(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (relasiConfigurationItem.isBlank())
+                            text = if (selectedRelasiCI.isEmpty())
                                 "Pilih Relasi CI"
                             else
-                                "Edit Relasi CI",
+                                "Edit Relasi CI (${selectedRelasiCI.size})",
                             fontSize = 14.sp
                         )
                     }
@@ -1045,11 +718,11 @@ fun EnduserForm(
                                     showErrorDialog = true
                                 }
                                 alasan.isBlank() -> {
-                                    errorMessage = "Alasan wajib diisi"
+                                    errorMessage = "Judul Permintaan Perubahan wajib diisi"
                                     showErrorDialog = true
                                 }
                                 tujuan.isBlank() -> {
-                                    errorMessage = "Tujuan wajib diisi"
+                                    errorMessage = "Deskripsi wajib diisi"
                                     showErrorDialog = true
                                 }
                                 idAset.isBlank() -> {
@@ -1064,7 +737,6 @@ fun EnduserForm(
                                     errorMessage = "Relasi Configuration Item wajib diisi"
                                     showErrorDialog = true
                                 }
-
                                 rencanaImplementasi.isBlank() -> {
                                     errorMessage = "Rencana Implementasi wajib diisi"
                                     showErrorDialog = true
@@ -1146,5 +818,489 @@ fun EnduserForm(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
+    }
+}
+
+// ✅ KOMPONEN BARU: Dialog Pencarian Aset (Lebih Rapi)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AsetSearchDialog(
+    selectedAsetNama: String,
+    onDismiss: () -> Unit,
+    onSelect: (id: String, nama: String) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val asetOptions = AsetHelper.getAllAsetKategori()
+    val filteredAsets = remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            asetOptions
+        } else {
+            asetOptions.filter {
+                it.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 550.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Pilih Aset yang Diperbaiki",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Ketik untuk mencari...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotBlank()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (filteredAsets.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Tidak ada hasil", color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredAsets) { aset ->
+                            val isSelected = selectedAsetNama == aset
+                            val generatedId = AsetHelper.generateAsetId(aset)
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onSelect(generatedId, aset)
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected)
+                                        Color(0xFF384E66).copy(alpha = 0.15f)
+                                    else
+                                        Color(0xFFF5F5F5)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color(0xFF384E66)
+                                        ),
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            text = generatedId,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                        )
+                                    }
+
+                                    Text(
+                                        text = aset,
+                                        fontSize = 14.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = Color.Black,
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = "Selected",
+                                            tint = Color(0xFF384E66),
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ✅ KOMPONEN BARU: Dialog Relasi CI dengan Tipe Relasi
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RelasiCIDialog(
+    selectedRelasi: List<AsetData>,
+    onDismiss: () -> Unit,
+    onSave: (List<AsetData>) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val asetOptions = AsetHelper.getAllAsetKategori()
+    val tempSelectedRelasi = remember {
+        mutableStateListOf<AsetData>().apply { addAll(selectedRelasi) }
+    }
+
+    // State untuk edit tipe relasi
+    var editingAsetId by remember { mutableStateOf<String?>(null) }
+    var showTipeRelasiDropdown by remember { mutableStateOf(false) }
+
+    val tipeRelasiOptions = listOf("INSTALLED_ON", "DEPENDS_ON", "CONNECTED_TO", "RUNS_ON")
+
+    val filteredAsets = remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            asetOptions
+        } else {
+            asetOptions.filter {
+                it.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 650.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Relasi Configuration Item",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${tempSelectedRelasi.size} dipilih",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Search Field
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Ketik untuk mencari...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotBlank()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Selected Items Preview
+                if (tempSelectedRelasi.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF384E66).copy(alpha = 0.1f)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Dipilih:",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray
+                            )
+                            tempSelectedRelasi.forEach { aset ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color.White
+                                    ),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color(0xFF384E66)
+                                            ),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = aset.id,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                                            )
+                                        }
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = aset.nama,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Black,
+                                                maxLines = 1
+                                            )
+                                            if (aset.tipeRelasi.isNotBlank()) {
+                                                Text(
+                                                    text = aset.tipeRelasi,
+                                                    fontSize = 9.sp,
+                                                    color = Color(0xFF2196F3),
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                        }
+
+                                        // Edit Tipe Relasi Button
+                                        IconButton(
+                                            onClick = {
+                                                editingAsetId = aset.id
+                                                showTipeRelasiDropdown = true
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = "Edit Tipe",
+                                                modifier = Modifier.size(16.dp),
+                                                tint = Color(0xFF2196F3)
+                                            )
+                                        }
+
+                                        // Remove Button
+                                        IconButton(
+                                            onClick = {
+                                                tempSelectedRelasi.removeAll { it.id == aset.id }
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Close,
+                                                contentDescription = "Hapus",
+                                                modifier = Modifier.size(16.dp),
+                                                tint = Color(0xFFD32F2F)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Aset List
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filteredAsets) { asetNama ->
+                        val generatedId = AsetHelper.generateAsetId(asetNama)
+                        val isSelected = tempSelectedRelasi.any { it.id == generatedId }
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (!isSelected) {
+                                        // Add dengan tipe relasi default
+                                        tempSelectedRelasi.add(
+                                            AsetData(
+                                                id = generatedId,
+                                                nama = asetNama,
+                                                tipeRelasi = "DEPENDS_ON" // Default
+                                            )
+                                        )
+                                    }
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected)
+                                    Color(0xFF384E66).copy(alpha = 0.15f)
+                                else
+                                    Color(0xFFF5F5F5)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Checkbox(
+                                    checked = isSelected,
+                                    onCheckedChange = null
+                                )
+
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF384E66)
+                                    ),
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        text = generatedId,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                Text(
+                                    text = asetNama,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = Color.Black,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Save Button
+                Button(
+                    onClick = {
+                        onSave(tempSelectedRelasi.toList())
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF384E66)
+                    ),
+                    enabled = tempSelectedRelasi.isNotEmpty()
+                ) {
+                    Text("Simpan (${tempSelectedRelasi.size} dipilih)")
+                }
+            }
+        }
+    }
+
+    // Dialog Edit Tipe Relasi
+    if (showTipeRelasiDropdown && editingAsetId != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showTipeRelasiDropdown = false
+                editingAsetId = null
+            },
+            title = { Text("Pilih Tipe Relasi") },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    tipeRelasiOptions.forEach { tipe ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val index = tempSelectedRelasi.indexOfFirst { it.id == editingAsetId }
+                                    if (index != -1) {
+                                        tempSelectedRelasi[index] = tempSelectedRelasi[index].copy(
+                                            tipeRelasi = tipe
+                                        )
+                                    }
+                                    showTipeRelasiDropdown = false
+                                    editingAsetId = null
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFF5F5F5)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = tipe,
+                                fontSize = 14.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = {
+                    showTipeRelasiDropdown = false
+                    editingAsetId = null
+                }) {
+                    Text("Batal")
+                }
+            }
+        )
     }
 }
