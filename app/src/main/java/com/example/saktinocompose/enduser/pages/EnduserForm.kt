@@ -18,11 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.saktinocompose.R
 import com.example.saktinocompose.data.AppDatabase
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import java.text.SimpleDateFormat
@@ -45,7 +47,6 @@ fun EnduserForm(
     val scrollState = rememberScrollState()
     val database = AppDatabase.getDatabase(context)
 
-    // ✅ ID Perubahan - auto-generated atau dari existing
     val idPerubahan = remember {
         existingRequest?.idPerubahan ?: UUID.randomUUID().toString()
     }
@@ -123,12 +124,12 @@ fun EnduserForm(
     if (showSuccessDialog) {
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
-            title = { Text("Berhasil!") },
+            title = { Text(stringResource(R.string.success)) },
             text = {
                 Text(if (existingRequest != null)
-                    "Revisi permohonan telah berhasil disubmit ulang"
+                    "The revised application has been successfully resubmitted."
                 else
-                    "Permohonan perubahan telah berhasil disubmit")
+                    "Change request has been successfully submitted")
             },
             confirmButton = {
                 Button(
@@ -150,7 +151,7 @@ fun EnduserForm(
     if (showErrorDialog) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = false },
-            title = { Text("Gagal") },
+            title = { Text(stringResource(R.string.error)) },
             text = { Text(errorMessage) },
             confirmButton = {
                 Button(
@@ -199,9 +200,9 @@ fun EnduserForm(
             title = {
                 Text(
                     if (existingRequest != null)
-                        "Revisi Permohonan"
+                        stringResource(R.string.revision_request)
                     else
-                        "Form Permohonan Perubahan",
+                        stringResource(R.string.change_request_form),
                     fontWeight = FontWeight.Bold
                 )
             },
@@ -279,7 +280,7 @@ fun EnduserForm(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // 0. ID Perubahan
-                    Text("ID Perubahan (Auto-generated)", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.change_id_auto), fontWeight = FontWeight.SemiBold)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -305,7 +306,7 @@ fun EnduserForm(
                                 )
                                 Column {
                                     Text(
-                                        text = "ID Unik Perubahan:",
+                                        text = "Unique Change ID:",
                                         fontSize = 11.sp,
                                         color = Color.Gray
                                     )
@@ -321,7 +322,7 @@ fun EnduserForm(
                     }
 
                     // 1. Jenis Perubahan
-                    Text("1. Jenis Perubahan *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.change_type) + " *", fontWeight = FontWeight.SemiBold)
                     ExposedDropdownMenuBox(
                         expanded = showJenisDropdown,
                         onExpandedChange = { showJenisDropdown = !showJenisDropdown }
@@ -330,7 +331,7 @@ fun EnduserForm(
                             value = jenisPerubahan,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Pilih Jenis") },
+                            label = { Text("Choose Change type") },
                             trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -359,13 +360,13 @@ fun EnduserForm(
                     }
 
                     // 2. Judul Permintaan Perubahan
-                    Text("2. Judul Permintaan Perubahan *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.request_title) + " *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = alasan,
                         onValueChange = { alasan = it },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        placeholder = { Text("Jelaskan judul permintaan perubahan") },
+                        placeholder = { Text("Explain request title") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
@@ -375,13 +376,14 @@ fun EnduserForm(
                     )
 
                     // 3. Deskripsi
-                    Text("3. Deskripsi *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.description) + " *"
+                        , fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = tujuan,
                         onValueChange = { tujuan = it },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        placeholder = { Text("Jelaskan deskripsi perubahan") },
+                        placeholder = { Text("Explain change description") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
@@ -391,12 +393,12 @@ fun EnduserForm(
                     )
 
                     // 4. ID Aset
-                    Text("4. ID Aset *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.asset_id) + " *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = idAset,
                         onValueChange = { idAset = it },
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Contoh: AST-001, SRV-123, dll") },
+                        placeholder = { Text("Example: AST-001, SRV-123, dll") },
                         leadingIcon = {
                             Icon(Icons.Default.QrCode, contentDescription = null)
                         },
@@ -409,7 +411,7 @@ fun EnduserForm(
                     )
 
                     // 5. Aset yang Diperbaiki
-                    Text("5. Aset yang Diperbaiki (CI) *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.affected_asset) + " *", fontWeight = FontWeight.SemiBold)
 
                     if (asetTerdampakNama.isNotBlank()) {
                         Card(
@@ -448,7 +450,7 @@ fun EnduserForm(
 
                                     Column {
                                         Text(
-                                            text = "Aset yang dipilih:",
+                                            text = "Selected assets:",
                                             fontSize = 11.sp,
                                             color = Color.Gray
                                         )
@@ -463,7 +465,7 @@ fun EnduserForm(
                                 IconButton(onClick = { showAsetSearchDialog = true }) {
                                     Icon(
                                         Icons.Default.Edit,
-                                        contentDescription = "Ganti",
+                                        contentDescription = "Change",
                                         tint = Color(0xFF384E66)
                                     )
                                 }
@@ -487,17 +489,17 @@ fun EnduserForm(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = if (asetTerdampakNama.isBlank())
-                                "Cari Aset yang Diperbaiki"
+                                "Search for Repaired Assets"
                             else
-                                "Ganti Aset yang Diperbaiki",
+                                "Change for Repaired Assets",
                             fontSize = 14.sp
                         )
                     }
 
                     // 6. Relasi Configuration Item
-                    Text("6. Relasi Configuration Item *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.ci_relationship) + " *", fontWeight = FontWeight.SemiBold)
                     Text(
-                        text = "Pilih aset lain yang terpengaruh oleh perbaikan aset ini",
+                        text = "Select other assets affected by this asset's repair.",
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
@@ -613,13 +615,13 @@ fun EnduserForm(
                     }
 
                     // 7. Rencana Implementasi
-                    Text("7. Rencana Implementasi *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.implementation_plan) + " *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = rencanaImplementasi,
                         onValueChange = { rencanaImplementasi = it },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        placeholder = { Text("Jelaskan rencana implementasi") },
+                        placeholder = { Text("Explain the implementation plan") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
@@ -629,7 +631,7 @@ fun EnduserForm(
                     )
 
                     // 8. Usulan Jadwal
-                    Text("8. Usulan Jadwal *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.proposed_schedule) + " *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = usulanJadwal,
                         onValueChange = {},
@@ -637,11 +639,11 @@ fun EnduserForm(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable { datePickerDialog.show() },
-                        placeholder = { Text("Pilih tanggal") },
+                        placeholder = { Text("Choose date") },
                         trailingIcon = {
                             Icon(
                                 Icons.Default.CalendarToday,
-                                contentDescription = "Pilih Tanggal",
+                                contentDescription = "Choose date",
                                 modifier = Modifier.clickable { datePickerDialog.show() }
                             )
                         },
@@ -654,13 +656,13 @@ fun EnduserForm(
                     )
 
                     // 9. Rencana Rollback
-                    Text("9. Rencana Rollback *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.rollback_plan) + " *", fontWeight = FontWeight.SemiBold)
                     OutlinedTextField(
                         value = rencanaRollback,
                         onValueChange = { rencanaRollback = it },
                         modifier = Modifier.fillMaxWidth(),
                         minLines = 3,
-                        placeholder = { Text("Jelaskan rencana rollback") },
+                        placeholder = { Text("Explain the rollback plan") },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedTextColor = Color.Black,
                             unfocusedTextColor = Color.Black,
@@ -670,7 +672,7 @@ fun EnduserForm(
                     )
 
                     // 10. Pilih Teknisi
-                    Text("10. Pilih Teknisi *", fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.select_technician) + " *", fontWeight = FontWeight.SemiBold)
                     ExposedDropdownMenuBox(
                         expanded = showTeknisiDropdown,
                         onExpandedChange = { showTeknisiDropdown = !showTeknisiDropdown }
@@ -679,7 +681,7 @@ fun EnduserForm(
                             value = selectedTeknisiName ?: "",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("Pilih Teknisi") },
+                            label = { Text("Select Technical") },
                             trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -714,43 +716,43 @@ fun EnduserForm(
                         onClick = {
                             when {
                                 jenisPerubahan.isBlank() -> {
-                                    errorMessage = "Jenis Perubahan wajib diisi"
+                                    errorMessage = "Change Type is mandatory"
                                     showErrorDialog = true
                                 }
                                 alasan.isBlank() -> {
-                                    errorMessage = "Judul Permintaan Perubahan wajib diisi"
+                                    errorMessage = "Change Request Title is required."
                                     showErrorDialog = true
                                 }
                                 tujuan.isBlank() -> {
-                                    errorMessage = "Deskripsi wajib diisi"
+                                    errorMessage = "Description is mandatory"
                                     showErrorDialog = true
                                 }
                                 idAset.isBlank() -> {
-                                    errorMessage = "ID Aset wajib diisi"
+                                    errorMessage = "Asset ID is required"
                                     showErrorDialog = true
                                 }
                                 asetTerdampakNama.isBlank() -> {
-                                    errorMessage = "Aset yang Diperbaiki wajib diisi"
+                                    errorMessage = "Repaired Assets must be filled in"
                                     showErrorDialog = true
                                 }
                                 selectedRelasiCI.isEmpty() -> {
-                                    errorMessage = "Relasi Configuration Item wajib diisi"
+                                    errorMessage = "Configuration Item Relation is required"
                                     showErrorDialog = true
                                 }
                                 rencanaImplementasi.isBlank() -> {
-                                    errorMessage = "Rencana Implementasi wajib diisi"
+                                    errorMessage = "Implementation Plan must be filled in"
                                     showErrorDialog = true
                                 }
                                 usulanJadwal.isBlank() -> {
-                                    errorMessage = "Usulan Jadwal wajib diisi"
+                                    errorMessage = "Proposed Schedule must be filled in"
                                     showErrorDialog = true
                                 }
                                 rencanaRollback.isBlank() -> {
-                                    errorMessage = "Rencana Rollback wajib diisi"
+                                    errorMessage = "Rollback Plan is required"
                                     showErrorDialog = true
                                 }
                                 selectedTeknisiId == null -> {
-                                    errorMessage = "Teknisi wajib dipilih"
+                                    errorMessage = "Technician must be selected"
                                     showErrorDialog = true
                                 }
                                 else -> {
@@ -800,7 +802,7 @@ fun EnduserForm(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = if (existingRequest != null) "Submit Revisi" else "Submit Permohonan",
+                            text = if (existingRequest != null) stringResource(R.string.submit) else stringResource(R.string.submit),
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -808,7 +810,7 @@ fun EnduserForm(
                     }
 
                     Text(
-                        text = "* Field wajib diisi",
+                        text = stringResource(R.string.required_field),
                         fontSize = 12.sp,
                         color = Color.Gray,
                         modifier = Modifier.align(Alignment.Start)
@@ -821,7 +823,6 @@ fun EnduserForm(
     }
 }
 
-// ✅ KOMPONEN BARU: Dialog Pencarian Aset (Lebih Rapi)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsetSearchDialog(
@@ -856,12 +857,12 @@ fun AsetSearchDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Pilih Aset yang Diperbaiki",
+                        text = "Select the Asset to Repair",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                        Icon(Icons.Default.Close, contentDescription = "Close")
                     }
                 }
 
@@ -871,7 +872,7 @@ fun AsetSearchDialog(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Ketik untuk mencari...") },
+                    placeholder = { Text("Click to search...") },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
                     },
@@ -894,7 +895,7 @@ fun AsetSearchDialog(
                             .padding(32.dp),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Tidak ada hasil", color = Color.Gray)
+                        Text("No Result", color = Color.Gray)
                     }
                 } else {
                     LazyColumn(
@@ -967,7 +968,6 @@ fun AsetSearchDialog(
     }
 }
 
-// ✅ KOMPONEN BARU: Dialog Relasi CI dengan Tipe Relasi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RelasiCIDialog(
@@ -1018,13 +1018,13 @@ fun RelasiCIDialog(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "${tempSelectedRelasi.size} dipilih",
+                            text = "${tempSelectedRelasi.size} chosen",
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
                     }
                     IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Tutup")
+                        Icon(Icons.Default.Close, contentDescription = "Close")
                     }
                 }
 
@@ -1035,7 +1035,7 @@ fun RelasiCIDialog(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Ketik untuk mencari...") },
+                    placeholder = { Text("Click to search...") },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
                     },
@@ -1130,7 +1130,7 @@ fun RelasiCIDialog(
                                         ) {
                                             Icon(
                                                 Icons.Default.Edit,
-                                                contentDescription = "Edit Tipe",
+                                                contentDescription = "Edit type",
                                                 modifier = Modifier.size(16.dp),
                                                 tint = Color(0xFF2196F3)
                                             )
@@ -1145,7 +1145,7 @@ fun RelasiCIDialog(
                                         ) {
                                             Icon(
                                                 Icons.Default.Close,
-                                                contentDescription = "Hapus",
+                                                contentDescription = "Delete",
                                                 modifier = Modifier.size(16.dp),
                                                 tint = Color(0xFFD32F2F)
                                             )
@@ -1244,7 +1244,7 @@ fun RelasiCIDialog(
                     ),
                     enabled = tempSelectedRelasi.isNotEmpty()
                 ) {
-                    Text("Simpan (${tempSelectedRelasi.size} dipilih)")
+                    Text("Sve (${tempSelectedRelasi.size} chosen)")
                 }
             }
         }
@@ -1257,7 +1257,7 @@ fun RelasiCIDialog(
                 showTipeRelasiDropdown = false
                 editingAsetId = null
             },
-            title = { Text("Pilih Tipe Relasi") },
+            title = { Text("Select Relationship Type") },
             text = {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -1298,7 +1298,7 @@ fun RelasiCIDialog(
                     showTipeRelasiDropdown = false
                     editingAsetId = null
                 }) {
-                    Text("Batal")
+                    Text("Cancel")
                 }
             }
         )

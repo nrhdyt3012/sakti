@@ -20,7 +20,8 @@ import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import com.example.saktinocompose.viewmodel.ApprovalHistoryViewModel
 import com.example.saktinocompose.viewmodel.NotificationViewModel
-
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmergencyActionDialog(
@@ -50,7 +51,7 @@ fun EmergencyActionDialog(
                     tint = Color(0xFFFF5722)
                 )
                 Text(
-                    text = "Emergency Action",
+                    text = stringResource(R.string.emergency_action),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -75,14 +76,14 @@ fun EmergencyActionDialog(
                         modifier = Modifier.padding(12.dp)
                     ) {
                         Text(
-                            text = "⚠️ Emergency Change Request",
+                            text = stringResource(R.string.emergency_change_request),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFFF5722)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Langsung tentukan status akhir tanpa proses review",
+                            text = stringResource(R.string.emergency_direct_status),
                             fontSize = 11.sp,
                             color = Color.Gray
                         )
@@ -90,7 +91,7 @@ fun EmergencyActionDialog(
                 }
 
                 Text(
-                    text = "Pilih Status Akhir",
+                    text = stringResource(R.string.select_final_status),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -132,7 +133,7 @@ fun EmergencyActionDialog(
                                 color = Color(0xFF4CAF50)
                             )
                             Text(
-                                text = "Perubahan berhasil diimplementasi",
+                                text = stringResource(R.string.change_successfully_implemented),
                                 fontSize = 11.sp,
                                 color = Color.Gray
                             )
@@ -177,7 +178,7 @@ fun EmergencyActionDialog(
                                 color = Color(0xFFD32F2F)
                             )
                             Text(
-                                text = "Perubahan gagal diimplementasi",
+                                text = stringResource(R.string.change_failed_to_implement),
                                 fontSize = 11.sp,
                                 color = Color.Gray
                             )
@@ -187,7 +188,7 @@ fun EmergencyActionDialog(
 
                 // Notes
                 Text(
-                    text = "Catatan",
+                    text = stringResource(R.string.notes),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -196,7 +197,7 @@ fun EmergencyActionDialog(
                     onValueChange = { notes = it },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
-                    placeholder = { Text("Tambahkan catatan tentang implementasi...") },
+                    placeholder = { Text("Add a note about implementation...") },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White
@@ -223,7 +224,7 @@ fun EmergencyActionDialog(
                             approverName = teknisiName,
                             fromStatus = changeRequest.status,
                             toStatus = selectedAction!!,
-                            notes = "EMERGENCY: ${if (notes.isBlank()) "Tidak ada catatan" else notes}"
+                            notes = "EMERGENCY: ${if (notes.isBlank()) "No notes" else notes}"
                         )
 
                         // Kirim notifikasi ke end user
@@ -254,7 +255,7 @@ fun EmergencyActionDialog(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Simpan")
+                    Text(stringResource(R.string.save))
                 }
             }
         },
@@ -263,7 +264,7 @@ fun EmergencyActionDialog(
                 onClick = onDismiss,
                 enabled = !isProcessing
             ) {
-                Text("Batal")
+                Text("Cancel")
             }
         }
     )

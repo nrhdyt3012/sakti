@@ -24,7 +24,8 @@ import com.example.saktinocompose.data.entity.Notification
 import com.example.saktinocompose.viewmodel.NotificationViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationPage(
@@ -43,7 +44,7 @@ fun NotificationPage(
     if (showClearAllDialog) {
         AlertDialog(
             onDismissRequest = { showClearAllDialog = false },
-            title = { Text("Tandai Semua Dibaca") },
+            title = { Text(stringResource(R.string.mark_all_read)) },
             text = { Text("Apakah Anda yakin ingin menandai semua notifikasi sebagai sudah dibaca?") },
             confirmButton = {
                 Button(
@@ -71,10 +72,10 @@ fun NotificationPage(
         TopAppBar(
             title = {
                 Column {
-                    Text("Notifikasi", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.notification), fontWeight = FontWeight.Bold)
                     if (unreadCount > 0) {
                         Text(
-                            text = "$unreadCount belum dibaca",
+                            text = stringResource(R.string.unread_count),
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.7f)
                         )
@@ -123,7 +124,7 @@ fun NotificationPage(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Belum ada notifikasi",
+                    text = stringResource(R.string.no_notifications),
                     fontSize = 16.sp,
                     color = Color.Gray,
                     textAlign = TextAlign.Center

@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
-
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 data class CMDBCategory(
     val name: String,
     val icon: ImageVector,
@@ -35,12 +36,12 @@ fun CMDBPage(
     val allChangeRequests by viewModel.getAllChangeRequests().collectAsState(initial = emptyList())
 
     val categories = listOf(
-        CMDBCategory("Aset Perangkat Keras", Icons.Default.Computer, Color(0xFF2196F3)),
-        CMDBCategory("Aplikasi/Service", Icons.Default.Apps, Color(0xFF4CAF50)),
+        CMDBCategory( stringResource(R.string.hardware_assets), Icons.Default.Computer, Color(0xFF2196F3)),
+        CMDBCategory(stringResource(R.string.application_service), Icons.Default.Apps, Color(0xFF4CAF50)),
         CMDBCategory("OS/Build", Icons.Default.Build, Color(0xFFFF9800)),
-        CMDBCategory("Jaringan (switch/router/AP)", Icons.Default.Router, Color(0xFF9C27B0)),
+        CMDBCategory(stringResource(R.string.network), Icons.Default.Router, Color(0xFF9C27B0)),
         CMDBCategory("Database/Instance", Icons.Default.Storage, Color(0xFFE91E63)),
-        CMDBCategory("Sertifikat", Icons.Default.Security, Color(0xFF00BCD4)),
+        CMDBCategory(stringResource(R.string.certificate), Icons.Default.Security, Color(0xFF00BCD4)),
         CMDBCategory("VM/Container", Icons.Default.CloudQueue, Color(0xFF673AB7)),
         CMDBCategory("Endpoint", Icons.Default.DeviceHub, Color(0xFF795548))
     )
@@ -55,7 +56,7 @@ fun CMDBPage(
         Spacer(modifier = Modifier.height(50.dp))
 
         Text(
-            text = "CMDB - Configuration Items",
+            text = stringResource(R.string.cmdb) + " - " + stringResource(R.string.configuration_items),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,
@@ -63,7 +64,7 @@ fun CMDBPage(
         )
 
         Text(
-            text = "Kelola item konfigurasi berdasarkan kategori",
+            text = stringResource(R.string.manage_ci_by_category),
             fontSize = 14.sp,
             color = Color.Gray,
             modifier = Modifier.padding(bottom = 24.dp)
@@ -149,7 +150,7 @@ fun CMDBCategoryCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "$count item",
+                        text = stringResource(R.string.items_count, count),
                         fontSize = 12.sp,
                         color = Color.Gray
                     )

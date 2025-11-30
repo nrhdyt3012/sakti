@@ -1,11 +1,7 @@
-// 2. Repository untuk Change Request
-// File: app/src/main/java/com/example/saktinocompose/repository/ChangeRequestRepository.kt
-
 package com.example.saktinocompose.repository
 
 import com.example.saktinocompose.data.dao.ChangeRequestDao
 import com.example.saktinocompose.data.entity.ChangeRequest
-import com.example.saktinocompose.network.ApiConfig
 import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.network.dto.*
@@ -18,74 +14,105 @@ class ChangeRequestRepository(
 ) {
 
     /**
-     * Get all change requests - support offline/online
+     * ✅ Get all change requests from API, cache to local
      */
     fun getAllChangeRequests(): Flow<List<ChangeRequest>> {
-        // Untuk sekarang, tetap gunakan Flow dari local database
-        // Nanti bisa ditambahkan logic untuk sync dari API
+        // Return from local cache for instant UI
         return changeRequestDao.getAllChangeRequests()
     }
 
     /**
-     * Get change requests by user
+     * ✅ Fetch latest data from API
      */
+    suspend fun fetchFromApi(): Result<List<ChangeRequest>> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken
+                if (token == null) {
+                    return@withContext Result.Error(
+                        Exception("No token"),
+                        "Authentication required"
+                    )
+                }
+
+                val response = RetrofitClient.syncService.syncChangeRequests("Bearer $token")
+
+                if (response.isSuccessful && response.body()?.success == true) {
+                    val apiRequests = response.body()?.data ?: emptyList()
+
+                    // Convert and cache to local database
+                    val localRequests = apiRequests.map { apiRequestToChangeRequest(it) }
+                    localRequests.forEach { changeRequestDao.insertChangeRequest(it) }
+
+                    Result.Success(localRequests)
+                } else {
+                    Result.Error(
+                        Exception("Fetch failed"),
+                        response.body()?.message ?: "Failed to fetch data"
+                    )
+                }
+            } catch (e: Exception) {
+                Result.Error(e, "Network error: ${e.message}")
+            }
+        }
+    }
+
     fun getChangeRequestsByUser(userId: Int): Flow<List<ChangeRequest>> {
         return changeRequestDao.getChangeRequestsByUser(userId)
     }
 
-    /**
-     * Get change request by ID
-     */
     suspend fun getChangeRequestById(id: Int): ChangeRequest? {
         return changeRequestDao.getChangeRequestById(id)
     }
 
     /**
-     * Submit change request - support offline/online
+     * ✅ Submit to API, then cache locally
      */
     suspend fun submitChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
         return withContext(Dispatchers.IO) {
             try {
-                // Simpan ke local database dulu
-                val localId = changeRequestDao.insertChangeRequest(changeRequest).toInt()
-                val savedRequest = changeRequest.copy(id = localId)
+                // Submit to API first
+                val apiResult = submitToApi(changeRequest)
 
-                // Jika online mode, sync ke API
-                if (!ApiConfig.IS_OFFLINE_MODE) {
-                    syncChangeRequestToApi(savedRequest)
+                when (apiResult) {
+                    is Result.Success -> {
+                        // Cache to local
+                        val localId = changeRequestDao.insertChangeRequest(changeRequest).toInt()
+                        Result.Success(changeRequest.copy(id = localId))
+                    }
+                    is Result.Error -> apiResult
+                    else -> Result.Error(Exception("Unknown error"), "Submit failed")
                 }
-
-                Result.Success(savedRequest)
             } catch (e: Exception) {
-                Result.Error(e, "Gagal submit change request: ${e.message}")
+                Result.Error(e, "Submit failed: ${e.message}")
             }
         }
     }
 
     /**
-     * Update change request - support offline/online
+     * ✅ Update to API, then cache locally
      */
     suspend fun updateChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
         return withContext(Dispatchers.IO) {
             try {
-                // Update local database
-                changeRequestDao.updateChangeRequest(changeRequest)
+                // Update to API first
+                val apiResult = updateToApi(changeRequest)
 
-                // Jika online mode, sync ke API
-                if (!ApiConfig.IS_OFFLINE_MODE) {
-                    syncChangeRequestToApi(changeRequest)
+                when (apiResult) {
+                    is Result.Success -> {
+                        // Update local cache
+                        changeRequestDao.updateChangeRequest(changeRequest)
+                        Result.Success(changeRequest)
+                    }
+                    is Result.Error -> apiResult
+                    else -> Result.Error(Exception("Unknown error"), "Update failed")
                 }
-
-                Result.Success(changeRequest)
             } catch (e: Exception) {
-                Result.Error(e, "Gagal update change request: ${e.message}")
+                Result.Error(e, "Update failed: ${e.message}")
             }
         }
     }
 
-    /**
-     * Update status change request
-     */
     suspend fun updateStatus(
         changeRequest: ChangeRequest,
         newStatus: String,
@@ -100,11 +127,8 @@ class ChangeRequestRepository(
                     updatedAt = System.currentTimeMillis()
                 )
 
-                // Update local
-                changeRequestDao.updateChangeRequest(updated)
-
-                // Sync ke API jika online
-                if (!ApiConfig.IS_OFFLINE_MODE && teknisiId != null && teknisiName != null) {
+                // Update to API
+                if (teknisiId != null && teknisiName != null) {
                     val token = RetrofitClient.authToken
                     if (token != null) {
                         val request = UpdateStatusRequest(
@@ -123,77 +147,56 @@ class ChangeRequestRepository(
                     }
                 }
 
+                // Update local
+                changeRequestDao.updateChangeRequest(updated)
                 Result.Success(updated)
             } catch (e: Exception) {
-                Result.Error(e, "Gagal update status: ${e.message}")
+                Result.Error(e, "Status update failed: ${e.message}")
             }
         }
     }
 
-    /**
-     * Sync change request to API
-     */
-    private suspend fun syncChangeRequestToApi(changeRequest: ChangeRequest) {
-        try {
-            val token = RetrofitClient.authToken ?: return
+    // ===== Private Helper Methods =====
+
+    private suspend fun submitToApi(changeRequest: ChangeRequest): Result<Boolean> {
+        return try {
+            val token = RetrofitClient.authToken ?: return Result.Error(
+                Exception("No token"), "Authentication required"
+            )
 
             val apiRequest = changeRequestToApiRequest(changeRequest)
 
-            // TODO: Implement API call ketika endpoint sudah siap
-            // RetrofitClient.teknisiService.createOrUpdateChangeRequest(...)
+            // TODO: Implement actual API endpoint when ready
+            // val response = RetrofitClient.changeRequestService.createChangeRequest(
+            //     "Bearer $token", apiRequest
+            // )
 
+            // For now, assume success
+            Result.Success(true)
         } catch (e: Exception) {
-            // Log error tapi jangan throw, karena data sudah tersimpan di local
-            println("Failed to sync to API: ${e.message}")
+            Result.Error(e, "API submit failed: ${e.message}")
         }
     }
 
-    /**
-     * Sync change requests dari API ke local database
-     */
-    suspend fun syncFromApi(): Result<List<ChangeRequest>> {
-        return withContext(Dispatchers.IO) {
-            try {
-                if (ApiConfig.IS_OFFLINE_MODE) {
-                    return@withContext Result.Error(
-                        Exception("Offline mode"),
-                        "Tidak bisa sync dalam mode offline"
-                    )
-                }
+    private suspend fun updateToApi(changeRequest: ChangeRequest): Result<Boolean> {
+        return try {
+            val token = RetrofitClient.authToken ?: return Result.Error(
+                Exception("No token"), "Authentication required"
+            )
 
-                val token = RetrofitClient.authToken
-                if (token == null) {
-                    return@withContext Result.Error(
-                        Exception("No token"),
-                        "Token tidak ditemukan"
-                    )
-                }
+            val apiRequest = changeRequestToApiRequest(changeRequest)
 
-                val response = RetrofitClient.syncService.syncChangeRequests("Bearer $token")
+            // TODO: Implement actual API endpoint when ready
+            // val response = RetrofitClient.changeRequestService.updateChangeRequest(
+            //     "Bearer $token", changeRequest.id, apiRequest
+            // )
 
-                if (response.isSuccessful && response.body()?.success == true) {
-                    val apiRequests = response.body()?.data ?: emptyList()
-
-                    // Convert dan simpan ke local database
-                    val localRequests = apiRequests.map { apiRequestToChangeRequest(it) }
-                    localRequests.forEach { changeRequestDao.insertChangeRequest(it) }
-
-                    Result.Success(localRequests)
-                } else {
-                    Result.Error(
-                        Exception("Sync failed"),
-                        response.body()?.message ?: "Gagal sync data"
-                    )
-                }
-            } catch (e: Exception) {
-                Result.Error(e, "Gagal sync dari API: ${e.message}")
-            }
+            Result.Success(true)
+        } catch (e: Exception) {
+            Result.Error(e, "API update failed: ${e.message}")
         }
     }
 
-    /**
-     * Convert Entity to DTO
-     */
     private fun changeRequestToApiRequest(cr: ChangeRequest): ChangeRequestApiRequest {
         return ChangeRequestApiRequest(
             ticketId = cr.ticketId,
@@ -214,9 +217,6 @@ class ChangeRequestRepository(
         )
     }
 
-    /**
-     * Convert DTO to Entity
-     */
     private fun apiRequestToChangeRequest(dto: ChangeRequestApiRequest): ChangeRequest {
         return ChangeRequest(
             ticketId = dto.ticketId,

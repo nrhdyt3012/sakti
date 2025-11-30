@@ -80,7 +80,7 @@ fun TeknisiFilteredListPage(
                 ) {
                     Column {
                         Text(
-                            text = "Total Pengajuan",
+                            text = "Total Submission",
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.7f)
                         )
@@ -125,7 +125,7 @@ fun TeknisiFilteredListPage(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Tidak ada data",
+                            text = "No data",
                             fontSize = 16.sp,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
@@ -222,7 +222,7 @@ fun TeknisiFilteredRequestCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Jenis:",
+                    text = "Type:",
                     fontSize = 13.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
@@ -242,7 +242,7 @@ fun TeknisiFilteredRequestCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Aset:",
+                    text = "Asset:",
                     fontSize = 13.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
@@ -262,7 +262,7 @@ fun TeknisiFilteredRequestCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Dibuat pada:",
+                    text = "Created on:",
                     fontSize = 13.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium

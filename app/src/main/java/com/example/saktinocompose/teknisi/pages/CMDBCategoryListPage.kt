@@ -140,7 +140,7 @@ fun CMDBCategoryListPage(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Belum ada item di kategori ini",
+                            text = "There are no items in this category yet",
                             fontSize = 16.sp,
                             color = Color.Gray
                         )

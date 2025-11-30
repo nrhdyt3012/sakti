@@ -20,24 +20,57 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
     private val changeRequestDao = database.changeRequestDao()
     private val repository = ChangeRequestRepository(changeRequestDao)
 
-    private val _isSyncing = MutableStateFlow(false)
-    val isSyncing = _isSyncing.asStateFlow()
+    // ✅ Loading state untuk UI
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
 
-    private val _syncError = MutableStateFlow<String?>(null)
-    val syncError = _syncError.asStateFlow()
+    private val _error = MutableStateFlow<String?>(null)
+    val error = _error.asStateFlow()
+
+    init {
+        // ✅ Auto-fetch data when ViewModel created
+        refreshData()
+    }
 
     /**
-     * ✅ UPDATED: Submit Change Request dengan 3 field aset
+     * ✅ Refresh data from API
      */
+    fun refreshData() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            when (val result = repository.fetchFromApi()) {
+                is Result.Success -> {
+                    _error.value = null
+                }
+                is Result.Error -> {
+                    _error.value = result.message
+                }
+                else -> {
+                    _error.value = "Failed to fetch data"
+                }
+            }
+
+            _isLoading.value = false
+        }
+    }
+
+    fun clearError() {
+        _error.value = null
+    }
+
+    // ===== Existing methods (unchanged) =====
+
     fun submitChangeRequest(
         userId: Int,
         idPerubahan: String,
         jenisPerubahan: String,
         alasan: String,
         tujuan: String,
-        idAset: String,                    // ✅ BARU
-        asetTerdampak: String,              // ✅ UPDATED
-        relasiConfigurationItem: String,    // ✅ BARU
+        idAset: String,
+        asetTerdampak: String,
+        relasiConfigurationItem: String,
         rencanaImplementasi: String,
         usulanJadwal: String,
         rencanaRollback: String,
@@ -45,6 +78,8 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         assignedTeknisiName: String?
     ) {
         viewModelScope.launch {
+            _isLoading.value = true
+
             val ticketId = generateTicketId()
             val changeRequest = ChangeRequest(
                 ticketId = ticketId,
@@ -64,22 +99,28 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 status = "Submitted"
             )
 
-            repository.submitChangeRequest(changeRequest)
+            when (val result = repository.submitChangeRequest(changeRequest)) {
+                is Result.Error -> {
+                    _error.value = result.message
+                }
+                else -> {
+                    _error.value = null
+                }
+            }
+
+            _isLoading.value = false
         }
     }
 
-    /**
-     * ✅ UPDATED: Update untuk revisi dengan 3 field aset
-     */
     fun updateChangeRequestForRevision(
         existingRequest: ChangeRequest,
         idPerubahan: String,
         jenisPerubahan: String,
         alasan: String,
         tujuan: String,
-        idAset: String,                    // ✅ BARU
-        asetTerdampak: String,              // ✅ UPDATED
-        relasiConfigurationItem: String,    // ✅ BARU
+        idAset: String,
+        asetTerdampak: String,
+        relasiConfigurationItem: String,
         rencanaImplementasi: String,
         usulanJadwal: String,
         rencanaRollback: String,
@@ -87,6 +128,8 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         assignedTeknisiName: String?
     ) {
         viewModelScope.launch {
+            _isLoading.value = true
+
             val updated = existingRequest.copy(
                 idPerubahan = idPerubahan,
                 jenisPerubahan = jenisPerubahan,
@@ -106,7 +149,16 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 updatedAt = System.currentTimeMillis()
             )
 
-            repository.updateChangeRequest(updated)
+            when (val result = repository.updateChangeRequest(updated)) {
+                is Result.Error -> {
+                    _error.value = result.message
+                }
+                else -> {
+                    _error.value = null
+                }
+            }
+
+            _isLoading.value = false
         }
     }
 
@@ -134,48 +186,46 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         notes: String? = null
     ) {
         viewModelScope.launch {
-            repository.updateStatus(
+            _isLoading.value = true
+
+            when (val result = repository.updateStatus(
                 changeRequest = changeRequest,
                 newStatus = newStatus,
                 teknisiId = teknisiId,
                 teknisiName = teknisiName,
                 notes = notes
-            )
+            )) {
+                is Result.Error -> {
+                    _error.value = result.message
+                }
+                else -> {
+                    _error.value = null
+                }
+            }
+
+            _isLoading.value = false
         }
     }
 
     fun updateFullChangeRequest(updatedRequest: ChangeRequest) {
         viewModelScope.launch {
+            _isLoading.value = true
+
             val updated = updatedRequest.copy(
                 updatedAt = System.currentTimeMillis()
             )
-            repository.updateChangeRequest(updated)
-        }
-    }
 
-    fun syncFromApi() {
-        viewModelScope.launch {
-            _isSyncing.value = true
-            _syncError.value = null
-
-            when (val result = repository.syncFromApi()) {
-                is Result.Success -> {
-                    _syncError.value = null
-                }
+            when (val result = repository.updateChangeRequest(updated)) {
                 is Result.Error -> {
-                    _syncError.value = result.message
+                    _error.value = result.message
                 }
                 else -> {
-                    _syncError.value = "Sync failed"
+                    _error.value = null
                 }
             }
 
-            _isSyncing.value = false
+            _isLoading.value = false
         }
-    }
-
-    fun clearSyncError() {
-        _syncError.value = null
     }
 
     private suspend fun generateTicketId(): String {

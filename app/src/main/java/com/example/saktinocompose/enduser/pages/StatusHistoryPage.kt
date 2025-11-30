@@ -24,7 +24,8 @@ import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.viewmodel.ApprovalHistoryViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatusHistoryPage(
@@ -42,7 +43,7 @@ fun StatusHistoryPage(
             .background(Color(0xFFF5F5F5))
     ) {
         TopAppBar(
-            title = { Text("Riwayat Status", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.status_history), fontWeight = FontWeight.Bold) },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(
@@ -122,7 +123,7 @@ fun StatusHistoryPage(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Timeline",
+                text = stringResource(R.string.timeline),
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
@@ -149,7 +150,7 @@ fun StatusHistoryPage(
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(
-                            text = "Belum ada riwayat perubahan status",
+                            text = stringResource(R.string.no_status_history),
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
@@ -295,7 +296,7 @@ fun TimelineItem(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Catatan:",
+                        text = stringResource(R.string.notes) + ":",
                         fontSize = 11.sp,
                         color = Color.Gray,
                         fontWeight = FontWeight.Medium

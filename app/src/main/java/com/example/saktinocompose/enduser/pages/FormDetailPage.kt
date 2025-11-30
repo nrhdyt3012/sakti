@@ -27,7 +27,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 import com.example.saktinocompose.ui.components.RelatedCITable
 import com.example.saktinocompose.ui.components.AsetTerdampakDisplay
-
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +51,7 @@ fun FormDetailPage(
     ) {
         // Top Bar
         TopAppBar(
-            title = { Text("Detail Permohonan", fontWeight = FontWeight.Bold) },
+            title = { Text(stringResource(R.string.request_detail), fontWeight = FontWeight.Bold) },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(
@@ -83,7 +84,7 @@ fun FormDetailPage(
                     modifier = Modifier.padding(16.dp)
                 ) {
                     Text(
-                        text = "Ticket ID",
+                        text =  stringResource(R.string.ticket_id),
                         fontSize = 12.sp,
                         color = Color.White.copy(alpha = 0.7f)
                     )
@@ -109,17 +110,17 @@ fun FormDetailPage(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Informasi Permohonan",
+                        text = stringResource(R.string.request_information),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
 
                     HorizontalDivider()
-                    DetailItem(label = "ID Perubahan", value = changeRequest.idPerubahan)
-                    DetailItem(label = "Judul Permintaan Perubahan", value = changeRequest.alasan)
-                    DetailItem(label = "Deskripsi", value = changeRequest.tujuan)
-                    DetailItem(label = "Tujuan", value = changeRequest.tujuan)
+                    DetailItem(label = stringResource(R.string.change_id), value = changeRequest.idPerubahan)
+                    DetailItem(label = stringResource(R.string.change_type), value = changeRequest.alasan)
+                    DetailItem(label = stringResource(R.string.request_title), value = changeRequest.tujuan)
+                    DetailItem(label = stringResource(R.string.description), value = changeRequest.tujuan)
                     HorizontalDivider()
 
 // ✅ ID Aset
@@ -131,7 +132,7 @@ fun FormDetailPage(
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = "Aset yang Diperbaiki",
+                                text = "Improved Assets",
                                 fontSize = 13.sp,
                                 color = Color.Gray,
                                 fontWeight = FontWeight.Medium
@@ -158,11 +159,11 @@ fun FormDetailPage(
                             relasiConfigurationItem = changeRequest.relasiConfigurationItem
                         )
                     }
-                    DetailItem(label = "Rencana Implementasi", value = changeRequest.rencanaImplementasi)
-                    DetailItem(label = "Usulan Jadwal", value = changeRequest.usulanJadwal)
-                    DetailItem(label = "Rencana Rollback", value = changeRequest.rencanaRollback)
+                    DetailItem(label = "Implementation Plan", value = changeRequest.rencanaImplementasi)
+                    DetailItem(label = "Proposed Schedule", value = changeRequest.usulanJadwal)
+                    DetailItem(label = "Rollback Plan", value = changeRequest.rencanaRollback)
                     if (changeRequest.assignedTeknisiName != null) {
-                        DetailItem(label = "Teknisi Ditugaskan", value = changeRequest.assignedTeknisiName)
+                        DetailItem(label = "Technician Assigned", value = changeRequest.assignedTeknisiName)
                     }
                 }
             }
@@ -214,14 +215,14 @@ fun FormDetailPage(
                                 ) {
                                     Image(
                                         bitmap = it.asImageBitmap(),
-                                        contentDescription = "Foto Bukti",
+                                        contentDescription = "Evidence photo",
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
                                     )
                                 }
 
                                 Text(
-                                    text = "Ketuk untuk memperbesar",
+                                    text = "Click to zoom in",
                                     fontSize = 11.sp,
                                     color = Color.Gray,
                                     modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -229,7 +230,7 @@ fun FormDetailPage(
                             }
                         } else {
                             Text(
-                                text = "Foto tidak ditemukan",
+                                text = "No Photo",
                                 fontSize = 13.sp,
                                 color = Color.Gray,
                                 modifier = Modifier.padding(8.dp)
@@ -251,7 +252,7 @@ fun FormDetailPage(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Status & Waktu",
+                        text = stringResource(R.string.status_and_time),
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -264,7 +265,7 @@ fun FormDetailPage(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Status Saat Ini:",
+                            text = stringResource(R.string.current_status),
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
@@ -294,8 +295,8 @@ fun FormDetailPage(
                         }
                     }
 
-                    DetailItem(label = "Dibuat pada", value = createdDate)
-                    DetailItem(label = "Diperbarui pada", value = updatedDate)
+                    DetailItem(label = stringResource(R.string.created_at), value = createdDate)
+                    DetailItem(label = stringResource(R.string.updated_at), value = updatedDate)
                 }
             }
 

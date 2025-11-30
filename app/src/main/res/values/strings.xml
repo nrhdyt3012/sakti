@@ -1,5 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Sakti</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
     <string name="second_fragment_label">Second Fragment</string>
@@ -42,4 +42,305 @@
         libero vel nunc consequat, quis tincidunt nisl eleifend. Cras bibendum enim a justo luctus
         vestibulum. Fusce dictum libero quis erat maximus, vitae volutpat diam dignissim.
     </string>
+    <string name="app_name">SAKTI - Change Management</string>
+
+    <!-- Common -->
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
+    <string name="submit">Submit</string>
+    <string name="close">Close</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="ok">OK</string>
+    <string name="loading">Loading...</string>
+    <string name="error">Error</string>
+    <string name="success">Success</string>
+    <string name="delete">Delete</string>
+    <string name="edit">Edit</string>
+    <string name="view_details">View Details</string>
+
+    <!-- Login -->
+    <string name="login">Login</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="welcome">Welcome!</string>
+    <string name="login_success">Login successful</string>
+    <string name="login_failed">Login failed</string>
+    <string name="email_password_required">Email and password are required</string>
+    <string name="invalid_credentials">Invalid email or password</string>
+
+    <!-- Profile -->
+    <string name="profile">Profile</string>
+    <string name="user_id">User ID</string>
+    <string name="name">Name</string>
+    <string name="role">Role</string>
+    <string name="logout">Logout</string>
+    <string name="logout_confirmation">Logout Confirmation</string>
+    <string name="logout_message">Are you sure you want to logout?</string>
+    <string name="exit_app">Exit Application</string>
+    <string name="exit_app_message">Are you sure you want to exit the application?</string>
+
+    <!-- Navigation -->
+    <string name="home">Home</string>
+    <string name="status">Status</string>
+    <string name="cmdb">CMDB</string>
+    <string name="notifications">Notifications</string>
+
+    <!-- Change Request Form -->
+    <string name="change_request_form">Change Request Form</string>
+    <string name="revision_request">Revision Request</string>
+    <string name="change_id">Change ID</string>
+    <string name="change_id_auto">Change ID (Auto-generated)</string>
+    <string name="change_type">Change Type</string>
+    <string name="select_type">Select Type</string>
+    <string name="request_title">Request Title</string>
+    <string name="description">Description</string>
+    <string name="purpose">Purpose</string>
+    <string name="asset_id">Asset ID</string>
+    <string name="affected_asset">Affected Asset (CI)</string>
+    <string name="ci_relationship">CI Relationship</string>
+    <string name="implementation_plan">Implementation Plan</string>
+    <string name="proposed_schedule">Proposed Schedule</string>
+    <string name="rollback_plan">Rollback Plan</string>
+    <string name="select_technician">Select Technician</string>
+    <string name="required_field">* Required field</string>
+    <string name="create_new_request">Create New Request</string>
+
+    <!-- Change Types -->
+    <string name="standard">Standard</string>
+    <string name="minor">Minor</string>
+    <string name="major">Major</string>
+    <string name="emergency">Emergency</string>
+
+    <!-- Status -->
+    <string name="submitted">Submitted</string>
+    <string name="reviewed">Reviewed</string>
+    <string name="revision">Revision</string>
+    <string name="approved">Approved</string>
+    <string name="scheduled">Scheduled</string>
+    <string name="implementing">Implementing</string>
+    <string name="completed">Completed</string>
+    <string name="failed">Failed</string>
+    <string name="closed">Closed</string>
+
+    <!-- Request Detail -->
+    <string name="request_detail">Request Detail</string>
+    <string name="ticket_id">Ticket ID</string>
+    <string name="request_information">Request Information</string>
+    <string name="status_and_time">Status &amp; Time</string>
+    <string name="current_status">Current Status</string>
+    <string name="created_at">Created at</string>
+    <string name="updated_at">Updated at</string>
+    <string name="assigned_technician">Assigned Technician</string>
+    <string name="photo_evidence">Photo Evidence</string>
+    <string name="tap_to_enlarge">Tap to enlarge</string>
+    <string name="photo_not_found">Photo not found</string>
+
+    <!-- Summary -->
+    <string name="change_summary">Change Summary</string>
+    <string name="request_summary">Request Summary (All Users)</string>
+    <string name="this_month">This Month</string>
+    <string name="this_week">This Week</string>
+    <string name="status_changes">Status Changes</string>
+    <string name="no_requests_status">No requests with status %s</string>
+
+    <!-- Status History -->
+    <string name="status_history">Status History</string>
+    <string name="timeline">Timeline</string>
+    <string name="no_status_history">No status change history yet</string>
+    <string name="notes">Notes</string>
+
+    <!-- Inspection -->
+    <string name="inspection">Inspection</string>
+    <string name="inspection_review">Inspection &amp; Review</string>
+    <string name="perform_inspection">Perform Inspection</string>
+    <string name="cost_estimate">Cost Estimate</string>
+    <string name="time_estimate">Time Estimate</string>
+    <string name="impact_score">Impact Score</string>
+    <string name="probability_score">Probability Score</string>
+    <string name="exposure_score">Exposure Score</string>
+    <string name="risk_score">Risk Score</string>
+    <string name="risk_level">Risk Level</string>
+    <string name="risk_calculation_result">Risk Calculation Result</string>
+    <string name="field_evidence_photo">Field Evidence Photo</string>
+    <string name="add_evidence_photo">Add Evidence Photo</string>
+    <string name="change_photo">Change Photo</string>
+    <string name="approve">Approve</string>
+    <string name="request_revision">Request Revision</string>
+    <string name="reject">Reject</string>
+    <string name="inspection_result">Inspection Result</string>
+    <string name="inspection_notes">Inspection notes (for reject/revision)</string>
+
+    <!-- Risk Assessment -->
+    <string name="risk_assessment">Risk Assessment</string>
+    <string name="select_impact">Select Impact</string>
+    <string name="select_probability">Select Probability</string>
+    <string name="select_exposure">Select Exposure (1-4)</string>
+    <string name="assessed_by">Assessed by: %s</string>
+
+    <!-- Risk Levels -->
+    <string name="very_low">Very Low</string>
+    <string name="low">Low</string>
+    <string name="medium">Medium</string>
+    <string name="high">High</string>
+    <string name="very_high">Very High</string>
+    <string name="extreme">Extreme</string>
+
+    <!-- Impact Labels -->
+    <string name="insignificant">Insignificant</string>
+    <string name="significant">Significant</string>
+    <string name="severe">Severe</string>
+
+    <!-- Probability Labels -->
+    <string name="rare">Rare</string>
+    <string name="unlikely">Unlikely</string>
+    <string name="moderate">Moderate</string>
+    <string name="likely">Likely</string>
+    <string name="almost_certain">Almost Certain</string>
+
+    <!-- Scheduling -->
+    <string name="schedule_implementation">Schedule Implementation</string>
+    <string name="implementation_date">Implementation Date</string>
+    <string name="schedule">Schedule</string>
+    <string name="select_date">Select date</string>
+    <string name="proposed_schedule_user">Proposed Schedule (End User)</string>
+    <string name="scheduled_implementation">Scheduled Implementation</string>
+    <string name="date">Date</string>
+
+    <!-- Implementation -->
+    <string name="start_implementation">Start Implementation</string>
+    <string name="complete_implementation">Complete Implementation</string>
+    <string name="implementation_result">Implementation Result</string>
+    <string name="impact_after_mitigation">Impact After Mitigation</string>
+    <string name="probability_after_mitigation">Probability After Mitigation</string>
+    <string name="residual_score">Residual Score</string>
+    <string name="residual_risk_level">Residual Risk Level</string>
+    <string name="implementation_description">Implementation Description</string>
+    <string name="result_description">Result Description</string>
+    <string name="implementation_notes">Add notes about implementation...</string>
+    <string name="residual_risk_calculation">Residual Risk Calculation Result</string>
+
+    <!-- Emergency -->
+    <string name="emergency_action">Emergency Action</string>
+    <string name="emergency_change_request">⚠️ Emergency Change Request</string>
+    <string name="emergency_direct_status">Directly determine final status without review process</string>
+    <string name="select_final_status">Select Final Status</string>
+    <string name="change_successfully_implemented">Change successfully implemented</string>
+    <string name="change_failed_to_implement">Change failed to implement</string>
+
+    <!-- Notifications -->
+    <string name="notification">Notification</string>
+    <string name="mark_all_read">Mark All as Read</string>
+    <string name="mark_all_read_confirmation">Mark All as Read</string>
+    <string name="mark_all_read_message">Are you sure you want to mark all notifications as read?</string>
+    <string name="no_notifications">No notifications yet</string>
+    <string name="unread_count">%d unread</string>
+    <string name="status_update">Status Update: %s</string>
+    <string name="status_changed">Status changed from \'%s\' to \'%s\'</string>
+    <string name="click_to_revise">Click to revise</string>
+
+    <!-- Revision -->
+    <string name="revision_notes">Revision Notes from Technician:</string>
+    <string name="requires_revision">Requires revision</string>
+
+    <!-- CMDB -->
+    <string name="configuration_items">Configuration Items</string>
+    <string name="manage_ci_by_category">Manage configuration items by category</string>
+    <string name="total_items">Total Items</string>
+    <string name="no_items_category">No items in this category yet</string>
+    <string name="items_count">%d items</string>
+
+    <!-- Asset Categories -->
+    <string name="hardware_assets">Hardware Assets</string>
+    <string name="application_service">Application/Service</string>
+    <string name="os_build">OS/Build</string>
+    <string name="network">Network (switch/router/AP)</string>
+    <string name="database_instance">Database/Instance</string>
+    <string name="certificate">Certificate</string>
+    <string name="vm_container">VM/Container</string>
+    <string name="endpoint">Endpoint</string>
+
+    <!-- CI Relationship -->
+    <string name="select_ci_relationship">Select CI Relationship</string>
+    <string name="select_affected_ci">Select other assets affected by this asset repair</string>
+    <string name="selected_relationships">%d relationships selected</string>
+    <string name="edit_ci_relationship">Edit CI Relationship (%d)</string>
+    <string name="select_relationship_type">Select Relationship Type</string>
+    <string name="search_affected_asset">Search Affected Asset</string>
+    <string name="type_to_search">Type to search...</string>
+    <string name="no_search_results">No results</string>
+    <string name="clear">Clear</string>
+    <string name="save_relationships">Save (%d selected)</string>
+    <string name="select_asset">Select Asset</string>
+    <string name="selected_asset">Selected asset:</string>
+    <string name="change_asset">Change Asset</string>
+    <string name="search_repair_asset">Search Repair Asset</string>
+    <string name="change_repair_asset">Change Repair Asset</string>
+
+    <!-- Relationship Types -->
+    <string name="installed_on">INSTALLED_ON</string>
+    <string name="depends_on">DEPENDS_ON</string>
+    <string name="connected_to">CONNECTED_TO</string>
+    <string name="runs_on">RUNS_ON</string>
+
+    <!-- Messages -->
+    <string name="request_submitted">Request submitted successfully</string>
+    <string name="revision_submitted">Revision submitted successfully</string>
+    <string name="inspection_success">Inspection successful! Status changed to \'Reviewed\'</string>
+    <string name="revision_request_sent">Revision request sent to End User</string>
+    <string name="request_rejected">Request rejected successfully</string>
+    <string name="implementation_scheduled">Implementation scheduled successfully!</string>
+    <string name="status_changed_to_implementing">Status changed to \'Implementing\'</string>
+    <string name="implementation_completed">Implementation completed successfully!</string>
+    <string name="change_request_closed">Change request closed successfully</string>
+    <string name="emergency_status_updated">Emergency change request status updated successfully</string>
+
+    <!-- Validation Messages -->
+    <string name="change_type_required">Change Type is required</string>
+    <string name="request_title_required">Request Title is required</string>
+    <string name="description_required">Description is required</string>
+    <string name="asset_id_required">Asset ID is required</string>
+    <string name="affected_asset_required">Affected Asset is required</string>
+    <string name="ci_relationship_required">CI Relationship is required</string>
+    <string name="implementation_plan_required">Implementation Plan is required</string>
+    <string name="proposed_schedule_required">Proposed Schedule is required</string>
+    <string name="rollback_plan_required">Rollback Plan is required</string>
+    <string name="technician_required">Technician must be selected</string>
+    <string name="all_fields_required">All fields are required</string>
+
+    <!-- Actions -->
+    <string name="take_action">Take Action</string>
+    <string name="detail_and_action">Detail &amp; Take Action</string>
+    <string name="view_history">View History</string>
+    <string name="close_change_request">Close Change Request</string>
+
+    <!-- Filter -->
+    <string name="monthly_requests">Monthly Requests</string>
+    <string name="weekly_requests">Weekly Requests</string>
+    <string name="status_filter">Status: %s</string>
+    <string name="total_requests">Total Requests</string>
+    <string name="no_data">No data</string>
+
+    <!-- Photo -->
+    <string name="select_photo_source">Select Photo Source</string>
+    <string name="select_photo_source_message">Choose where you want to take the field evidence photo</string>
+    <string name="camera">Camera</string>
+    <string name="gallery">Gallery</string>
+
+    <!-- Network -->
+    <string name="online_mode">Online Mode</string>
+    <string name="offline_mode">Offline Mode</string>
+    <string name="connected_to_server">Connected to server</string>
+    <string name="using_local_data">Using local data</string>
+    <string name="data_will_sync_when_online">Data will sync when online</string>
+    <string name="sync">Sync</string>
+    <string name="sync_error">Sync Error: %s</string>
+
+    <!-- System Messages -->
+    <string name="greeting">Hi, %s!</string>
+    <string name="welcome_message">Welcome to Change Management System</string>
+    <string name="technician_panel">Technician Panel - Change Management</string>
+    <string name="request_denied">Request denied</string>
+    <string name="no_requests">No requests yet</string>
 </resources>

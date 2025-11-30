@@ -80,7 +80,7 @@ fun FilteredListPage(
                 ) {
                     Column {
                         Text(
-                            text = "Total Pengajuan",
+                            text = "Total Submissions",
                             fontSize = 12.sp,
                             color = Color.White.copy(alpha = 0.7f)
                         )
@@ -125,7 +125,7 @@ fun FilteredListPage(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Tidak ada data",
+                            text = "No data",
                             fontSize = 16.sp,
                             color = Color.Gray,
                             textAlign = TextAlign.Center
@@ -242,7 +242,7 @@ fun FilteredChangeRequestCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Dibuat pada:",
+                    text = "Created on:",
                     fontSize = 13.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
@@ -272,7 +272,7 @@ fun FilteredChangeRequestCard(
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text("Lihat Detail", fontSize = 13.sp, color = Color.White)
+                Text("View Detail", fontSize = 13.sp, color = Color.White)
             }
         }
     }

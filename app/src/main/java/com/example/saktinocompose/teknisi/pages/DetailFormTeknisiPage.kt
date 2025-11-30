@@ -110,7 +110,7 @@ fun DetailFormTeknisiPage(
                             approverName = teknisiName,
                             fromStatus = changeRequest.status,
                             toStatus = "Reviewed",
-                            notes = "Inspeksi selesai. Estimasi biaya: $estimasiBiaya, Estimasi waktu: $estimasiWaktu, Level risiko: $levelRisiko"
+                            notes = "Inspection completed. Cost estimate $estimasiBiaya, Time estimate: $estimasiWaktu, Risk Level : $levelRisiko"
                         )
 
                         // Kirim notifikasi ke end user
@@ -123,7 +123,7 @@ fun DetailFormTeknisiPage(
                         )
 
                         showInspectionDialog = false
-                        successMessage = "Inspeksi berhasil! Status berubah menjadi 'Reviewed'"
+                        successMessage = "Inspection successful! Status changed to 'Reviewed'"
                         showSuccessDialog = true
                     }
 
@@ -144,7 +144,7 @@ fun DetailFormTeknisiPage(
                             approverName = teknisiName,
                             fromStatus = changeRequest.status,
                             toStatus = "Revision",
-                            notes = "Meminta revisi: $notes"
+                            notes = "Requesting revision: $notes"
                         )
 
                         // Kirim notifikasi ke end user
@@ -157,7 +157,7 @@ fun DetailFormTeknisiPage(
                         )
 
                         showInspectionDialog = false
-                        successMessage = "Permintaan revisi berhasil dikirim ke End User"
+                        successMessage = "Revision request successfully sent to End User"
                         showSuccessDialog = true
                     }
 
@@ -177,7 +177,7 @@ fun DetailFormTeknisiPage(
                             approverName = teknisiName,
                             fromStatus = changeRequest.status,
                             toStatus = "Failed",
-                            notes = "Ditolak: $notes"
+                            notes = "Rejected: $notes"
                         )
 
                         // Kirim notifikasi ke end user
@@ -190,7 +190,7 @@ fun DetailFormTeknisiPage(
                         )
 
                         showInspectionDialog = false
-                        successMessage = "Permohonan berhasil ditolak"
+                        successMessage = "Application successfully rejected"
                         showSuccessDialog = true
                     }
                 }
@@ -225,7 +225,7 @@ fun DetailFormTeknisiPage(
                     approverName = teknisiName,
                     fromStatus = changeRequest.status,
                     toStatus = "Scheduled",
-                    notes = "Implementasi dijadwalkan pada $scheduledDate"
+                    notes = "Implementation is scheduled for $scheduledDate"
                 )
 
                 // Kirim notifikasi ke end user
@@ -238,7 +238,7 @@ fun DetailFormTeknisiPage(
                 )
 
                 showSchedulingDialog = false
-                successMessage = "Implementasi berhasil dijadwalkan!"
+                successMessage = "Implementation successfully scheduled!"
                 showSuccessDialog = true
             }
         )
@@ -267,7 +267,7 @@ fun DetailFormTeknisiPage(
                     approverName = teknisiName,
                     fromStatus = "Implementing",
                     toStatus = "Completed",
-                    notes = "Implementasi selesai. Skor residual: $skorResidual, Level risiko residual: $levelRisikoResidual"
+                    notes = "Implementation completed. Residual score: $skorResidual, Residual risk level: $levelRisikoResidual"
                 )
 
                 // Kirim notifikasi ke end user
@@ -280,7 +280,7 @@ fun DetailFormTeknisiPage(
                 )
 
                 showImplementationDialog = false
-                successMessage = "Implementasi berhasil diselesaikan!"
+                successMessage = "Implementation successfully completed!"
                 showSuccessDialog = true
             }
         )
@@ -293,7 +293,7 @@ fun DetailFormTeknisiPage(
             onDismiss = { showEmergencyDialog = false },
             onSuccess = {
                 showEmergencyDialog = false
-                successMessage = "Status emergency change request berhasil diupdate"
+                successMessage = "Emergency change request status successfully updated"
                 showSuccessDialog = true
             }
         )
@@ -327,7 +327,7 @@ fun DetailFormTeknisiPage(
     ) {
         // Top Bar
         TopAppBar(
-            title = { Text("Detail Pengajuan", fontWeight = FontWeight.Bold) },
+            title = { Text("Request Details", fontWeight = FontWeight.Bold) },
             navigationIcon = {
                 IconButton(onClick = onBackClick) {
                     Icon(
@@ -411,21 +411,21 @@ fun DetailFormTeknisiPage(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Text(
-                        text = "Informasi Permohonan",
+                        text = "Application Information",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
                     )
 
                     HorizontalDivider()
-                    DetailItem(label = "Id Perubahan", value = changeRequest.idPerubahan)
-                    DetailItem(label = "Jenis Perubahan", value = changeRequest.jenisPerubahan)
-                    DetailItem(label = "Judul Permintaan Perubahan", value = changeRequest.alasan)
-                    DetailItem(label = "Deskripsi", value = changeRequest.tujuan)
+                    DetailItem(label = "Change Id", value = changeRequest.idPerubahan)
+                    DetailItem(label = "Type of Change", value = changeRequest.jenisPerubahan)
+                    DetailItem(label = "Change Request Title", value = changeRequest.alasan)
+                    DetailItem(label = "Description", value = changeRequest.tujuan)
                     HorizontalDivider()
 
 // ✅ ID Aset
-                    DetailItem(label = "ID Aset", value = changeRequest.idAset)
+                    DetailItem(label = "Asset ID", value = changeRequest.idAset)
 
 // ✅ Ganti bagian Aset yang Diperbaiki
                     Row(
@@ -434,7 +434,7 @@ fun DetailFormTeknisiPage(
                     ) {
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = "Aset yang Diperbaiki",
+                                text = "Improved Assets",
                                 fontSize = 13.sp,
                                 color = Color.Gray,
                                 fontWeight = FontWeight.Medium
@@ -452,7 +452,7 @@ fun DetailFormTeknisiPage(
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text(
-                            text = "Relasi Configuration Item",
+                            text = "Configuration Item Relationship",
                             fontSize = 13.sp,
                             color = Color.Gray,
                             fontWeight = FontWeight.Medium
@@ -462,11 +462,11 @@ fun DetailFormTeknisiPage(
                             relasiConfigurationItem = changeRequest.relasiConfigurationItem
                         )
                     }
-                    DetailItem(label = "Rencana Implementasi", value = changeRequest.rencanaImplementasi)
-                    DetailItem(label = "Usulan Jadwal", value = changeRequest.usulanJadwal)
-                    DetailItem(label = "Rencana Rollback", value = changeRequest.rencanaRollback)
+                    DetailItem(label = "Implementation Plan", value = changeRequest.rencanaImplementasi)
+                    DetailItem(label = "Proposed Schedule", value = changeRequest.usulanJadwal)
+                    DetailItem(label = "Rollback Plan", value = changeRequest.rencanaRollback)
                     if (changeRequest.assignedTeknisiName != null) {
-                        DetailItem(label = "Teknisi Ditugaskan", value = changeRequest.assignedTeknisiName)
+                        DetailItem(label = "Technician Assigned", value = changeRequest.assignedTeknisiName)
                     }
                 }
             }
@@ -489,7 +489,7 @@ fun DetailFormTeknisiPage(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Hasil Inspeksi",
+                                text = "Inspection Results",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Black
@@ -504,10 +504,10 @@ fun DetailFormTeknisiPage(
                         HorizontalDivider()
 
                         changeRequest.estimasiBiaya?.let {
-                            DetailItem(label = "Estimasi Biaya", value = it)
+                            DetailItem(label = "Estimated costs", value = it)
                         }
                         changeRequest.estimasiWaktu?.let {
-                            DetailItem(label = "Estimasi Waktu", value = it)
+                            DetailItem(label = "Estimated time", value = it)
                         }
                     }
                 }
@@ -530,7 +530,7 @@ fun DetailFormTeknisiPage(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Jadwal Implementasi",
+                                text = "Implementation Schedule",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Black
@@ -566,7 +566,7 @@ fun DetailFormTeknisiPage(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Hasil Implementasi",
+                                text = "Implementation Results",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Black
@@ -585,7 +585,7 @@ fun DetailFormTeknisiPage(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Dampak Setelah Mitigasi:", fontSize = 13.sp)
+                                Text("Impact After Mitigation:", fontSize = 13.sp)
                                 Text("$it - ${getImpactLabel(it)}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
@@ -595,7 +595,7 @@ fun DetailFormTeknisiPage(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Kemungkinan Setelah Mitigasi:", fontSize = 13.sp)
+                                Text("Possibilities After Mitigation:", fontSize = 13.sp)
                                 Text("$it - ${getProbabilityLabel(it)}", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
@@ -605,7 +605,7 @@ fun DetailFormTeknisiPage(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Exposur:", fontSize = 13.sp)
+                                Text("Exposure:", fontSize = 13.sp)
                                 Text(it.toString(), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                             }
                         }
@@ -615,7 +615,7 @@ fun DetailFormTeknisiPage(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Skor Residual:", fontSize = 13.sp)
+                                Text("Residual Score:", fontSize = 13.sp)
                                 Text(it.toString(), fontSize = 13.sp, fontWeight = FontWeight.Bold)
                             }
                         }
@@ -625,7 +625,7 @@ fun DetailFormTeknisiPage(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Level Risiko Residual:", fontSize = 13.sp)
+                                Text("Residual Risk Level:", fontSize = 13.sp)
                                 Card(
                                     colors = CardDefaults.cardColors(
                                         containerColor = getRiskLevelColor(level)
@@ -646,7 +646,7 @@ fun DetailFormTeknisiPage(
                         HorizontalDivider()
 
                         changeRequest.keteranganHasilImplementasi?.let {
-                            DetailItem(label = "Keterangan Hasil", value = it)
+                            DetailItem(label = "Results Description", value = it)
                         }
                     }
                 }
@@ -673,7 +673,7 @@ fun DetailFormTeknisiPage(
                                 tint = Color(0xFF384E66)
                             )
                             Text(
-                                text = "Foto Bukti Inspeksi Lapangan",
+                                text = "Field Inspection Evidence Photo",
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.Black
@@ -698,14 +698,14 @@ fun DetailFormTeknisiPage(
                                 ) {
                                     Image(
                                         bitmap = it.asImageBitmap(),
-                                        contentDescription = "Foto Bukti",
+                                        contentDescription = "Photo Evidence",
                                         modifier = Modifier.fillMaxSize(),
                                         contentScale = ContentScale.Crop
                                     )
                                 }
 
                                 Text(
-                                    text = "Ketuk untuk memperbesar",
+                                    text = "Tap to zoom",
                                     fontSize = 11.sp,
                                     color = Color.Gray,
                                     modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
@@ -713,7 +713,7 @@ fun DetailFormTeknisiPage(
                             }
                         } else {
                             Text(
-                                text = "Foto tidak ditemukan",
+                                text = "No Photo",
                                 fontSize = 13.sp,
                                 color = Color.Gray,
                                 modifier = Modifier.padding(8.dp)
@@ -735,7 +735,7 @@ fun DetailFormTeknisiPage(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "Status & Waktu",
+                        text = "Status and Time",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -748,7 +748,7 @@ fun DetailFormTeknisiPage(
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Status Saat Ini:",
+                            text = "Current Status:",
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
@@ -777,8 +777,8 @@ fun DetailFormTeknisiPage(
                         }
                     }
 
-                    DetailItem(label = "Dibuat pada", value = createdDate)
-                    DetailItem(label = "Diperbarui pada", value = updatedDate)
+                    DetailItem(label = "Created on", value = createdDate)
+                    DetailItem(label = "Updated on", value = updatedDate)
                 }
             }
 
@@ -819,7 +819,7 @@ fun DetailFormTeknisiPage(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Skor Dampak:", fontSize = 13.sp)
+                            Text("Impact Score:", fontSize = 13.sp)
                             Text(
                                 "${risk.skorDampak} - ${getImpactLabel(risk.skorDampak)}",
                                 fontSize = 13.sp,
@@ -831,7 +831,7 @@ fun DetailFormTeknisiPage(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Skor Kemungkinan:", fontSize = 13.sp)
+                            Text("Probable Score:", fontSize = 13.sp)
                             Text(
                                 "${risk.skorKemungkinan} - ${getProbabilityLabel(risk.skorKemungkinan)}",
                                 fontSize = 13.sp,
@@ -843,7 +843,7 @@ fun DetailFormTeknisiPage(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Skor Risiko:", fontSize = 13.sp)
+                            Text("Risk Score:", fontSize = 13.sp)
                             Text(
                                 risk.skorRisiko.toString(),
                                 fontSize = 13.sp,
@@ -855,7 +855,7 @@ fun DetailFormTeknisiPage(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Level Risiko:", fontSize = 13.sp)
+                            Text("Risk Level:", fontSize = 13.sp)
                             Card(
                                 colors = CardDefaults.cardColors(
                                     containerColor = getRiskLevelColor(risk.levelRisiko)
@@ -873,7 +873,7 @@ fun DetailFormTeknisiPage(
                         }
 
                         Text(
-                            text = "Dinilai oleh: ${risk.teknisiName}",
+                            text = "Rated by:${risk.teknisiName}",
                             fontSize = 11.sp,
                             color = Color.Gray
                         )
@@ -901,7 +901,7 @@ fun DetailFormTeknisiPage(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Lakukan Inspeksi",
+                            text = "Take an Inspection",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -924,7 +924,7 @@ fun DetailFormTeknisiPage(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Lakukan Inspeksi",
+                            text = "Take an Inspection",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -948,7 +948,7 @@ fun DetailFormTeknisiPage(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Jadwalkan Implementasi",
+                            text = "Schedule Implementation",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -968,7 +968,7 @@ fun DetailFormTeknisiPage(
                                 approverName = teknisiName,
                                 fromStatus = "Scheduled",
                                 toStatus = "Implementing",
-                                notes = "Memulai implementasi"
+                                notes = "Starting implementation"
                             )
                             // Kirim notifikasi ke end user
                             notificationViewModel.createNotification(
@@ -978,7 +978,7 @@ fun DetailFormTeknisiPage(
                                 fromStatus = "Scheduled",
                                 toStatus = "Implementing"
                             )
-                            successMessage = "Status berubah menjadi 'Implementing'"
+                            successMessage = "Status changed to 'Implementing'"
                             showSuccessDialog = true
                         },
                         modifier = Modifier
@@ -996,7 +996,7 @@ fun DetailFormTeknisiPage(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Mulai Implementasi",
+                            text = "Start Implementation",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -1020,7 +1020,7 @@ fun DetailFormTeknisiPage(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Selesaikan Implementasi",
+                            text = "Complete Implementation",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -1040,7 +1040,7 @@ fun DetailFormTeknisiPage(
                                 approverName = teknisiName,
                                 fromStatus = "Completed",
                                 toStatus = "Closed",
-                                notes = "Change request ditutup"
+                                notes = "Change requests are closed"
                             )
                             // Kirim notifikasi ke end user
                             notificationViewModel.createNotification(
@@ -1050,7 +1050,7 @@ fun DetailFormTeknisiPage(
                                 fromStatus = "Completed",
                                 toStatus = "Closed"
                             )
-                            successMessage = "Change request berhasil ditutup"
+                            successMessage = "Change request closed successfully"
                             showSuccessDialog = true
                         },
                         modifier = Modifier
@@ -1068,7 +1068,7 @@ fun DetailFormTeknisiPage(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Tutup Change Request",
+                            text = "Close Change Request",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )

@@ -1,7 +1,6 @@
-// ===== Updated LoginScreen untuk handle token =====
-// File: app/src/main/java/com/example/saktinocompose/login/LoginScreen.kt
 
 package com.example.saktinocompose.login
+import androidx.compose.ui.res.stringResource
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -55,7 +54,6 @@ fun LoginScreen(
     var successRole by remember { mutableStateOf("") }
     var successToken by remember { mutableStateOf<String?>(null) }
 
-    // Listener untuk event dari ViewModel
     LaunchedEffect(Unit) {
         loginViewModel.loginEvent.collect { event ->
             when (event) {
@@ -84,17 +82,17 @@ fun LoginScreen(
 
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
-            title = { Text("Selamat Datang!") },
+            title = { Text(stringResource(R.string.welcome)) },
             text = {
                 Column {
-                    Text("Login berhasil.")
+                    Text(stringResource(R.string.login_success))
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Nama: $successName")
                     Text("Role: $roleText")
                     if (successToken != null) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "✓ Tersambung ke server",
+                            "✓ Connected to server",
                             fontSize = 12.sp,
                             color = Color(0xFF4CAF50)
                         )
@@ -116,8 +114,8 @@ fun LoginScreen(
     if (showErrorDialog != null) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = null },
-            title = { Text("Gagal") },
-            text = { Text(showErrorDialog ?: "Terjadi kesalahan") },
+            title = { Text("Failed") },
+            text = { Text(showErrorDialog ?: "an error occurred") },
             confirmButton = {
                 Button(onClick = { showErrorDialog = null }) {
                     Text("Kembali")
@@ -126,7 +124,6 @@ fun LoginScreen(
         )
     }
 
-    // Animasi (sama seperti sebelumnya)
     val viewAlphas = List(7) { remember { Animatable(0f) } }
     LaunchedEffect(Unit) {
         launch {
@@ -165,7 +162,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = "Log In",
+                text = (stringResource(R.string.login)),
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = White,
@@ -184,7 +181,7 @@ fun LoginScreen(
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
-                            text = "Email",
+                            text = stringResource(R.string.email),
                             color = Color.Gray,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
@@ -219,7 +216,7 @@ fun LoginScreen(
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
-                            text = "Password",
+                            text = stringResource(R.string.password),
                             color = Color.Gray,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
@@ -267,7 +264,7 @@ fun LoginScreen(
                         color = Black
                     )
                 } else {
-                    Text("Login", fontSize = 18.sp)
+                    Text(stringResource(R.string.login), fontSize = 18.sp)
                 }
             }
 

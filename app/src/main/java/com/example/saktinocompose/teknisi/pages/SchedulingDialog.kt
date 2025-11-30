@@ -19,7 +19,8 @@ import androidx.compose.ui.unit.sp
 import com.example.saktinocompose.data.entity.ChangeRequest
 import java.text.SimpleDateFormat
 import java.util.*
-
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchedulingDialog(
@@ -61,7 +62,7 @@ fun SchedulingDialog(
                     tint = Color(0xFFFF9800)
                 )
                 Text(
-                    text = "Jadwalkan Implementasi",
+                    text = stringResource(R.string.schedule_implementation),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -94,7 +95,7 @@ fun SchedulingDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Tentukan tanggal implementasi perubahan",
+                            text = stringResource(R.string.implementation_date) + " *",
                             fontSize = 11.sp,
                             color = Color.Gray
                         )
@@ -113,7 +114,7 @@ fun SchedulingDialog(
                         modifier = Modifier.padding(12.dp)
                     ) {
                         Text(
-                            text = "Usulan Jadwal (End User)",
+                            text = stringResource(R.string.proposed_schedule_user),
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.Gray
@@ -130,7 +131,7 @@ fun SchedulingDialog(
 
                 // Tanggal Implementasi
                 Text(
-                    text = "Tanggal Implementasi *",
+                    text = stringResource(R.string.implementation_date) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -139,7 +140,7 @@ fun SchedulingDialog(
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Pilih tanggal") },
+                    placeholder = { Text("Choose date") },
                     leadingIcon = {
                         Icon(Icons.Default.CalendarToday, contentDescription = null)
                     },
@@ -156,7 +157,7 @@ fun SchedulingDialog(
 
                 // Catatan
                 Text(
-                    text = "Catatan (Opsional)",
+                    text = stringResource(R.string.notes) + " (Optional)",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -165,7 +166,7 @@ fun SchedulingDialog(
                     onValueChange = { notes = it },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
-                    placeholder = { Text("Tambahkan catatan untuk penjadwalan...") },
+                    placeholder = { Text("Add a note for scheduling...") },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White
@@ -221,12 +222,12 @@ fun SchedulingDialog(
                     containerColor = Color(0xFFFF9800)
                 )
             ) {
-                Text("Jadwalkan")
+                Text(stringResource(R.string.schedule))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal")
+                Text("Cancel")
             }
         }
     )

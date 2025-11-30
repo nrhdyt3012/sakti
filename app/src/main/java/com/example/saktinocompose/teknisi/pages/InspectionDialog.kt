@@ -1,5 +1,7 @@
 package com.example.saktinocompose.teknisi.pages
 
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -172,7 +174,7 @@ fun InspectionDialog(
                     tint = Color(0xFF384E66)
                 )
                 Text(
-                    text = "Inspeksi & Review",
+                    text = stringResource(R.string.inspection_review),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -205,7 +207,7 @@ fun InspectionDialog(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Lakukan inspeksi dan pilih tindakan: Setuju, Reject, atau Revisi",
+                            text =  stringResource(R.string.perform_inspection),
                             fontSize = 11.sp,
                             color = Color.Gray
                         )
@@ -214,7 +216,7 @@ fun InspectionDialog(
 
                 // 1. Edit Jenis Perubahan
                 Text(
-                    text = "1. Jenis Perubahan (dapat diedit)",
+                    text = "1. Change Type ",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -227,7 +229,7 @@ fun InspectionDialog(
                         value = jenisPerubahan,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Jenis Perubahan") },
+                        label = { Text("Change Type") },
                         trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -255,7 +257,7 @@ fun InspectionDialog(
 
                 // 2. Estimasi Biaya
                 Text(
-                    text = "2. Estimasi Biaya *",
+                    text = stringResource(R.string.cost_estimate) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -264,7 +266,7 @@ fun InspectionDialog(
                     value = estimasiBiaya,
                     onValueChange = { estimasiBiaya = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Contoh: Rp 5.000.000") },
+                    placeholder = { Text("Example: Rp 5.000.000") },
                     leadingIcon = {
                         Icon(Icons.Default.AttachMoney, contentDescription = null, tint = Color.Black)
                     },
@@ -276,7 +278,7 @@ fun InspectionDialog(
 
                 // 3. Estimasi Waktu
                 Text(
-                    text = "3. Estimasi Waktu *",
+                    text = stringResource(R.string.time_estimate) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -285,7 +287,7 @@ fun InspectionDialog(
                     value = estimasiWaktu,
                     onValueChange = { estimasiWaktu = it },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Contoh: 2 hari / 4 jam") },
+                    placeholder = { Text("Example: 2 hari / 4 jam") },
                     leadingIcon = {
                         Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.Black)
                     },
@@ -297,7 +299,7 @@ fun InspectionDialog(
 
                 // 4. Skor Dampak
                 Text(
-                    text = "4. Skor Dampak (Impact) *",
+                    text = stringResource(R.string.impact_score) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -310,7 +312,7 @@ fun InspectionDialog(
                         value = if (skorDampak == 0) "" else "$skorDampak - ${getImpactLabel(skorDampak)}",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Pilih Skor Dampak") },
+                        label = { Text("Choose Impact score") },
                         trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -338,7 +340,7 @@ fun InspectionDialog(
 
                 // 5. Skor Kemungkinan
                 Text(
-                    text = "5. Skor Kemungkinan (Probability) *",
+                    text = stringResource(R.string.probability_score) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -351,7 +353,7 @@ fun InspectionDialog(
                         value = if (skorKemungkinan == 0) "" else "$skorKemungkinan - ${getProbabilityLabel(skorKemungkinan)}",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Pilih Skor Kemungkinan") },
+                        label = { Text("Choose Probability Score") },
                         trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -379,7 +381,7 @@ fun InspectionDialog(
 
                 // 6. Skor Eksposur (BARU)
                 Text(
-                    text = "6. Skor Eksposur *",
+                    text = stringResource(R.string.exposure_score) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -392,7 +394,7 @@ fun InspectionDialog(
                         value = if (skorEksposur == 0) "" else skorEksposur.toString(),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Pilih Skor Eksposur (1-4)") },
+                        label = { Text("Choose exposure score (1-4)") },
                         trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -433,7 +435,7 @@ fun InspectionDialog(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Hasil Perhitungan Risk",
+                                text = stringResource(R.string.risk_calculation_result),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -455,7 +457,7 @@ fun InspectionDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Level Risiko:", fontSize = 13.sp)
+                                Text("Risk Level:", fontSize = 13.sp)
                                 Card(
                                     colors = CardDefaults.cardColors(
                                         containerColor = levelColor
@@ -477,7 +479,7 @@ fun InspectionDialog(
 
                 // 7. Foto Bukti Lapangan
                 Text(
-                    text = "7. Foto Bukti Lapangan *",
+                    text = stringResource(R.string.field_evidence_photo) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -493,7 +495,7 @@ fun InspectionDialog(
                         Box(modifier = Modifier.fillMaxSize()) {
                             Image(
                                 bitmap = photoBitmap!!.asImageBitmap(),
-                                contentDescription = "Preview Foto",
+                                contentDescription = "Preview Photo",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
                             )
@@ -510,7 +512,7 @@ fun InspectionDialog(
                             ) {
                                 Icon(
                                     Icons.Default.Close,
-                                    contentDescription = "Hapus Foto",
+                                    contentDescription = "Delete Photo",
                                     tint = Color.White
                                 )
                             }
@@ -525,7 +527,7 @@ fun InspectionDialog(
                     ) {
                         Icon(Icons.Default.Edit, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Ganti Foto")
+                        Text("Change Photo")
                     }
                 } else {
                     OutlinedButton(
@@ -534,13 +536,13 @@ fun InspectionDialog(
                     ) {
                         Icon(Icons.Default.AddAPhoto, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Tambah Foto Bukti")
+                        Text("Add evidence photo")
                     }
                 }
 
                 // 8. Catatan
                 Text(
-                    text = "8. Catatan (untuk Reject/Revisi)",
+                    text = stringResource(R.string.approve),
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
@@ -550,7 +552,7 @@ fun InspectionDialog(
                     onValueChange = { notes = it },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
-                    placeholder = { Text("Jelaskan alasan reject atau revisi jika diperlukan...") },
+                    placeholder = { Text("Explain the reason for rejection or revision if necessary...") },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White
@@ -610,7 +612,7 @@ fun InspectionDialog(
                 ) {
                     Icon(Icons.Default.CheckCircle, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Setuju (Approve)")
+                    Text(stringResource(R.string.approve))
                 }
 
                 // Tombol REVISI
@@ -640,7 +642,7 @@ fun InspectionDialog(
                 ) {
                     Icon(Icons.Default.Edit, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Minta Revisi")
+                    Text(stringResource(R.string.request_revision))
                 }
 
                 // Tombol REJECT
@@ -670,7 +672,7 @@ fun InspectionDialog(
                 ) {
                     Icon(Icons.Default.Cancel, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Reject")
+                    Text(stringResource(R.string.reject))
                 }
             }
         },

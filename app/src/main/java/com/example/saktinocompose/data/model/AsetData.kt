@@ -19,12 +19,12 @@ object AsetHelper {
 
     // Map kategori aset ke prefix ID
     private val asetPrefixMap = mapOf(
-        "Aset Perangkat Keras" to "APK",
-        "Aplikasi/Service" to "APS",
+        "Hardware Assets" to "APK",
+        "Application/Service" to "APS",
         "OS/Build" to "OSB",
-        "Jaringan (switch/router/AP)" to "JRG",
+        "Network (switch/router/AP)" to "JRG",
         "Database/Instance" to "DBS",
-        "Sertifikat" to "SRT",
+        "Certificate" to "SRT",
         "VM/Container" to "VMC",
         "Endpoint" to "EPT"
     )
@@ -60,20 +60,20 @@ object AsetHelper {
 
         return relatedCIString.split(",").mapNotNull { item ->
             val parts = item.trim().split(":")
-            when (parts.size) {
+            when {
                 // Format BARU: "id:nama:tipeRelasi"
-                3 -> AsetData(
+                parts.size >= 3 -> AsetData(
                     id = parts[0].trim(),
                     nama = parts[1].trim(),
                     tipeRelasi = parts[2].trim()
                 )
-                // Format LAMA: "id:nama"
-                2 -> AsetData(
+                // Format LAMA: "id:nama" (backward compatibility)
+                parts.size == 2 -> AsetData(
                     id = parts[0].trim(),
                     nama = parts[1].trim(),
-                    tipeRelasi = "" // Beri nilai default karena tipe relasi tidak ada di data lama
+                    tipeRelasi = "DEPENDS_ON" // Default tipe relasi untuk data lama
                 )
-                // Format tidak valid, buang
+                // Format invalid, skip
                 else -> null
             }
         }

@@ -17,7 +17,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.viewmodel.NotificationViewModel
-
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImplementationResultDialog(
@@ -58,7 +59,7 @@ fun ImplementationResultDialog(
                     tint = Color(0xFF4CAF50)
                 )
                 Text(
-                    text = "Hasil Implementasi",
+                    text = stringResource(R.string.implementation_result),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -100,7 +101,7 @@ fun ImplementationResultDialog(
 
                 // Dampak Setelah Mitigasi
                 Text(
-                    text = "1. Dampak Setelah Mitigasi *",
+                    text = stringResource(R.string.impact_after_mitigation) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -112,7 +113,7 @@ fun ImplementationResultDialog(
                         value = if (dampakSetelahMitigasi == 0) "" else "$dampakSetelahMitigasi - ${getImpactLabel(dampakSetelahMitigasi)}",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Pilih Dampak") },
+                        label = { Text("Choose Impact Score") },
                         trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -140,7 +141,7 @@ fun ImplementationResultDialog(
 
                 // Kemungkinan Setelah Mitigasi
                 Text(
-                    text = "2. Kemungkinan Setelah Mitigasi *",
+                    text = stringResource(R.string.probability_after_mitigation) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -152,7 +153,7 @@ fun ImplementationResultDialog(
                         value = if (kemungkinanSetelahMitigasi == 0) "" else "$kemungkinanSetelahMitigasi - ${getProbabilityLabel(kemungkinanSetelahMitigasi)}",
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Pilih Kemungkinan") },
+                        label = { Text("Choose Probabilit Score") },
                         trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -180,7 +181,7 @@ fun ImplementationResultDialog(
 
                 // Exposur
                 Text(
-                    text = "3. Exposur *",
+                    text = "3. Exposure *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -192,7 +193,7 @@ fun ImplementationResultDialog(
                         value = if (exposur == 0) "" else exposur.toString(),
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Pilih Exposur (1-4)") },
+                        label = { Text("Choose Exposure Score") },
                         trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -233,7 +234,7 @@ fun ImplementationResultDialog(
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "Hasil Perhitungan Risiko Residual",
+                                text = "Residual Risk Calculation Results",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold
                             )
@@ -242,7 +243,7 @@ fun ImplementationResultDialog(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Skor Residual:", fontSize = 13.sp)
+                                Text("Residual Score:", fontSize = 13.sp)
                                 Text(
                                     "$skorResidual",
                                     fontSize = 13.sp,
@@ -255,7 +256,7 @@ fun ImplementationResultDialog(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Level Risiko Residual:", fontSize = 13.sp)
+                                Text(stringResource(R.string.residual_risk_level) + ":", fontSize = 13.sp)
                                 Card(
                                     colors = CardDefaults.cardColors(
                                         containerColor = levelColor
@@ -277,7 +278,7 @@ fun ImplementationResultDialog(
 
                 // Keterangan Hasil Implementasi
                 Text(
-                    text = "4. Keterangan Hasil Implementasi *",
+                    text = stringResource(R.string.implementation_description) + " *",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -286,7 +287,7 @@ fun ImplementationResultDialog(
                     onValueChange = { keteranganHasilImplementasi = it },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 4,
-                    placeholder = { Text("Jelaskan hasil implementasi perubahan...") },
+                    placeholder = { Text("Explain the results of implementing changes...") },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White
@@ -320,12 +321,12 @@ fun ImplementationResultDialog(
                     containerColor = Color(0xFF4CAF50)
                 )
             ) {
-                Text("Selesai Implementasi")
+                Text(stringResource(R.string.complete_implementation))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Batal")
+                Text("Cancel")
             }
         }
     )

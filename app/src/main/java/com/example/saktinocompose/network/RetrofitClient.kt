@@ -1,6 +1,6 @@
-// 4. Retrofit Client Setup
 package com.example.saktinocompose.network
 
+import android.content.Context
 import com.example.saktinocompose.network.api.*
 import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
@@ -12,15 +12,18 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // Auth Token Storage (nanti akan diambil dari SessionManager)
     var authToken: String? = null
+    private var applicationContext: Context? = null
 
-    // Logging Interceptor
+    // ✅ Initialize dengan context
+    fun initialize(context: Context) {
+        applicationContext = context.applicationContext
+    }
+
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    // Auth Interceptor untuk menambahkan token ke header
     private val authInterceptor = Interceptor { chain ->
         val request = chain.request()
         val newRequest = request.newBuilder()
@@ -35,9 +38,15 @@ object RetrofitClient {
         chain.proceed(newRequest)
     }
 
-    // OkHttp Client
+    // ✅ Tambahkan Internet Check Interceptor
     private fun getOkHttpClient(): OkHttpClient {
         return OkHttpClient.Builder()
+            .apply {
+                // ✅ Add internet check interceptor first
+                applicationContext?.let {
+                    addInterceptor(InternetCheckInterceptor(it))
+                }
+            }
             .addInterceptor(loggingInterceptor)
             .addInterceptor(authInterceptor)
             .connectTimeout(ApiConfig.CONNECT_TIMEOUT, TimeUnit.SECONDS)
@@ -46,33 +55,28 @@ object RetrofitClient {
             .build()
     }
 
-    // Gson Converter
     private val gson = GsonBuilder()
         .setLenient()
         .create()
 
-    // Retrofit instance untuk Auth API
     private val retrofitAuth = Retrofit.Builder()
         .baseUrl(ApiConfig.BASE_URL_AUTH)
         .client(getOkHttpClient())
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
-    // Retrofit instance untuk Teknisi API
     private val retrofitTeknisi = Retrofit.Builder()
         .baseUrl(ApiConfig.BASE_URL_TEKNISI)
         .client(getOkHttpClient())
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
-    // Retrofit instance untuk Sync API
     private val retrofitSync = Retrofit.Builder()
         .baseUrl(ApiConfig.BASE_URL_SYNC)
         .client(getOkHttpClient())
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
-    // Service instances
     val authService: AuthApiService by lazy {
         retrofitAuth.create(AuthApiService::class.java)
     }
@@ -85,12 +89,10 @@ object RetrofitClient {
         retrofitSync.create(SyncApiService::class.java)
     }
 
-    // Function untuk set auth token
     fun updateAuthToken(token: String?) {
         authToken = token
     }
 
-    // Function untuk clear auth token
     fun clearAuthToken() {
         authToken = null
     }

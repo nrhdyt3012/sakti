@@ -27,7 +27,7 @@ fun RelatedCITable(
 
     if (relasiList.isEmpty()) {
         Text(
-            text = "Tidak ada relasi CI",
+            text = "No CI relationship",
             fontSize = 14.sp,
             color = Color.Gray,
             modifier = modifier
@@ -63,21 +63,21 @@ fun RelatedCITable(
                         .padding(12.dp)
                 ) {
                     Text(
-                        text = "ID Aset",
+                        text = "Asset ID",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         modifier = Modifier.width(120.dp)
                     )
                     Text(
-                        text = "Nama CI",
+                        text = "CI Name",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                         modifier = Modifier.width(200.dp)
                     )
                     Text(
-                        text = "Tipe Relasi",
+                        text = "Relationship Type",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,

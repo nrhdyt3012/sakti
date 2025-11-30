@@ -25,7 +25,8 @@ import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 @Composable
 fun EnduserStatusPage(
     userId: Int,
@@ -45,7 +46,7 @@ fun EnduserStatusPage(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Status Permohonan",
+            text = stringResource(R.string.status),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,
@@ -77,7 +78,7 @@ fun EnduserStatusPage(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "Belum ada permohonan",
+                        text = stringResource(R.string.no_requests),
                         fontSize = 16.sp,
                         color = Color.Gray,
                         textAlign = TextAlign.Center
@@ -175,7 +176,7 @@ fun ChangeRequestCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Jenis:",
+                    text =  stringResource(R.string.change_type) + ":",
                     fontSize = 13.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
@@ -195,7 +196,7 @@ fun ChangeRequestCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Aset:",
+                    text = "Asset:",
                     fontSize = 13.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
@@ -215,7 +216,7 @@ fun ChangeRequestCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Diajukan:",
+                    text = stringResource(R.string.submitted) + ":",
                     fontSize = 13.sp,
                     color = Color.Gray,
                     fontWeight = FontWeight.Medium
@@ -253,7 +254,7 @@ fun ChangeRequestCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Riwayat", fontSize = 13.sp)
+                    Text(stringResource(R.string.view_history), fontSize = 13.sp)
                 }
 
                 Button(
@@ -272,7 +273,7 @@ fun ChangeRequestCard(
                             .size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Detail", fontSize = 13.sp, color = Color.White)
+                    Text(stringResource(R.string.view_details), fontSize = 13.sp, color = Color.White)
                 }
             }
         }

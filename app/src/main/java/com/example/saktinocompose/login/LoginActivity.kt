@@ -1,6 +1,3 @@
-// ===== Updated LoginActivity untuk save token =====
-// File: app/src/main/java/com/example/saktinocompose/login/LoginActivity.kt
-
 package com.example.saktinocompose.login
 
 import android.content.Intent
@@ -12,21 +9,20 @@ import com.example.saktinocompose.enduser.EnduserActivity
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.teknisi.TeknisiActivity
 import com.example.saktinocompose.utils.SessionManager
-import com.example.saktinocompose.utils.SyncManager
+// ❌ HAPUS import SyncManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class LoginActivity: ComponentActivity(){
     private lateinit var sessionManager: SessionManager
-    private lateinit var syncManager: SyncManager
+    // ❌ HAPUS syncManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         sessionManager = SessionManager(this)
-        syncManager = SyncManager(this)
+        // ❌ HAPUS syncManager = SyncManager(this)
 
-        // Cek apakah user sudah login
         lifecycleScope.launch {
             val userSession = sessionManager.userSession.first()
 
@@ -36,15 +32,12 @@ class LoginActivity: ComponentActivity(){
                 userSession.name != null &&
                 userSession.role != null) {
 
-                // Set token jika ada
                 userSession.authToken?.let { token ->
                     RetrofitClient.updateAuthToken(token)
                 }
 
-                // Initialize sync
-                syncManager.initializeSync()
+                // ❌ HAPUS syncManager.initializeSync()
 
-                // User sudah login, langsung navigasi ke halaman sesuai role
                 navigateToHome(
                     userId = userSession.userId,
                     email = userSession.email,
@@ -52,7 +45,6 @@ class LoginActivity: ComponentActivity(){
                     role = userSession.role
                 )
             } else {
-                // User belum login, tampilkan login screen
                 showLoginScreen()
             }
         }
@@ -62,7 +54,6 @@ class LoginActivity: ComponentActivity(){
         setContent {
             LoginScreen(
                 onLoginSuccess = { userId, email, name, role, token ->
-                    // Simpan session dengan token
                     lifecycleScope.launch {
                         sessionManager.saveSession(
                             userId = userId,
@@ -72,11 +63,9 @@ class LoginActivity: ComponentActivity(){
                             authToken = token
                         )
 
-                        // Set token ke RetrofitClient
                         token?.let { RetrofitClient.updateAuthToken(it) }
 
-                        // Initialize sync
-                        syncManager.initializeSync()
+                        // ❌ HAPUS syncManager.initializeSync()
 
                         navigateToHome(userId, email, name, role)
                     }

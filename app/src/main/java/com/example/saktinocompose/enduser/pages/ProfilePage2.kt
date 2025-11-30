@@ -23,6 +23,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.login.LoginActivity
 import com.example.saktinocompose.viewmodel.ProfileViewModel
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.example.saktinocompose.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,8 +45,8 @@ fun ProfilePage2(
     if (showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { showLogoutDialog = false },
-            title = { Text("Konfirmasi Logout") },
-            text = { Text("Apakah Anda yakin ingin keluar?") },
+            title = { Text(stringResource(R.string.logout_confirmation)) },
+            text = { Text(stringResource(R.string.logout_message)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -59,12 +61,12 @@ fun ProfilePage2(
                         containerColor = Color(0xFFD32F2F)
                     )
                 ) {
-                    Text("Ya, Keluar")
+                    Text(stringResource(R.string.yes) + ", " + stringResource(R.string.logout))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showLogoutDialog = false }) {
-                    Text("Batal")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -172,7 +174,7 @@ fun ProfilePage2(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column {
                             Text(
-                                text = "Nama",
+                                text = "Name",
                                 fontSize = 12.sp,
                                 color = Color.Gray
                             )
