@@ -18,7 +18,7 @@ class ApprovalHistoryViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun addApprovalHistory(
-        changeRequestId: Int,
+        changeRequestId: String,
         approverUserId: Int,
         approverName: String,
         fromStatus: String,

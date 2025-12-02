@@ -14,13 +14,14 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+// File: app/src/main/java/com/example/saktinocompose/viewmodel/ChangeRequestViewModel.kt
+
 class ChangeRequestViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = AppDatabase.getDatabase(application)
     private val changeRequestDao = database.changeRequestDao()
     private val repository = ChangeRequestRepository(changeRequestDao)
 
-    // ✅ Loading state untuk UI
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
 
@@ -28,7 +29,6 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
     val error = _error.asStateFlow()
 
     init {
-        // ✅ Auto-fetch data when ViewModel created
         refreshData()
     }
 
@@ -60,36 +60,36 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         _error.value = null
     }
 
+    // ===== Read Operations =====
 
     fun getAllChangeRequests(): Flow<List<ChangeRequest>> {
         return repository.getAllChangeRequests()
     }
 
     fun getChangeRequestsByStatus(status: String): Flow<List<ChangeRequest>> {
-        return changeRequestDao.getChangeRequestsByStatus(status)
+        return repository.getChangeRequestsByStatus(status)
     }
 
-    suspend fun getChangeRequestById(id: Int): ChangeRequest? {
-        return repository.getChangeRequestById(id)
+    suspend fun getChangeRequestById(crId: String): ChangeRequest? {
+        return repository.getChangeRequestById(crId)
     }
+
+    // ===== Update Operations =====
 
     fun updateChangeRequestStatus(
         changeRequest: ChangeRequest,
-        newStatus: String,
-        teknisiId: Int? = null,
-        teknisiName: String? = null,
-        notes: String? = null
+        newStatus: String
     ) {
         viewModelScope.launch {
             _isLoading.value = true
 
-            when (val result = repository.updateStatus(
-                changeRequest = changeRequest,
-                newStatus = newStatus,
-                teknisiId = teknisiId,
-                teknisiName = teknisiName,
-                notes = notes
-            )) {
+            val updated = changeRequest.copy(
+                ,,,,,,,,,,,,
+                status = newStatus,,
+                updatedAt = getCurrentIsoTimestamp(),,,
+            )
+
+            when (val result = repository.updateChangeRequest(updated)) {
                 is Result.Error -> {
                     _error.value = result.message
                 }
@@ -107,7 +107,8 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             _isLoading.value = true
 
             val updated = updatedRequest.copy(
-                updatedAt = System.currentTimeMillis()
+                ,,,,,,,,,,,,,
+                updatedAt = getCurrentIsoTimestamp(),,,
             )
 
             when (val result = repository.updateChangeRequest(updated)) {
@@ -123,10 +124,12 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private suspend fun generateTicketId(): String {
-        val dateFormat = SimpleDateFormat("yyyyMMdd", Locale.getDefault())
-        val today = dateFormat.format(Date())
-        val count = changeRequestDao.getTodayRequestCount() + 1
-        return "CR-$today-${count.toString().padStart(4, '0')}"
+    /**
+     * ✅ Helper untuk generate ISO 8601 timestamp
+     */
+    private fun getCurrentIsoTimestamp(): String {
+        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        sdf.timeZone = TimeZone.getTimeZone("UTC")
+        return sdf.format(Date())
     }
 }

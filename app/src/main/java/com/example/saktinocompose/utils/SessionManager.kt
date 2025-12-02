@@ -24,7 +24,7 @@ class SessionManager(private val context: Context) {
     }
 
     suspend fun saveSession(
-        userId: Int,
+        userId: String,
         email: String,
         name: String,
         role: String,

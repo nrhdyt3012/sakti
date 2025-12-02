@@ -37,7 +37,7 @@ class LoginActivity: ComponentActivity() {
                 // ❌ HAPUS syncManager.initializeSync()
 
                 navigateToHome(
-                    userId = userSession.userId,
+                    userId = userSession.userId.toString(),
                     email = userSession.email,
                     name = userSession.name,
                     role = userSession.role
@@ -72,7 +72,7 @@ class LoginActivity: ComponentActivity() {
         }
     }
 
-    private fun navigateToHome(userId: Int, email: String, name: String, role: String) {
+    private fun navigateToHome(userId: String, email: String, name: String, role: String) {
         // Hanya Teknisi yang bisa login
         if (role.uppercase() != "TEKNISI") {
             Toast.makeText(this, "Access denied. Technician only.", Toast.LENGTH_LONG).show()

@@ -25,12 +25,12 @@ import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import com.example.saktinocompose.viewmodel.RiskAssessmentViewModel
 import com.example.saktinocompose.viewmodel.ApprovalHistoryViewModel
-import com.example.saktinocompose.viewmodel.NotificationViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 import com.example.saktinocompose.ui.components.RelatedCITable
 import com.example.saktinocompose.ui.components.AsetTerdampakDisplay
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,8 +43,6 @@ fun DetailFormTeknisiPage(
     changeRequestViewModel: ChangeRequestViewModel = viewModel(),
     riskAssessmentViewModel: RiskAssessmentViewModel = viewModel(),
     approvalHistoryViewModel: ApprovalHistoryViewModel = viewModel(),
-    notificationViewModel: NotificationViewModel = viewModel()
-
 ) {
     val scrollState = rememberScrollState()
     val dateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale.getDefault())
@@ -86,7 +84,7 @@ fun DetailFormTeknisiPage(
                             skorEksposur = skorEksposur,
                             photoPath = photoPath,
                             status = "Reviewed",
-                            updatedAt = System.currentTimeMillis()
+                            updatedAt = System.currentTimeMillis().toString()
                         )
                         changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
@@ -110,15 +108,6 @@ fun DetailFormTeknisiPage(
                             fromStatus = changeRequest.status,
                             toStatus = "Reviewed",
                             notes = "Inspection completed. Cost estimate $estimasiBiaya, Time estimate: $estimasiWaktu, Risk Level : $levelRisiko"
-                        )
-
-                        // Kirim notifikasi ke end user
-                        notificationViewModel.createNotification(
-                            userId = changeRequest.userId,
-                            changeRequestId = changeRequest.id,
-                            ticketId = changeRequest.ticketId,
-                            fromStatus = changeRequest.status,
-                            toStatus = "Reviewed"
                         )
 
                         showInspectionDialog = false

@@ -4,13 +4,15 @@ import androidx.room.*
 import com.example.saktinocompose.data.entity.ChangeRequest
 import kotlinx.coroutines.flow.Flow
 
+// File: app/src/main/java/com/example/saktinocompose/data/dao/ChangeRequestDao.kt
+
 @Dao
 interface ChangeRequestDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertChangeRequest(changeRequest: ChangeRequest): Long
 
-    @Query("SELECT * FROM change_requests WHERE userId = :userId ORDER BY createdAt DESC")
-    fun getChangeRequestsByUser(userId: Int): Flow<List<ChangeRequest>>
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(changeRequests: List<ChangeRequest>)
 
     @Query("SELECT * FROM change_requests ORDER BY createdAt DESC")
     fun getAllChangeRequests(): Flow<List<ChangeRequest>>
@@ -18,8 +20,8 @@ interface ChangeRequestDao {
     @Query("SELECT * FROM change_requests WHERE status = :status ORDER BY createdAt DESC")
     fun getChangeRequestsByStatus(status: String): Flow<List<ChangeRequest>>
 
-    @Query("SELECT * FROM change_requests WHERE id = :id LIMIT 1")
-    suspend fun getChangeRequestById(id: Int): ChangeRequest?
+    @Query("SELECT * FROM change_requests WHERE id = :crId LIMIT 1")  // ✅ Pakai String
+    suspend fun getChangeRequestById(crId: String): ChangeRequest?
 
     @Update
     suspend fun updateChangeRequest(changeRequest: ChangeRequest)
@@ -27,6 +29,6 @@ interface ChangeRequestDao {
     @Delete
     suspend fun deleteChangeRequest(changeRequest: ChangeRequest)
 
-    @Query("SELECT COUNT(*) FROM change_requests WHERE DATE(createdAt/1000, 'unixepoch') = DATE('now')")
-    suspend fun getTodayRequestCount(): Int
+    @Query("DELETE FROM change_requests")
+    suspend fun clearAll()
 }

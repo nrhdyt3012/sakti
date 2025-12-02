@@ -3,47 +3,67 @@ package com.example.saktinocompose.data.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
+// File: app/src/main/java/com/example/saktinocompose/data/entity/ChangeRequest.kt
+
 @Entity(tableName = "change_requests")
 data class ChangeRequest(
-    @PrimaryKey(autoGenerate = true)
-    val id: Int = 0,
+    @PrimaryKey(autoGenerate = true)  // ✅ Tidak auto-generate, pakai cr_id dari API
+    val id: String,  // ✅ cr_id dari API (String, bukan Int)
+
     val ticketId: String,
-    val userId: Int,
-    val idPerubahan: String,  // ✅ UUID-based ID Perubahan
-    val jenisPerubahan: String,
-    val alasan: String,
-    val tujuan: String,
-    // ✅ BARU: 3 Field untuk Aset
-    val idAset: String,                    // ID Aset (manual input)
-    val asetTerdampak: String,              // Aset yang Diperbaiki (dari list)
+    val type: String,  // ✅ type (jenisPerubahan)
+    val title: String,  // ✅ title (alasan)
+    val description: String,  // ✅ description (tujuan)
+
+    // Asset info
+    val assetId: String,
+    val asetTerdampak: String,  // ✅ Tetap untuk kompatibilitas UI
     val relasiConfigurationItem: String,
+
+    // Implementation plan
     val rencanaImplementasi: String,
     val usulanJadwal: String,
-    val rencanaRollback: String,
-    val assignedTeknisiId: Int? = null,
+    val rollbackPlan: String,
+
+    // Assigned technician
+    val assignedTeknisiId: String? = null,
     val assignedTeknisiName: String? = null,
+
+    // Inspection results
     val photoPath: String? = null,
     val estimasiBiaya: String? = null,
     val estimasiWaktu: String? = null,
+
+    // Schedule
     val scheduledDate: String? = null,
-    val scheduledTimestamp: Long? = null,
+    val scheduleStart: String? = null,
+    val scheduleEnd: String? = null,
 
-    // Field untuk skor eksposur awal (dari inspeksi)
-    val skorEksposur: Int? = null,
+    // Risk scores
+    val scoreImpact: Int? = null,
+    val scoreLikelihood: Int? = null,
+    val scoreRisk: Int? = null,
+    val riskLevel: String? = null,
 
-    // Field untuk hasil implementasi
-    val dampakSetelahMitigasi: Int? = null,
-    val kemungkinanSetelahMitigasi: Int? = null,
-    val exposur: Int? = null,
-    val skorResidual: Int? = null,
-    val levelRisikoResidual: String? = null,
-    val keteranganHasilImplementasi: String? = null,
+    // Post-implementation
+    val postImpact: Int? = null,
+    val postLikelihood: Int? = null,
+    val postResidualScore: Int? = null,
+    val postRiskLevel: String? = null,
+    val implementationResult: String? = null,
 
-    // Field untuk revisi
-    val revisionNotes: String? = null,
-    val revisionCount: Int = 0,
+    // Status & timestamps
+    val status: String,
+    val approvalStatus: String? = null,
+    val createdAt: String,  // ✅ ISO 8601 string dari API
+    val updatedAt: String,  // ✅ ISO 8601 string dari API
 
-    val status: String = "Submitted",
-    val createdAt: Long = System.currentTimeMillis(),
-    val updatedAt: Long = System.currentTimeMillis()
+    // Additional info
+    val dinas: String? = null,
+    val impactDesc: String? = null,
+    val controlExisting: String? = null,
+    val controlEffectiveness: String? = null,
+    val mitigationPlan: String? = null,
+    val jenisPerubahan: String,
+    val skorEksposur: Int
 )

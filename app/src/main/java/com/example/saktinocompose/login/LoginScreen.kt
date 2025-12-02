@@ -33,6 +33,7 @@ import com.example.saktinocompose.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+lateinit var successUsername: String
 val White = Color(0xFFFFFFFF)
 val MediumGreen = Color(0xFF009951)
 val GrayBackground = Color(0xFF485F88)
@@ -41,12 +42,12 @@ val Black = Color(0xFF000000)
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModelCompose = viewModel(),
-    onLoginSuccess: (userId: Int, email: String, name: String, role: String, token: String?) -> Unit
+    onLoginSuccess: (userId: String, email: String, name: String, role: String, token: String?) -> Unit
 ) {
     val uiState by loginViewModel.uiState.collectAsState()
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf<String?>(null) }
-    var successUserId by remember { mutableStateOf(0) }
+    var successUserId: String by remember { mutableStateOf("") }
     var successEmail by remember { mutableStateOf("") }
     var successName by remember { mutableStateOf("") }
     var successRole by remember { mutableStateOf("") }
@@ -57,7 +58,7 @@ fun LoginScreen(
             when (event) {
                 is LoginEvent.LoginSuccess -> {
                     successUserId = event.user.id
-                    successEmail = event.user.email
+                    successUsername = event.user.username
                     successName = event.user.name
                     successRole = event.user.role
                     successToken = event.token

@@ -22,7 +22,7 @@ class RiskAssessmentViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun saveRiskAssessment(
-        changeRequestId: Int,
+        changeRequestId: String,
         teknisiId: Int,
         teknisiName: String,
         skorDampak: Int,
