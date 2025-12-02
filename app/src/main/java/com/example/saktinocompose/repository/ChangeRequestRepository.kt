@@ -1,5 +1,6 @@
 package com.example.saktinocompose.repository
 
+import android.util.Log
 import com.example.saktinocompose.data.dao.ChangeRequestDao
 import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.network.Result
@@ -14,7 +15,7 @@ class ChangeRequestRepository(
 ) {
 
     /**
-     * ✅ Fetch dari API dan cache ke database
+     * ✅ FIXED: Fetch dari API dengan error handling yang lebih baik
      */
     suspend fun fetchFromApi(
         status: String? = null,
@@ -23,10 +24,14 @@ class ChangeRequestRepository(
         return withContext(Dispatchers.IO) {
             try {
                 val token = RetrofitClient.authToken
+
+                Log.d("ChangeRequestRepo", "Fetching with token: ${token?.take(20)}...")
+
                 if (token == null) {
+                    Log.e("ChangeRequestRepo", "No token available")
                     return@withContext Result.Error(
                         Exception("No token"),
-                        "Authentication required"
+                        "Authentication required. Please login again."
                     )
                 }
 
@@ -36,8 +41,12 @@ class ChangeRequestRepository(
                     deskripsi
                 )
 
+                Log.d("ChangeRequestRepo", "Response code: ${response.code()}")
+
                 if (response.isSuccessful && response.body()?.status == "success") {
                     val apiRequests = response.body()?.data ?: emptyList()
+
+                    Log.d("ChangeRequestRepo", "Fetched ${apiRequests.size} requests")
 
                     // ✅ Convert API response ke Entity
                     val localRequests = apiRequests.map { apiDataToChangeRequest(it) }
@@ -48,75 +57,103 @@ class ChangeRequestRepository(
 
                     Result.Success(localRequests)
                 } else {
+                    val errorBody = response.errorBody()?.string()
+                    val errorMessage = response.body()?.message ?: errorBody ?: "Failed to fetch data"
+
+                    Log.e("ChangeRequestRepo", "API Error: $errorMessage")
+
+                    // ✅ Check for auth error
+                    if (response.code() == 401) {
+                        RetrofitClient.clearAuthToken()
+                        return@withContext Result.Error(
+                            Exception("Token expired"),
+                            "Session expired. Please login again."
+                        )
+                    }
+
                     Result.Error(
                         Exception("Fetch failed"),
-                        response.body()?.message ?: "Failed to fetch data"
+                        errorMessage
                     )
                 }
             } catch (e: Exception) {
+                Log.e("ChangeRequestRepo", "Exception during fetch", e)
                 Result.Error(e, "Network error: ${e.message}")
             }
         }
     }
 
     /**
-     * ✅ IMPROVED Mapping dari API response ke local entity
+     * ✅ IMPROVED: Mapping dari API response ke local entity
+     * Sesuai dengan struktur JSON yang Anda berikan
      */
     private fun apiDataToChangeRequest(apiData: ChangeRequestApiData): ChangeRequest {
+        Log.d("ChangeRequestRepo", "Mapping CR: ${apiData.crId}")
+
         return ChangeRequest(
             id = apiData.crId,
             ticketId = apiData.ticketId ?: apiData.crId,
-            type = apiData.type,
-            title = apiData.title,
+
+            // ✅ Type dari API response
+            type = apiData.type ?: apiData.changeType ?: "Standard",
+
+            // ✅ Title dan Description
+            title = apiData.title ?: "No Title",
             description = apiData.description ?: "",
 
-            // Asset - handle format "id:nama" atau plain string
+            // ✅ Asset - handle null values
             assetId = apiData.assetId ?: "",
             asetTerdampak = apiData.assetId ?: "",
-            relasiConfigurationItem = "",  // ⚠️ Tidak ada di API response
+            relasiConfigurationItem = "",
 
-            // Implementation
+            // ✅ Implementation
             rencanaImplementasi = apiData.mitigationPlan ?: "",
             usulanJadwal = apiData.targetCompletion ?: "",
             rollbackPlan = apiData.rollbackPlan ?: "",
 
-            // Technician
+            // ✅ Technician
             assignedTeknisiName = apiData.picImplementation,
             scheduledDate = apiData.scheduleImplementation,
 
-            // Schedule
+            // ✅ Schedule
             scheduleStart = apiData.scheduleStart,
             scheduleEnd = apiData.scheduleEnd,
 
-            // Risk scores
-            scoreImpact = apiData.scoreImpact,
-            scoreLikelihood = apiData.scoreLikelihood,
-            scoreRisk = apiData.scoreRisk,
-            riskLevel = apiData.riskLevel,
+            // ✅ Risk scores (handle null)
+            scoreImpact = apiData.scoreImpact ?: 0,
+            scoreLikelihood = apiData.scoreLikelihood ?: 0,
+            scoreRisk = apiData.scoreRisk ?: 0,
+            riskLevel = apiData.riskLevel ?: "Low",
 
-            // Post-implementation
+            // ✅ Post-implementation
             postImpact = apiData.postImpact,
             postLikelihood = apiData.postLikelihood,
             postResidualScore = apiData.postResidualScore,
             postRiskLevel = apiData.postRiskLevel,
             implementationResult = apiData.implementationResult,
 
-            // Status
+            // ✅ Status mapping
             status = mapApiStatusToLocalStatus(apiData.status),
             approvalStatus = apiData.approvalStatus,
+
+            // ✅ Timestamps
             createdAt = apiData.createdAt,
             updatedAt = apiData.updatedAt,
 
-            // Additional from API
+            // ✅ Additional fields
             dinas = apiData.dinas,
             impactDesc = apiData.impactDesc,
             controlExisting = apiData.controlExisting,
             controlEffectiveness = apiData.controlEffectiveness,
             mitigationPlan = apiData.mitigationPlan,
 
-            // ✅ TAMBAHKAN field yang missing
-            jenisPerubahan = apiData.changeType ?: apiData.type,
-            skorEksposur = calculateExposure(apiData.scoreImpact, apiData.scoreLikelihood, apiData.scoreRisk)
+            // ✅ CRITICAL: Field yang diperlukan UI
+            jenisPerubahan = apiData.changeType ?: apiData.type ?: "Standard",
+            skorEksposur = calculateExposure(
+                apiData.scoreImpact,
+                apiData.scoreLikelihood,
+                apiData.scoreRisk
+            )
         )
     }
 
@@ -124,25 +161,31 @@ class ChangeRequestRepository(
      * ✅ Calculate exposure from existing scores
      */
     private fun calculateExposure(impact: Int?, likelihood: Int?, totalRisk: Int?): Int {
-        if (impact == null || likelihood == null || totalRisk == null) return 0
-        if (impact == 0 || likelihood == 0) return 0
+        if (impact == null || likelihood == null || totalRisk == null) return 1
+        if (impact == 0 || likelihood == 0) return 1
 
         val baseRisk = impact * likelihood
-        if (baseRisk == 0) return 0
+        if (baseRisk == 0) return 1
 
-        return (totalRisk / baseRisk).coerceIn(1, 4)
+        // Formula: totalRisk = impact * likelihood * exposure
+        // exposure = totalRisk / (impact * likelihood)
+        val calculatedExposure = (totalRisk.toDouble() / baseRisk.toDouble()).toInt()
+        return calculatedExposure.coerceIn(1, 4)
     }
 
+    /**
+     * ✅ Map API status to local status
+     */
     private fun mapApiStatusToLocalStatus(apiStatus: String): String {
         return when (apiStatus.uppercase()) {
-            "SUBMITTED" -> "Submitted"
-            "REVIEWED" -> "Reviewed"
-            "REVISION" -> "Revision"
+            "SUBMITTED", "PENDING" -> "Submitted"
+            "REVIEWED", "IN_REVIEW" -> "Reviewed"
+            "REVISION", "NEED_REVISION" -> "Revision"
             "APPROVED" -> "Approved"
             "SCHEDULED" -> "Scheduled"
-            "IMPLEMENTING" -> "Implementing"
-            "COMPLETED" -> "Completed"
-            "FAILED" -> "Failed"
+            "IMPLEMENTING", "IN_PROGRESS" -> "Implementing"
+            "COMPLETED", "DONE" -> "Completed"
+            "FAILED", "REJECTED" -> "Failed"
             "CLOSED" -> "Closed"
             else -> apiStatus
         }

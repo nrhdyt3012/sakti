@@ -1,5 +1,6 @@
 package com.example.saktinocompose.repository
 
+import android.util.Log
 import com.example.saktinocompose.data.dao.UserDao
 import com.example.saktinocompose.data.entity.User
 import com.example.saktinocompose.network.Result
@@ -12,43 +13,40 @@ class AuthRepository(
     private val userDao: UserDao
 ) {
 
-    /**
-     * ✅ Login via API only (Online-only mode)
-     */
-    suspend fun login(email: String, password: String): Result<User> {
+    suspend fun login(username: String, password: String): Result<User> {
         return withContext(Dispatchers.IO) {
             try {
                 val response = RetrofitClient.authService.login(
-                    LoginRequest(email, password)
+                    LoginRequest(username, password)
                 )
 
-                if (response.isSuccessful && response.body()?.status == "success") {
-                    val userData = response.body()?.data
+                val body = response.body()
 
-                    if (userData != null) {
-                        // Save token
-                        RetrofitClient.updateAuthToken(userData.token)
+                // ✔ VALIDASI SUKSES LOGIN
+                if (response.isSuccessful && body?.status == "success") {
 
-                        // Convert API response to local User entity
-                        val user = User(
-                            id = userData.id,
-                            username = userData.username,
-                            name = userData.name,
-                            passwordHash = "", // Not needed from API
-                            role = userData.role
-                        )
+                    val userData = body.data.user
+                    val token = body.data.token
 
-                        return@withContext Result.Success(user)
-                    } else {
-                        return@withContext Result.Error(
-                            Exception("Invalid response"),
-                            "User data not found"
-                        )
-                    }
-                } else {
-                    val errorMessage = response.body()?.message ?: "Login failed"
-                    return@withContext Result.Error(Exception(errorMessage), errorMessage)
+                    // ✔ SIMPAN TOKEN
+                    RetrofitClient.updateAuthToken(token)
+
+                    // ✔ KONVERSI KE ENTITY ANDROID
+                    val user = User(
+                        id = userData.id,
+                        username = userData.username,
+                        name = userData.name,
+                        passwordHash = "",
+                        role = userData.role
+                    )
+
+                    return@withContext Result.Success(user)
                 }
+
+                // ❌ LOGIN GAGAL
+                val message = body?.message ?: "Login gagal"
+                return@withContext Result.Error(Exception(message), message)
+
             } catch (e: Exception) {
                 return@withContext Result.Error(
                     e,
@@ -56,46 +54,68 @@ class AuthRepository(
                 )
             }
         }
+        suspend fun validateToken(): Boolean {
+            return withContext(Dispatchers.IO) {
+                try {
+                    val token = RetrofitClient.authToken
+                    if (token == null) {
+                        Log.w("AuthRepository", "No token found")
+                        return@withContext false
+                    }
+
+                    Log.d("AuthRepository", "Validating token...")
+                    val response = RetrofitClient.authService.getProfile("Bearer $token")
+
+                    val isValid = response.isSuccessful && response.body()?.status == "success"
+                    Log.d("AuthRepository", "Token validation result: $isValid")
+
+                    if (!isValid) {
+                        Log.w("AuthRepository", "Token invalid, clearing...")
+                        RetrofitClient.clearAuthToken()
+                    }
+
+                    isValid
+                } catch (e: Exception) {
+                    Log.e("AuthRepository", "Token validation failed", e)
+                    false
+                }
+            }
+        }
     }
+
     suspend fun getProfile(): Result<User> {
         return withContext(Dispatchers.IO) {
             try {
                 val token = RetrofitClient.authToken
-                if (token == null) {
-                    return@withContext Result.Error(
+                    ?: return@withContext Result.Error(
                         Exception("No token"),
                         "Authentication required"
                     )
-                }
 
                 val response = RetrofitClient.authService.getProfile("Bearer $token")
+                val body = response.body()
 
-                if (response.isSuccessful && response.body()?.status == "success") {
-                    val userData = response.body()?.data
+                if (response.isSuccessful && body?.status == "success") {
 
-                    if (userData != null) {
-                        val user = User(
-                            id = userData.id,
-                            username = userData.username,
-                            name = userData.username,
-                            passwordHash = "",
-                            role = userData.role
-                        )
-                        return@withContext Result.Success(user)
-                    } else {
-                        return@withContext Result.Error(
-                            Exception("Invalid response"),
-                            "Profile data not found"
-                        )
-                    }
-                } else {
-                    val errorMessage = response.body()?.message ?: "Failed to get profile"
-                    return@withContext Result.Error(Exception(errorMessage), errorMessage)
+                    val u = body.data
+
+                    val user = User(
+                        id = u!!.id ,
+                        username = u.username,
+                        name = u.username,
+                        passwordHash = "",
+                        role = u?.role.toString()
+                    )
+
+                    return@withContext Result.Success(user)
                 }
+
+                val errorMsg = body?.message ?: "Failed to get profile"
+                return@withContext Result.Error(Exception(errorMsg), errorMsg)
+
             } catch (e: Exception) {
                 return@withContext Result.Error(
-                    e,
-                    "Network error: ${e.message}"
+                    e, "Network error: ${e.message}"
                 )
             }
         }

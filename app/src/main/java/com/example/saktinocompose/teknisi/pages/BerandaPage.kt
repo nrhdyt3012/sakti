@@ -56,6 +56,16 @@ fun BerandaPage(
         refreshing = refreshing,
         onRefresh = { viewModel.refreshData() }
     )
+    // ✅ Show error untuk token invalid
+    LaunchedEffect(error) {
+        if (error?.contains("401") == true || error?.contains("Token") == true) {
+            Toast.makeText(
+                context,
+                "Session expired. Please login again.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
 
     // Process data
     val allChangeRequests = remember(allChangeRequestsRaw) {
@@ -103,40 +113,40 @@ fun BerandaPage(
             Spacer(modifier = Modifier.height(50.dp))
 
             // ✅ Error message jika ada
-            error?.let {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(0xFFD32F2F).copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = it,
-                            fontSize = 12.sp,
-                            color = Color(0xFFD32F2F),
-                            modifier = Modifier.weight(1f)
-                        )
+            // POPUP ERROR DIALOG
+            if (error != null) {
+                AlertDialog(
+                    onDismissRequest = { viewModel.clearError() },
+                    confirmButton = {
                         TextButton(onClick = { viewModel.clearError() }) {
                             Text("OK")
                         }
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
+                    },
+                    title = {
+                        Text(
+                            text = "Error",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
+                    },
+                    text = {
+                        Text(
+                            text = error ?: "",
+                            fontSize = 14.sp,
+                            color = Color.Black
+                        )
+                    },
+                    containerColor = Color.White
+                )
             }
+
 
             // ========================================
             // ✅ GREETING CARD (existing code tetap sama)
             // ========================================
             Card(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth()
+                    .padding(top = 40.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66)),
                 shape = RoundedCornerShape(12.dp),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
