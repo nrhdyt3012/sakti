@@ -20,6 +20,7 @@ class LoginActivity: ComponentActivity() {
 
         sessionManager = SessionManager(this)
 
+        // ✅ Check session dulu
         lifecycleScope.launch {
             val userSession = sessionManager.userSession.first()
 
@@ -29,11 +30,12 @@ class LoginActivity: ComponentActivity() {
                 userSession.name != null &&
                 userSession.role != null
             ) {
-
+                // ✅ Update token ke Retrofit
                 userSession.authToken?.let { token ->
                     RetrofitClient.updateAuthToken(token)
                 }
 
+                // ✅ Langsung navigasi ke home
                 navigateToHome(
                     userId = userSession.userId.toString(),
                     email = userSession.email,
@@ -41,6 +43,7 @@ class LoginActivity: ComponentActivity() {
                     role = userSession.role
                 )
             } else {
+                // ✅ Tampilkan login screen
                 showLoginScreen()
             }
         }
@@ -50,7 +53,7 @@ class LoginActivity: ComponentActivity() {
         setContent {
             LoginScreen(
                 onLoginSuccess = { userId, email, name, role, token ->
-                    // ✅ PERBAIKAN: Simpan session dulu, baru navigasi
+                    // ✅ Save session dulu, baru navigasi
                     lifecycleScope.launch {
                         try {
                             // 1. Save session
@@ -69,7 +72,6 @@ class LoginActivity: ComponentActivity() {
                             navigateToHome(userId, email, name, role)
 
                         } catch (e: Exception) {
-                            // Handle error saat save session
                             Toast.makeText(
                                 this@LoginActivity,
                                 "Error saving session: ${e.message}",
@@ -83,7 +85,6 @@ class LoginActivity: ComponentActivity() {
     }
 
     private fun navigateToHome(userId: String, email: String, name: String, role: String) {
-        // Hanya Teknisi yang bisa login
         if (role.uppercase() != "TEKNISI") {
             Toast.makeText(this, "Access denied. Technician only.", Toast.LENGTH_LONG).show()
             return

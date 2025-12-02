@@ -15,15 +15,12 @@ import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.data.entity.Notification
 import com.example.saktinocompose.data.entity.RiskAssessment
 import com.example.saktinocompose.data.entity.User
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import java.security.MessageDigest
+
 
 
 @Database(
     entities = [User::class, ChangeRequest::class, ApprovalHistory::class, RiskAssessment::class, Notification::class],
-    version = 17,  // ✅ UPDATED VERSION untuk field idPerubahan
+    version = 18,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

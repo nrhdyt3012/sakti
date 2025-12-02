@@ -34,10 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.R
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
-lateinit var successUsername: String
 val White = Color(0xFFFFFFFF)
 val MediumGreen = Color(0xFF009951)
 val GrayBackground = Color(0xFF485F88)

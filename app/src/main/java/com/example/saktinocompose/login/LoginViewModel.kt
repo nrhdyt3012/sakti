@@ -8,7 +8,6 @@ import com.example.saktinocompose.data.entity.User
 import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.repository.AuthRepository
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -59,9 +58,6 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
             }
 
             _uiState.update { it.copy(isLoading = true) }
-
-            // ✅ HAPUS delay simulasi
-            // delay(1000)
 
             try {
                 when (val result = authRepository.login(username, password)) {
