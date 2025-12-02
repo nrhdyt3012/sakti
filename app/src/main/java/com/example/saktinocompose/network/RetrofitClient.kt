@@ -1,6 +1,7 @@
 package com.example.saktinocompose.network
 
 import android.content.Context
+import android.util.Log
 import com.example.saktinocompose.network.api.*
 import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
@@ -27,15 +28,32 @@ object RetrofitClient {
 
     private val authInterceptor = Interceptor { chain ->
         val request = chain.request()
+
+        authToken?.let { token ->
+            Log.d("RetrofitClient", "Token: ${token.take(50)}...")
+
+            // ✅ Decode dan log token info
+            try {
+                val parts = token.split(".")
+                if (parts.size == 3) {
+                    val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE))
+                    Log.d("RetrofitClient", "Token payload: $payload")
+                }
+            } catch (e: Exception) {
+                Log.e("RetrofitClient", "Failed to decode token", e)
+            }
+        }
+
         val newRequest = request.newBuilder()
             .apply {
-                authToken?.let {
-                    addHeader("Authorization", "Bearer $it")
+                authToken?.let { token ->
+                    addHeader("Authorization", "Bearer $token")
                 }
                 addHeader("Accept", "application/json")
                 addHeader("Content-Type", "application/json")
             }
             .build()
+
         chain.proceed(newRequest)
     }
 

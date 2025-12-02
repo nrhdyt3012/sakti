@@ -27,38 +27,59 @@ class LoginActivity: ComponentActivity() {
         lifecycleScope.launch {
             val userSession = sessionManager.userSession.first()
 
-            // ✅ Log untuk debugging
+            // ✅ CHECK TOKEN EXPIRY
+            val isTokenValid = userSession.authToken?.let { token ->
+                checkTokenValidity(token)
+            } ?: false
+
             Log.d("LoginActivity", """
-            Session check:
-            - isLoggedIn: ${userSession.isLoggedIn}
-            - userId: ${userSession.userId}
-            - email: ${userSession.email}
-            - role: ${userSession.role}
-            - hasToken: ${userSession.authToken != null}
+            ========== SESSION CHECK ==========
+            isLoggedIn: ${userSession.isLoggedIn}
+            hasToken: ${userSession.authToken != null}
+            isTokenValid: $isTokenValid
+            ===================================
         """.trimIndent())
 
-            if (userSession.isLoggedIn &&
-                userSession.userId != null &&
-                userSession.email != null &&
-                userSession.name != null &&
-                userSession.role != null
-            ) {
-                // ✅ Update token ke Retrofit
+            if (userSession.isLoggedIn && isTokenValid) {
                 userSession.authToken?.let { token ->
                     RetrofitClient.updateAuthToken(token)
                 }
 
-                // ✅ Langsung navigasi ke home
                 navigateToHome(
                     userId = userSession.userId.toString(),
-                    email = userSession.email,
-                    name = userSession.name,
-                    role = userSession.role
+                    email = userSession.email!!,
+                    name = userSession.name!!,
+                    role = userSession.role!!
                 )
             } else {
-                // ✅ Tampilkan login screen
+                // ✅ Clear invalid session
+                if (userSession.isLoggedIn && !isTokenValid) {
+                    sessionManager.clearSession()
+                    RetrofitClient.clearAuthToken()
+                }
                 showLoginScreen()
             }
+        }
+    }
+
+    // ✅ Helper function untuk check token validity
+    private fun checkTokenValidity(token: String): Boolean {
+        return try {
+            val parts = token.split(".")
+            if (parts.size != 3) return false
+
+            val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE))
+            val json = org.json.JSONObject(payload)
+
+            val exp = json.getLong("exp")
+            val now = System.currentTimeMillis() / 1000
+
+            Log.d("LoginActivity", "Token exp: $exp, now: $now, valid: ${exp > now}")
+
+            exp > now  // token masih valid jika belum expired
+        } catch (e: Exception) {
+            Log.e("LoginActivity", "Token validation failed", e)
+            false
         }
     }
 
@@ -68,6 +89,12 @@ class LoginActivity: ComponentActivity() {
                 onLoginSuccess = { userId, email, name, role, token ->
                     lifecycleScope.launch {
                         try {
+                            token?.let {
+                                RetrofitClient.updateAuthToken(it)
+                                Log.d("LoginActivity", "✅ Token set to Retrofit: ${it.take(20)}...")
+
+                            }
+
                             // ✅ Pastikan semua operasi async selesai
                             withContext(Dispatchers.IO) {
                                 // 1. Save session dengan konfirmasi
@@ -78,9 +105,9 @@ class LoginActivity: ComponentActivity() {
                                     role = role.uppercase().trim(), // ✅ Normalize role
                                     authToken = token
                                 )
+                                Log.d("LoginActivity", "✅ Session saved")
 
                                 // 2. Update Retrofit token
-                                token?.let { RetrofitClient.updateAuthToken(it) }
                             }
 
                             // ✅ Tunggu 100ms untuk memastikan save selesai
