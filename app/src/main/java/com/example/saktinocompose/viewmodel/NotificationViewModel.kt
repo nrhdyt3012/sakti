@@ -23,7 +23,7 @@ class NotificationViewModel(application: Application) : AndroidViewModel(applica
 
     fun createNotification(
         userId: Int,
-        changeRequestId: Int,
+        changeRequestId: String,  // ✅ Changed from Int to String
         ticketId: String,
         fromStatus: String,
         toStatus: String

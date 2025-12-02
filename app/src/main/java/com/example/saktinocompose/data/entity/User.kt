@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "users")
 data class User(
     @PrimaryKey(autoGenerate = false)
-    val id: String,
+    val id: String,  // ✅ Changed from Int to String untuk consistency dengan API
     val username: String,
     val name: String,
     val passwordHash: String,

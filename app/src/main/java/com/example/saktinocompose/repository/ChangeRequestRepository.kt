@@ -115,6 +115,7 @@ class ChangeRequestRepository(
 
             // Additional
             mitigationPlan = apiData.mitigationPlan,
+            picImplementation = apiData.picImplementation,
         )
     }
 

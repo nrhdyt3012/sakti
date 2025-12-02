@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class ApprovalHistory(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val changeRequestId: Int,
+    val changeRequestId: String,  // ✅ Changed from Int to String
     val approverUserId: Int,
     val approverName: String,
     val fromStatus: String,

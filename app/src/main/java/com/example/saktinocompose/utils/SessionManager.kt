@@ -12,7 +12,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 class SessionManager(private val context: Context) {
 
     companion object {
-        private val USER_ID_KEY = intPreferencesKey("user_id")
+        private val USER_ID_KEY = stringPreferencesKey("user_id")  // ✅ Changed to String
         private val EMAIL_KEY = stringPreferencesKey("user_email")
         private val NAME_KEY = stringPreferencesKey("user_name")
         private val ROLE_KEY = stringPreferencesKey("user_role")
@@ -20,11 +20,10 @@ class SessionManager(private val context: Context) {
         private val AUTH_TOKEN_KEY = stringPreferencesKey("auth_token")
         private val TOKEN_EXPIRY_KEY = longPreferencesKey("token_expiry")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
-
     }
 
     suspend fun saveSession(
-        userId: String,
+        userId: String,  // ✅ Changed from Int to String
         email: String,
         name: String,
         role: String,
@@ -85,7 +84,7 @@ class SessionManager(private val context: Context) {
     }
 
     data class UserSession(
-        val userId: Int?,
+        val userId: String?,  // ✅ Changed from Int to String
         val email: String?,
         val name: String?,
         val role: String?,

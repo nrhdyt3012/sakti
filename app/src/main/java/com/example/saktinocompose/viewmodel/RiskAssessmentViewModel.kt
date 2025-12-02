@@ -13,16 +13,16 @@ class RiskAssessmentViewModel(application: Application) : AndroidViewModel(appli
     private val database = AppDatabase.getDatabase(application)
     private val riskAssessmentDao = database.riskAssessmentDao()
 
-    fun getRiskAssessmentFlow(changeRequestId: Int): Flow<RiskAssessment?> {
+    fun getRiskAssessmentFlow(changeRequestId: String): Flow<RiskAssessment?> {
         return riskAssessmentDao.getRiskAssessmentFlow(changeRequestId)
     }
 
-    suspend fun getRiskAssessment(changeRequestId: Int): RiskAssessment? {
+    suspend fun getRiskAssessment(changeRequestId: String): RiskAssessment? {
         return riskAssessmentDao.getRiskAssessmentByChangeRequest(changeRequestId)
     }
 
     fun saveRiskAssessment(
-        changeRequestId: String,
+        changeRequestId: String,  // ✅ Changed from Int to String
         teknisiId: Int,
         teknisiName: String,
         skorDampak: Int,

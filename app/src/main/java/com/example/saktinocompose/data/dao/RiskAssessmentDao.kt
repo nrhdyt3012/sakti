@@ -10,10 +10,10 @@ interface RiskAssessmentDao {
     suspend fun insertRiskAssessment(riskAssessment: RiskAssessment): Long
 
     @Query("SELECT * FROM risk_assessments WHERE changeRequestId = :changeRequestId LIMIT 1")
-    suspend fun getRiskAssessmentByChangeRequest(changeRequestId: Int): RiskAssessment?
+    suspend fun getRiskAssessmentByChangeRequest(changeRequestId: String): RiskAssessment?
 
     @Query("SELECT * FROM risk_assessments WHERE changeRequestId = :changeRequestId")
-    fun getRiskAssessmentFlow(changeRequestId: Int): Flow<RiskAssessment?>
+    fun getRiskAssessmentFlow(changeRequestId: String): Flow<RiskAssessment?>
 
     @Update
     suspend fun updateRiskAssessment(riskAssessment: RiskAssessment)

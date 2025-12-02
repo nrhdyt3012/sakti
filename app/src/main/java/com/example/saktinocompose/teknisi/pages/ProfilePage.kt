@@ -28,7 +28,7 @@ import com.example.saktinocompose.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfilePage(
-    userId: Int,
+    userId: String,
     userEmail: String,
     userName: String,
     userRole: String,

@@ -10,10 +10,10 @@ interface ApprovalHistoryDao {
     suspend fun insertApprovalHistory(approvalHistory: ApprovalHistory): Long
 
     @Query("SELECT * FROM approval_history WHERE changeRequestId = :changeRequestId ORDER BY timestamp ASC")
-    fun getApprovalHistoryByChangeRequest(changeRequestId: Int): Flow<List<ApprovalHistory>>
+    fun getApprovalHistoryByChangeRequest(changeRequestId: String): Flow<List<ApprovalHistory>>
 
     @Query("SELECT * FROM approval_history WHERE changeRequestId = :changeRequestId ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLatestApprovalHistory(changeRequestId: Int): ApprovalHistory?
+    suspend fun getLatestApprovalHistory(changeRequestId: String): ApprovalHistory?
 
     @Delete
     suspend fun deleteApprovalHistory(approvalHistory: ApprovalHistory)

@@ -40,7 +40,7 @@ import com.example.saktinocompose.teknisi.pages.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeknisiScreen(
-    userId: Int,
+    userId: String,
     userEmail: String,
     userName: String,
     userRole: String,

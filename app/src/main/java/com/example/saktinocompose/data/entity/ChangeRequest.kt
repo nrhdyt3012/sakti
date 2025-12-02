@@ -3,21 +3,19 @@ package com.example.saktinocompose.data.entity
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
-// File: app/src/main/java/com/example/saktinocompose/data/entity/ChangeRequest.kt
-
 @Entity(tableName = "change_requests")
 data class ChangeRequest(
-    @PrimaryKey(autoGenerate = true)  // ✅ Tidak auto-generate, pakai cr_id dari API
-    val id: String,  // ✅ cr_id dari API (String, bukan Int)
+    @PrimaryKey
+    val id: String,  // cr_id dari API (String)
 
     val ticketId: String,
-    val type: String,  // ✅ type (jenisPerubahan)
-    val title: String,  // ✅ title (alasan)
-    val description: String,  // ✅ description (tujuan)
+    val type: String,  // jenisPerubahan
+    val title: String,  // alasan
+    val description: String,  // tujuan
 
     // Asset info
     val assetId: String,
-    val asetTerdampak: String,  // ✅ Tetap untuk kompatibilitas UI
+    val asetTerdampak: String,
     val relasiConfigurationItem: String,
 
     // Implementation plan
@@ -39,7 +37,7 @@ data class ChangeRequest(
     val scheduleStart: String? = null,
     val scheduleEnd: String? = null,
 
-    // Risk scores
+    // Risk scores (from inspection)
     val scoreImpact: Int? = null,
     val scoreLikelihood: Int? = null,
     val scoreRisk: Int? = null,
@@ -55,8 +53,8 @@ data class ChangeRequest(
     // Status & timestamps
     val status: String,
     val approvalStatus: String? = null,
-    val createdAt: String,  // ✅ ISO 8601 string dari API
-    val updatedAt: String,  // ✅ ISO 8601 string dari API
+    val createdAt: String,  // ISO 8601 string
+    val updatedAt: String,  // ISO 8601 string
 
     // Additional info
     val dinas: String? = null,

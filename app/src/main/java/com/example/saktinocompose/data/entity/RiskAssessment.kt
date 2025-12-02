@@ -7,12 +7,12 @@ import androidx.room.PrimaryKey
 data class RiskAssessment(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val changeRequestId: Int,
+    val changeRequestId: String,  // ✅ Changed from Int to String
     val teknisiId: Int,
     val teknisiName: String,
     val skorDampak: Int,
     val skorKemungkinan: Int,
-    val skorEksposur: Int, // Tambahan field eksposur
+    val skorEksposur: Int,
     val skorRisiko: Int,
     val levelRisiko: String,
     val createdAt: Long = System.currentTimeMillis()

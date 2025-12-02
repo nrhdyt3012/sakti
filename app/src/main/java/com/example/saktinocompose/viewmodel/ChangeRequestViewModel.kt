@@ -14,8 +14,6 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
-// File: app/src/main/java/com/example/saktinocompose/viewmodel/ChangeRequestViewModel.kt
-
 class ChangeRequestViewModel(application: Application) : AndroidViewModel(application) {
 
     private val database = AppDatabase.getDatabase(application)
@@ -84,9 +82,8 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             _isLoading.value = true
 
             val updated = changeRequest.copy(
-                ,,,,,,,,,,,,
-                status = newStatus,,
-                updatedAt = getCurrentIsoTimestamp(),,,
+                status = newStatus,
+                updatedAt = getCurrentIsoTimestamp()
             )
 
             when (val result = repository.updateChangeRequest(updated)) {
@@ -107,8 +104,7 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             _isLoading.value = true
 
             val updated = updatedRequest.copy(
-                ,,,,,,,,,,,,,
-                updatedAt = getCurrentIsoTimestamp(),,,
+                updatedAt = getCurrentIsoTimestamp()
             )
 
             when (val result = repository.updateChangeRequest(updated)) {

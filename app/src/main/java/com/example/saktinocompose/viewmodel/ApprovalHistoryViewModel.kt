@@ -13,12 +13,12 @@ class ApprovalHistoryViewModel(application: Application) : AndroidViewModel(appl
     private val database = AppDatabase.getDatabase(application)
     private val approvalHistoryDao = database.approvalHistoryDao()
 
-    fun getApprovalHistoryByChangeRequest(changeRequestId: Int): Flow<List<ApprovalHistory>> {
+    fun getApprovalHistoryByChangeRequest(changeRequestId: String): Flow<List<ApprovalHistory>> {
         return approvalHistoryDao.getApprovalHistoryByChangeRequest(changeRequestId)
     }
 
     fun addApprovalHistory(
-        changeRequestId: String,
+        changeRequestId: String,  // ✅ Changed from Int to String
         approverUserId: Int,
         approverName: String,
         fromStatus: String,

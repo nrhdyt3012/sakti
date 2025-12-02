@@ -4,8 +4,6 @@ import androidx.room.*
 import com.example.saktinocompose.data.entity.ChangeRequest
 import kotlinx.coroutines.flow.Flow
 
-// File: app/src/main/java/com/example/saktinocompose/data/dao/ChangeRequestDao.kt
-
 @Dao
 interface ChangeRequestDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -20,7 +18,7 @@ interface ChangeRequestDao {
     @Query("SELECT * FROM change_requests WHERE status = :status ORDER BY createdAt DESC")
     fun getChangeRequestsByStatus(status: String): Flow<List<ChangeRequest>>
 
-    @Query("SELECT * FROM change_requests WHERE id = :crId LIMIT 1")  // ✅ Pakai String
+    @Query("SELECT * FROM change_requests WHERE id = :crId LIMIT 1")
     suspend fun getChangeRequestById(crId: String): ChangeRequest?
 
     @Update

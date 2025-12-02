@@ -8,7 +8,7 @@ data class Notification(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
     val userId: Int, // End user yang akan menerima notifikasi
-    val changeRequestId: Int,
+    val changeRequestId: String,  // ✅ Changed from Int to String
     val ticketId: String,
     val title: String,
     val message: String,
