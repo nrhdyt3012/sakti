@@ -1,6 +1,4 @@
-
 package com.example.saktinocompose.login
-import androidx.compose.ui.res.stringResource
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
@@ -11,7 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -82,17 +80,17 @@ fun LoginScreen(
 
         AlertDialog(
             onDismissRequest = { showSuccessDialog = false },
-            title = { Text(stringResource(R.string.welcome)) },
+            title = { Text("Selamat Datang!") },
             text = {
                 Column {
-                    Text(stringResource(R.string.login_success))
+                    Text("Login berhasil!")
                     Spacer(modifier = Modifier.height(8.dp))
                     Text("Nama: $successName")
                     Text("Role: $roleText")
                     if (successToken != null) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "✓ Connected to server",
+                            "✓ Terhubung ke server",
                             fontSize = 12.sp,
                             color = Color(0xFF4CAF50)
                         )
@@ -114,8 +112,8 @@ fun LoginScreen(
     if (showErrorDialog != null) {
         AlertDialog(
             onDismissRequest = { showErrorDialog = null },
-            title = { Text("Failed") },
-            text = { Text(showErrorDialog ?: "an error occurred") },
+            title = { Text("Gagal") },
+            text = { Text(showErrorDialog ?: "Terjadi kesalahan") },
             confirmButton = {
                 Button(onClick = { showErrorDialog = null }) {
                     Text("Kembali")
@@ -162,7 +160,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Text(
-                text = (stringResource(R.string.login)),
+                text = "Login",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = White,
@@ -171,24 +169,24 @@ fun LoginScreen(
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Email Field
+            // ✅ Username Field (changed from email)
             OutlinedTextField(
-                value = uiState.email,
-                onValueChange = loginViewModel::onEmailChange,
+                value = uiState.username,
+                onValueChange = loginViewModel::onUsernameChange,
                 label = {
                     Surface(
                         color = Color.White,
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
-                            text = stringResource(R.string.email),
+                            text = "Username",
                             color = Color.Gray,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
                     }
                 },
-                leadingIcon = { Icon(Icons.Default.Email, contentDescription = "Email Icon") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Username Icon") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -216,7 +214,7 @@ fun LoginScreen(
                         shape = MaterialTheme.shapes.small
                     ) {
                         Text(
-                            text = stringResource(R.string.password),
+                            text = "Password",
                             color = Color.Gray,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
@@ -256,7 +254,8 @@ fun LoginScreen(
                     .alpha(viewAlphas[4].value),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = White,
-                    contentColor = Black)
+                    contentColor = Black
+                )
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
@@ -264,7 +263,7 @@ fun LoginScreen(
                         color = Black
                     )
                 } else {
-                    Text(stringResource(R.string.login), fontSize = 18.sp)
+                    Text("Login", fontSize = 18.sp)
                 }
             }
 

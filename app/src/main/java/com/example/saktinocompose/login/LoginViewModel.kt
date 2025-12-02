@@ -25,7 +25,7 @@ enum class UserRole {
 }
 
 data class LoginUiState(
-    val email: String = "",
+    val username: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null
@@ -50,8 +50,8 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
     private val _loginEvent = MutableSharedFlow<LoginEvent>()
     val loginEvent = _loginEvent.asSharedFlow()
 
-    fun onEmailChange(email: String) {
-        _uiState.update { it.copy(email = email) }
+    fun onUsernameChange(username: String) {
+        _uiState.update { it.copy(username = username) }
     }
 
     fun onPasswordChange(password: String) {
@@ -60,11 +60,11 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
 
     fun login() {
         viewModelScope.launch {
-            val email = _uiState.value.email.trim()
+            val username = _uiState.value.username.trim()
             val password = _uiState.value.password
 
-            if (email.isEmpty() || password.isEmpty()) {
-                _loginEvent.emit(LoginEvent.LoginError("Email dan Password tidak boleh kosong"))
+            if (username.isEmpty() || password.isEmpty()) {
+                _loginEvent.emit(LoginEvent.LoginError("Username dan Password tidak boleh kosong"))
                 return@launch
             }
 
@@ -74,7 +74,7 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
 
             try {
                 // Gunakan repository yang sudah handle offline/online
-                when (val result = authRepository.login(email, password)) {
+                when (val result = authRepository.login(username, password)) {
                     is Result.Success -> {
                         val user = result.data
 

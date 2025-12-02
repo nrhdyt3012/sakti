@@ -11,6 +11,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
+    private const val BASE_URL = "https://sakti-backend-674826252080.asia-southeast2.run.app/"
 
     var authToken: String? = null
     private var applicationContext: Context? = null
@@ -59,36 +60,26 @@ object RetrofitClient {
         .setLenient()
         .create()
 
-    private val retrofitAuth = Retrofit.Builder()
-        .baseUrl(ApiConfig.BASE_URL_AUTH)
+    private val retrofit = Retrofit.Builder()
+        .baseUrl(ApiConfig.BASE_URL)
         .client(getOkHttpClient())
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
-    private val retrofitTeknisi = Retrofit.Builder()
-        .baseUrl(ApiConfig.BASE_URL_TEKNISI)
-        .client(getOkHttpClient())
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
-
-    private val retrofitSync = Retrofit.Builder()
-        .baseUrl(ApiConfig.BASE_URL_SYNC)
-        .client(getOkHttpClient())
-        .addConverterFactory(GsonConverterFactory.create(gson))
-        .build()
-
+    // ✅ Service untuk Authentication
     val authService: AuthApiService by lazy {
-        retrofitAuth.create(AuthApiService::class.java)
+        retrofit.create(AuthApiService::class.java)
     }
 
-    val teknisiService: TeknisiApiService by lazy {
-        retrofitTeknisi.create(TeknisiApiService::class.java)
+    // ✅ Service untuk Change Request
+    val changeRequestService: ChangeRequestApiService by lazy {
+        retrofit.create(ChangeRequestApiService::class.java)
     }
 
-    val syncService: SyncApiService by lazy {
-        retrofitSync.create(SyncApiService::class.java)
+    // ✅ Service untuk Siladan Integration
+    val siladanService: SiladanApiService by lazy {
+        retrofit.create(SiladanApiService::class.java)
     }
-
     fun updateAuthToken(token: String?) {
         authToken = token
     }

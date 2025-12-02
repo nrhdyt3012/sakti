@@ -7,15 +7,15 @@ import com.google.gson.annotations.SerializedName
 
 // Login Request
 data class LoginRequest(
-    @SerializedName("email")
-    val email: String,
+    @SerializedName("username")
+    val username: String,
     @SerializedName("password")
     val password: String
 )
 
 // Login Response
 data class LoginResponse(
-    @SerializedName("success")
+    @SerializedName("status")
     val success: Boolean,
     @SerializedName("message")
     val message: String?,
@@ -25,13 +25,49 @@ data class LoginResponse(
 
 data class UserData(
     @SerializedName("id")
-    val id: Int,
-    @SerializedName("email")
-    val email: String,
+    val id: String,
+
     @SerializedName("name")
     val name: String,
+
+    @SerializedName("username")
+    val username: String,
+
     @SerializedName("role")
-    val role: String,
+    val role: String, // TEKNISI, END_USER, etc
+
+    @SerializedName("status")
+    val status: String, // ACTIVE, INACTIVE
+
+    @SerializedName("email")
+    val email: String? = null,
+
+    @SerializedName("agency_id")
+    val agencyId: Int? = null,
+
     @SerializedName("token")
-    val token: String? // JWT token untuk autentikasi
+    val token: String,
+
+)
+
+data class LoginErrorResponse(
+    @SerializedName("status")
+    val status: String,
+
+    @SerializedName("message")
+    val message: String,
+
+    @SerializedName("details")
+    val details: Any?
+)
+
+data class ProfileResponse(
+    @SerializedName("status")
+    val status: String,
+
+    @SerializedName("message")
+    val message: String,
+
+    @SerializedName("data")
+    val data: UserData?
 )

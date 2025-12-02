@@ -32,7 +32,7 @@ class AuthRepository(
                         // Convert API response to local User entity
                         val user = User(
                             id = userData.id,
-                            email = userData.email,
+                            username = userData.username,
                             name = userData.name,
                             passwordHash = "", // Not needed from API
                             role = userData.role
@@ -60,6 +60,51 @@ class AuthRepository(
             }
         }
     }
+    suspend fun getProfile(): Result<User> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken
+                if (token == null) {
+                    return@withContext Result.Error(
+                        Exception("No token"),
+                        "Authentication required"
+                    )
+                }
+
+                val response = RetrofitClient.authService.getProfile("Bearer $token")
+
+                if (response.isSuccessful && response.body()?.status == "success") {
+                    val userData = response.body()?.data
+
+                    if (userData != null) {
+                        val user = User(
+                            id = userData.id,
+                            username = userData.username,
+                            name = userData.username,
+                            passwordHash = "",
+                            role = userData.role
+                        )
+
+                        syncUserToLocal(user)
+                        return@withContext Result.Success(user)
+                    } else {
+                        return@withContext Result.Error(
+                            Exception("Invalid response"),
+                            "Profile data not found"
+                        )
+                    }
+                } else {
+                    val errorMessage = response.body()?.message ?: "Failed to get profile"
+                    return@withContext Result.Error(Exception(errorMessage), errorMessage)
+                }
+            } catch (e: Exception) {
+                return@withContext Result.Error(
+                    e,
+                    "Network error: ${e.message}"
+                )
+            }
+        }
+    }
 
     private suspend fun syncUserToLocal(user: User) {
         val existingUser = userDao.getUserById(user.id)
@@ -73,9 +118,6 @@ class AuthRepository(
     suspend fun logout(): Result<Boolean> {
         return withContext(Dispatchers.IO) {
             try {
-                RetrofitClient.authToken?.let { token ->
-                    RetrofitClient.authService.logout("Bearer $token")
-                }
                 RetrofitClient.clearAuthToken()
                 Result.Success(true)
             } catch (e: Exception) {

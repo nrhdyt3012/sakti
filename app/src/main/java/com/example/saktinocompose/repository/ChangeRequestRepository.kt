@@ -8,23 +8,17 @@ import com.example.saktinocompose.network.dto.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.*
 
 class ChangeRequestRepository(
     private val changeRequestDao: ChangeRequestDao
 ) {
 
     /**
-     * ✅ Get all change requests from API, cache to local
+     * ✅ Fetch change requests from API
      */
-    fun getAllChangeRequests(): Flow<List<ChangeRequest>> {
-        // Return from local cache for instant UI
-        return changeRequestDao.getAllChangeRequests()
-    }
-
-    /**
-     * ✅ Fetch latest data from API
-     */
-    suspend fun fetchFromApi(): Result<List<ChangeRequest>> {
+    suspend fun fetchFromApi(status: String? = null, deskripsi: String? = null): Result<List<ChangeRequest>> {
         return withContext(Dispatchers.IO) {
             try {
                 val token = RetrofitClient.authToken
@@ -35,13 +29,17 @@ class ChangeRequestRepository(
                     )
                 }
 
-                val response = RetrofitClient.syncService.syncChangeRequests("Bearer $token")
+                val response = RetrofitClient.changeRequestService.getChangeRequests(
+                    "Bearer $token",
+                    status,
+                    deskripsi
+                )
 
-                if (response.isSuccessful && response.body()?.success == true) {
+                if (response.isSuccessful && response.body()?.status == "success") {
                     val apiRequests = response.body()?.data ?: emptyList()
 
                     // Convert and cache to local database
-                    val localRequests = apiRequests.map { apiRequestToChangeRequest(it) }
+                    val localRequests = apiRequests.map { apiDataToChangeRequest(it) }
                     localRequests.forEach { changeRequestDao.insertChangeRequest(it) }
 
                     Result.Success(localRequests)
@@ -57,6 +55,214 @@ class ChangeRequestRepository(
         }
     }
 
+    /**
+     * ✅ Submit inspection ke API
+     */
+    suspend fun submitInspection(
+        crId: String,
+        jenisPerubahan: String,
+        alasan: String,
+        tujuan: String,
+        ciId: String,
+        asetTerdampakId: String,
+        rencanaImplementasi: String,
+        usulanJadwal: String,
+        rencanaRollback: String,
+        estimasiBiaya: Double,
+        estimasiWaktu: Double,
+        skorDampak: Int,
+        skorKemungkinan: Int,
+        skorExposure: Int
+    ): Result<Boolean> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken
+                if (token == null) {
+                    return@withContext Result.Error(
+                        Exception("No token"),
+                        "Authentication required"
+                    )
+                }
+
+                val request = InspectionRequest(
+                    jenisPerubahan = jenisPerubahan,
+                    alasan = alasan,
+                    tujuan = tujuan,
+                    ciId = ciId,
+                    asetTerdampakId = asetTerdampakId,
+                    rencanaImplementasi = rencanaImplementasi,
+                    usulanJadwal = convertToIso8601(usulanJadwal),
+                    rencanaRollback = rencanaRollback,
+                    estimasiBiaya = estimasiBiaya,
+                    estimasiWaktu = estimasiWaktu,
+                    skorDampak = skorDampak,
+                    skorKemungkinan = skorKemungkinan,
+                    skorExposure = skorExposure
+                )
+
+                val response = RetrofitClient.changeRequestService.submitInspection(
+                    "Bearer $token",
+                    crId,
+                    request
+                )
+
+                if (response.isSuccessful && response.body()?.status == "success") {
+                    Result.Success(true)
+                } else {
+                    Result.Error(
+                        Exception("Inspection failed"),
+                        response.body()?.message ?: "Failed to submit inspection"
+                    )
+                }
+            } catch (e: Exception) {
+                Result.Error(e, "Network error: ${e.message}")
+            }
+        }
+    }
+
+
+    /**
+     * ✅ Schedule implementation ke API
+     */
+    suspend fun scheduleImplementation(
+        crId: String,
+        tanggalImplementasi: String
+    ): Result<Boolean> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken
+                if (token == null) {
+                    return@withContext Result.Error(
+                        Exception("No token"),
+                        "Authentication required"
+                    )
+                }
+
+                val request = ScheduleRequest(
+                    tanggalImplementasi = convertToIso8601(tanggalImplementasi)
+                )
+
+                val response = RetrofitClient.changeRequestService.scheduleImplementation(
+                    "Bearer $token",
+                    crId,
+                    request
+                )
+
+                if (response.isSuccessful && response.body()?.status == "success") {
+                    Result.Success(true)
+                } else {
+                    Result.Error(
+                        Exception("Scheduling failed"),
+                        response.body()?.message ?: "Failed to schedule implementation"
+                    )
+                }
+            } catch (e: Exception) {
+                Result.Error(e, "Network error: ${e.message}")
+            }
+        }
+    }
+    /**
+     * ✅ Complete implementation ke API
+     */
+    suspend fun completeImplementation(
+        crId: String,
+        dampakSetelahMitigasi: Int,
+        kemungkinanSetelahMitigasi: Int,
+        exposureSetelahMitigasi: Int,
+        keterangan: String
+    ): Result<Boolean> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken
+                if (token == null) {
+                    return@withContext Result.Error(
+                        Exception("No token"),
+                        "Authentication required"
+                    )
+                }
+
+                val request = ImplementationRequest(
+                    dampakSetelahMitigasi = dampakSetelahMitigasi,
+                    kemungkinanSetelahMitigasi = kemungkinanSetelahMitigasi,
+                    exposureSetelahMitigasi = exposureSetelahMitigasi,
+                    keterangan = keterangan,
+                    status = "COMPLETED"
+                )
+
+                val response = RetrofitClient.changeRequestService.completeImplementation(
+                    "Bearer $token",
+                    crId,
+                    request
+                )
+
+                if (response.isSuccessful && response.body()?.status == "success") {
+                    Result.Success(true)
+                } else {
+                    Result.Error(
+                        Exception("Implementation failed"),
+                        response.body()?.message ?: "Failed to complete implementation"
+                    )
+                }
+            } catch (e: Exception) {
+                Result.Error(e, "Network error: ${e.message}")
+            }
+        }
+    }
+
+
+    /**
+     * ✅ Create Siladan Change Request
+     */
+    suspend fun createSiladanChangeRequest(
+        tiketId: String,
+        katalogPermintaan: String,
+        assetId: String,
+        judul: String,
+        deskripsi: String
+    ): Result<Boolean> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken
+                if (token == null) {
+                    return@withContext Result.Error(
+                        Exception("No token"),
+                        "Authentication required"
+                    )
+                }
+
+                val request = SiladanChangeRequestRequest(
+                    tiketId = tiketId,
+                    katalogPermintaan = katalogPermintaan,
+                    assetId = assetId,
+                    judul = judul,
+                    deskripsi = deskripsi
+                )
+
+                val response = RetrofitClient.siladanService.createSiladanChangeRequest(
+                    "Bearer $token",
+                    request
+                )
+
+                if (response.isSuccessful && response.body()?.status == "success") {
+                    Result.Success(true)
+                } else {
+                    Result.Error(
+                        Exception("Siladan request failed"),
+                        response.body()?.message ?: "Failed to create Siladan request"
+                    )
+                }
+            } catch (e: Exception) {
+                Result.Error(e, "Network error: ${e.message}")
+            }
+        }
+    }
+
+    // ===== Local Database Operations =====
+
+    fun getAllChangeRequests(): Flow<List<ChangeRequest>> {
+        return changeRequestDao.getAllChangeRequests()
+    }
+
     fun getChangeRequestsByUser(userId: Int): Flow<List<ChangeRequest>> {
         return changeRequestDao.getChangeRequestsByUser(userId)
     }
@@ -65,50 +271,24 @@ class ChangeRequestRepository(
         return changeRequestDao.getChangeRequestById(id)
     }
 
-    /**
-     * ✅ Submit to API, then cache locally
-     */
-    suspend fun submitChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
+    suspend fun updateChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
         return withContext(Dispatchers.IO) {
             try {
-                // Submit to API first
-                val apiResult = submitToApi(changeRequest)
-
-                when (apiResult) {
-                    is Result.Success -> {
-                        // Cache to local
-                        val localId = changeRequestDao.insertChangeRequest(changeRequest).toInt()
-                        Result.Success(changeRequest.copy(id = localId))
-                    }
-                    is Result.Error -> apiResult
-                    else -> Result.Error(Exception("Unknown error"), "Submit failed")
-                }
+                changeRequestDao.updateChangeRequest(changeRequest)
+                Result.Success(changeRequest)
             } catch (e: Exception) {
-                Result.Error(e, "Submit failed: ${e.message}")
+                Result.Error(e, "Update failed: ${e.message}")
             }
         }
     }
 
-    /**
-     * ✅ Update to API, then cache locally
-     */
-    suspend fun updateChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
+    suspend fun submitChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
         return withContext(Dispatchers.IO) {
             try {
-                // Update to API first
-                val apiResult = updateToApi(changeRequest)
-
-                when (apiResult) {
-                    is Result.Success -> {
-                        // Update local cache
-                        changeRequestDao.updateChangeRequest(changeRequest)
-                        Result.Success(changeRequest)
-                    }
-                    is Result.Error -> apiResult
-                    else -> Result.Error(Exception("Unknown error"), "Update failed")
-                }
+                val localId = changeRequestDao.insertChangeRequest(changeRequest).toInt()
+                Result.Success(changeRequest.copy(id = localId))
             } catch (e: Exception) {
-                Result.Error(e, "Update failed: ${e.message}")
+                Result.Error(e, "Submit failed: ${e.message}")
             }
         }
     }
@@ -126,28 +306,6 @@ class ChangeRequestRepository(
                     status = newStatus,
                     updatedAt = System.currentTimeMillis()
                 )
-
-                // Update to API
-                if (teknisiId != null && teknisiName != null) {
-                    val token = RetrofitClient.authToken
-                    if (token != null) {
-                        val request = UpdateStatusRequest(
-                            changeRequestId = changeRequest.id,
-                            newStatus = newStatus,
-                            teknisiId = teknisiId,
-                            teknisiName = teknisiName,
-                            notes = notes
-                        )
-
-                        RetrofitClient.teknisiService.updateChangeRequestStatus(
-                            token = "Bearer $token",
-                            id = changeRequest.id,
-                            request = request
-                        )
-                    }
-                }
-
-                // Update local
                 changeRequestDao.updateChangeRequest(updated)
                 Result.Success(updated)
             } catch (e: Exception) {
@@ -156,84 +314,80 @@ class ChangeRequestRepository(
         }
     }
 
-    // ===== Private Helper Methods =====
+    // ===== Helper Functions =====
 
-    private suspend fun submitToApi(changeRequest: ChangeRequest): Result<Boolean> {
+    private fun convertToIso8601(dateString: String): String {
         return try {
-            val token = RetrofitClient.authToken ?: return Result.Error(
-                Exception("No token"), "Authentication required"
-            )
+            // Input format: "yyyy-MM-dd"
+            val inputFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+            val date = inputFormat.parse(dateString)
 
-            val apiRequest = changeRequestToApiRequest(changeRequest)
-
-            // TODO: Implement actual API endpoint when ready
-            // val response = RetrofitClient.changeRequestService.createChangeRequest(
-            //     "Bearer $token", apiRequest
-            // )
-
-            // For now, assume success
-            Result.Success(true)
+            // Output format: ISO 8601
+            val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault())
+            outputFormat.timeZone = TimeZone.getTimeZone("UTC")
+            outputFormat.format(date ?: Date())
         } catch (e: Exception) {
-            Result.Error(e, "API submit failed: ${e.message}")
+            dateString
         }
     }
 
-    private suspend fun updateToApi(changeRequest: ChangeRequest): Result<Boolean> {
-        return try {
-            val token = RetrofitClient.authToken ?: return Result.Error(
-                Exception("No token"), "Authentication required"
-            )
-
-            val apiRequest = changeRequestToApiRequest(changeRequest)
-
-            // TODO: Implement actual API endpoint when ready
-            // val response = RetrofitClient.changeRequestService.updateChangeRequest(
-            //     "Bearer $token", changeRequest.id, apiRequest
-            // )
-
-            Result.Success(true)
-        } catch (e: Exception) {
-            Result.Error(e, "API update failed: ${e.message}")
-        }
-    }
-
-    private fun changeRequestToApiRequest(cr: ChangeRequest): ChangeRequestApiRequest {
-        return ChangeRequestApiRequest(
-            ticketId = cr.ticketId,
-            userId = cr.userId,
-            idPerubahan = cr.idPerubahan,
-            jenisPerubahan = cr.jenisPerubahan,
-            alasan = cr.alasan,
-            tujuan = cr.tujuan,
-            idAset = cr.idAset,
-            asetTerdampak = cr.asetTerdampak,
-            relasiConfigurationItem = cr.relasiConfigurationItem,
-            rencanaImplementasi = cr.rencanaImplementasi,
-            usulanJadwal = cr.usulanJadwal,
-            rencanaRollback = cr.rencanaRollback,
-            assignedTeknisiId = cr.assignedTeknisiId,
-            assignedTeknisiName = cr.assignedTeknisiName,
-            status = cr.status
-        )
-    }
-
-    private fun apiRequestToChangeRequest(dto: ChangeRequestApiRequest): ChangeRequest {
+    private fun apiDataToChangeRequest(apiData: ChangeRequestApiData): ChangeRequest {
         return ChangeRequest(
-            ticketId = dto.ticketId,
-            userId = dto.userId,
-            idPerubahan = dto.idPerubahan,
-            jenisPerubahan = dto.jenisPerubahan,
-            alasan = dto.alasan,
-            tujuan = dto.tujuan,
-            idAset = dto.idAset,
-            asetTerdampak = dto.asetTerdampak,
-            relasiConfigurationItem = dto.relasiConfigurationItem,
-            rencanaImplementasi = dto.rencanaImplementasi,
-            usulanJadwal = dto.usulanJadwal,
-            rencanaRollback = dto.rencanaRollback,
-            assignedTeknisiId = dto.assignedTeknisiId,
-            assignedTeknisiName = dto.assignedTeknisiName,
-            status = dto.status
+            id = 0, // Local ID
+            ticketId = apiData.ticketId ?: apiData.crId,
+            userId = 0, // Will be set from session
+            idPerubahan = apiData.crId,
+            jenisPerubahan = apiData.type,
+            alasan = apiData.title,
+            tujuan = apiData.description ?: "",
+            idAset = apiData.assetId ?: "",
+            asetTerdampak = "",
+            relasiConfigurationItem = "",
+            rencanaImplementasi = "",
+            usulanJadwal = apiData.scheduleImplementation ?: "",
+            rencanaRollback = apiData.rollbackPlan ?: "",
+            assignedTeknisiId = null,
+            assignedTeknisiName = apiData.picImplementation,
+            photoPath = null,
+            estimasiBiaya = null,
+            estimasiWaktu = null,
+            scheduledDate = apiData.scheduleStart,
+            scheduledTimestamp = null,
+            skorEksposur = null,
+            dampakSetelahMitigasi = apiData.postImpact,
+            kemungkinanSetelahMitigasi = apiData.postLikelihood,
+            exposur = null,
+            skorResidual = apiData.postResidualScore,
+            levelRisikoResidual = apiData.postRiskLevel,
+            keteranganHasilImplementasi = apiData.implementationResult,
+            revisionNotes = null,
+            revisionCount = 0,
+            status = mapApiStatusToLocalStatus(apiData.status),
+            createdAt = parseIso8601ToTimestamp(apiData.createdAt),
+            updatedAt = parseIso8601ToTimestamp(apiData.updatedAt)
         )
+    }
+
+    private fun mapApiStatusToLocalStatus(apiStatus: String): String {
+        return when (apiStatus.uppercase()) {
+            "SUBMITTED" -> "Submitted"
+            "REVIEWED" -> "Reviewed"
+            "APPROVED" -> "Approved"
+            "SCHEDULED" -> "Scheduled"
+            "IMPLEMENTING" -> "Implementing"
+            "COMPLETED" -> "Completed"
+            "FAILED" -> "Failed"
+            "CLOSED" -> "Closed"
+            else -> apiStatus
+        }
+    }
+
+    private fun parseIso8601ToTimestamp(iso8601: String): Long {
+        return try {
+            val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+            format.parse(iso8601)?.time ?: System.currentTimeMillis()
+        } catch (e: Exception) {
+            System.currentTimeMillis()
+        }
     }
 }

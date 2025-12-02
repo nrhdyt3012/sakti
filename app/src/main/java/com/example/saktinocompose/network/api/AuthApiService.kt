@@ -14,18 +14,8 @@ interface AuthApiService {
         @Body request: LoginRequest
     ): Response<LoginResponse>
 
-    @POST("auth/logout")
-    suspend fun logout(
+    @GET("auth/profile")
+    suspend fun getProfile(
         @Header("Authorization") token: String
-    ): Response<ApiResponse<Any>>
-
-    @GET("auth/verify")
-    suspend fun verifyToken(
-        @Header("Authorization") token: String
-    ): Response<ApiResponse<UserData>>
-
-    @POST("auth/refresh")
-    suspend fun refreshToken(
-        @Header("Authorization") token: String
-    ): Response<LoginResponse>
+    ): Response<ProfileResponse>
 }
