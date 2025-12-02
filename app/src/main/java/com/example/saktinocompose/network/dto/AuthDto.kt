@@ -16,7 +16,7 @@ data class LoginRequest(
 // Login Response
 data class LoginResponse(
     @SerializedName("status")
-    val success: Boolean,
+    val status: String,
     @SerializedName("message")
     val message: String?,
     @SerializedName("data")

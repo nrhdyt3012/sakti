@@ -8,6 +8,7 @@ import com.example.saktinocompose.data.entity.User
 import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.repository.AuthRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -65,21 +66,15 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
                         val user = result.data
                         val token = RetrofitClient.authToken
 
-                        // ✅ Set loading false SEBELUM emit success
-                        _uiState.update { it.copy(isLoading = false) }
+                        // ✅ Tunggu sebentar sebelum emit success
+                        delay(200)
 
-                        // ✅ Emit success event
+                        _uiState.update { it.copy(isLoading = false) }
                         _loginEvent.emit(LoginEvent.LoginSuccess(user, token))
                     }
                     is Result.Error -> {
-                        // ✅ Set loading false SEBELUM emit error
                         _uiState.update { it.copy(isLoading = false) }
-
-                        _loginEvent.emit(
-                            LoginEvent.LoginError(
-                                result.message ?: "Login gagal"
-                            )
-                        )
+                        _loginEvent.emit(LoginEvent.LoginError(result.message ?: "Login gagal"))
                     }
                     else -> {
                         _uiState.update { it.copy(isLoading = false) }
@@ -88,7 +83,7 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
                 }
             } catch (e: Exception) {
                 _uiState.update { it.copy(isLoading = false) }
-                _loginEvent.emit(LoginEvent.LoginError("Terjadi kesalahan: ${e.message}"))
+                _loginEvent.emit(LoginEvent.LoginError("Error: ${e.message}"))
             }
         }
     }

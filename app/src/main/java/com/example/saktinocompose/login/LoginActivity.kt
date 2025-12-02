@@ -2,6 +2,7 @@ package com.example.saktinocompose.login
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,8 +10,11 @@ import androidx.lifecycle.lifecycleScope
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.teknisi.TeknisiActivity
 import com.example.saktinocompose.utils.SessionManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class LoginActivity: ComponentActivity() {
     private lateinit var sessionManager: SessionManager
@@ -20,9 +24,18 @@ class LoginActivity: ComponentActivity() {
 
         sessionManager = SessionManager(this)
 
-        // ✅ Check session dulu
         lifecycleScope.launch {
             val userSession = sessionManager.userSession.first()
+
+            // ✅ Log untuk debugging
+            Log.d("LoginActivity", """
+            Session check:
+            - isLoggedIn: ${userSession.isLoggedIn}
+            - userId: ${userSession.userId}
+            - email: ${userSession.email}
+            - role: ${userSession.role}
+            - hasToken: ${userSession.authToken != null}
+        """.trimIndent())
 
             if (userSession.isLoggedIn &&
                 userSession.userId != null &&
@@ -53,30 +66,41 @@ class LoginActivity: ComponentActivity() {
         setContent {
             LoginScreen(
                 onLoginSuccess = { userId, email, name, role, token ->
-                    // ✅ Save session dulu, baru navigasi
                     lifecycleScope.launch {
                         try {
-                            // 1. Save session
-                            sessionManager.saveSession(
-                                userId = userId,
-                                email = email,
-                                name = name,
-                                role = role,
-                                authToken = token
-                            )
+                            // ✅ Pastikan semua operasi async selesai
+                            withContext(Dispatchers.IO) {
+                                // 1. Save session dengan konfirmasi
+                                sessionManager.saveSession(
+                                    userId = userId,
+                                    email = email,
+                                    name = name,
+                                    role = role.uppercase().trim(), // ✅ Normalize role
+                                    authToken = token
+                                )
 
-                            // 2. Update Retrofit token
-                            token?.let { RetrofitClient.updateAuthToken(it) }
+                                // 2. Update Retrofit token
+                                token?.let { RetrofitClient.updateAuthToken(it) }
+                            }
 
-                            // 3. Navigate SETELAH save selesai
-                            navigateToHome(userId, email, name, role)
+                            // ✅ Tunggu 100ms untuk memastikan save selesai
+                            delay(100)
+
+                            // 3. Navigate di Main thread
+                            withContext(Dispatchers.Main) {
+                                navigateToHome(userId, email, name, role.uppercase().trim())
+                            }
 
                         } catch (e: Exception) {
-                            Toast.makeText(
-                                this@LoginActivity,
-                                "Error saving session: ${e.message}",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(
+                                    this@LoginActivity,
+                                    "Login error: ${e.message}",
+                                    Toast.LENGTH_LONG
+                                ).show()
+
+                                // ✅ Reset UI agar user bisa retry
+                            }
                         }
                     }
                 }
@@ -85,8 +109,24 @@ class LoginActivity: ComponentActivity() {
     }
 
     private fun navigateToHome(userId: String, email: String, name: String, role: String) {
-        if (role.uppercase() != "TEKNISI") {
-            Toast.makeText(this, "Access denied. Technician only.", Toast.LENGTH_LONG).show()
+        // ✅ Normalize dan validate role
+        val normalizedRole = role.uppercase().trim()
+
+        if (normalizedRole != "TEKNISI") {
+            // ✅ Log untuk debugging
+            Log.e("LoginActivity", "Access denied. Role: '$role' (normalized: '$normalizedRole')")
+
+            Toast.makeText(
+                this,
+                "Access denied. Technician only. Your role: $normalizedRole",
+                Toast.LENGTH_LONG
+            ).show()
+
+            // ✅ JANGAN langsung return, clear session dulu
+            lifecycleScope.launch {
+                sessionManager.clearSession()
+                RetrofitClient.clearAuthToken()
+            }
             return
         }
 
@@ -94,8 +134,7 @@ class LoginActivity: ComponentActivity() {
             putExtra("USER_ID", userId)
             putExtra("USER_EMAIL", email)
             putExtra("USER_NAME", name)
-            putExtra("USER_ROLE", role)
-            // ✅ Clear back stack
+            putExtra("USER_ROLE", normalizedRole)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 

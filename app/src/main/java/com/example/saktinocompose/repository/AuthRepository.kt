@@ -22,7 +22,7 @@ class AuthRepository(
                     LoginRequest(email, password)
                 )
 
-                if (response.isSuccessful && response.body()?.success == true) {
+                if (response.isSuccessful && response.body()?.status == "success") {
                     val userData = response.body()?.data
 
                     if (userData != null) {
