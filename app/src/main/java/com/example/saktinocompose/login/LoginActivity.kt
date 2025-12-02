@@ -2,26 +2,23 @@ package com.example.saktinocompose.login
 
 import android.content.Intent
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.lifecycle.lifecycleScope
-import com.example.saktinocompose.enduser.EnduserActivity
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.teknisi.TeknisiActivity
 import com.example.saktinocompose.utils.SessionManager
-// ❌ HAPUS import SyncManager
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
-class LoginActivity: ComponentActivity(){
+class LoginActivity: ComponentActivity() {
     private lateinit var sessionManager: SessionManager
-    // ❌ HAPUS syncManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         sessionManager = SessionManager(this)
-        // ❌ HAPUS syncManager = SyncManager(this)
 
         lifecycleScope.launch {
             val userSession = sessionManager.userSession.first()
@@ -30,7 +27,8 @@ class LoginActivity: ComponentActivity(){
                 userSession.userId != null &&
                 userSession.email != null &&
                 userSession.name != null &&
-                userSession.role != null) {
+                userSession.role != null
+            ) {
 
                 userSession.authToken?.let { token ->
                     RetrofitClient.updateAuthToken(token)
@@ -75,12 +73,13 @@ class LoginActivity: ComponentActivity(){
     }
 
     private fun navigateToHome(userId: Int, email: String, name: String, role: String) {
-        val intent = when (role.uppercase()) {
-            "TEKNISI" -> Intent(this, TeknisiActivity::class.java)
-            "END_USER" -> Intent(this, EnduserActivity::class.java)
-            else -> return
+        // Hanya Teknisi yang bisa login
+        if (role.uppercase() != "TEKNISI") {
+            Toast.makeText(this, "Access denied. Technician only.", Toast.LENGTH_LONG).show()
+            return
         }
 
+        val intent = Intent(this, TeknisiActivity::class.java)
         intent.putExtra("USER_ID", userId)
         intent.putExtra("USER_EMAIL", email)
         intent.putExtra("USER_NAME", name)

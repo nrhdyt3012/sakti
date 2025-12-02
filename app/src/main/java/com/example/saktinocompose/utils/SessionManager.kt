@@ -21,9 +21,6 @@ class SessionManager(private val context: Context) {
         private val TOKEN_EXPIRY_KEY = longPreferencesKey("token_expiry")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
 
-        // ❌ HAPUS sync-related keys:
-        // private val LAST_SYNC_KEY = longPreferencesKey("last_sync_timestamp")
-        // private val SYNC_ENABLED_KEY = booleanPreferencesKey("sync_enabled")
     }
 
     suspend fun saveSession(
@@ -79,32 +76,6 @@ class SessionManager(private val context: Context) {
             }
         }
         return isExpired
-    }
-
-    // ❌ HAPUS semua sync-related methods:
-    // suspend fun saveLastSyncTimestamp(...)
-    // val lastSyncTimestamp: Flow<Long?>
-    // suspend fun setSyncEnabled(...)
-    // val isSyncEnabled: Flow<Boolean>
-
-    val userId: Flow<Int?> = context.dataStore.data.map { preferences ->
-        preferences[USER_ID_KEY]
-    }
-
-    val userEmail: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[EMAIL_KEY]
-    }
-
-    val userName: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[NAME_KEY]
-    }
-
-    val userRole: Flow<String?> = context.dataStore.data.map { preferences ->
-        preferences[ROLE_KEY]
-    }
-
-    val isLoggedIn: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[IS_LOGGED_IN_KEY] == "true"
     }
 
     suspend fun clearSession() {

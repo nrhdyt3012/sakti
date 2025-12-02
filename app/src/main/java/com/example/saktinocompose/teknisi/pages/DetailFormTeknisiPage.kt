@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.data.entity.ChangeRequest
-import com.example.saktinocompose.enduser.pages.DetailItem
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import com.example.saktinocompose.viewmodel.RiskAssessmentViewModel
 import com.example.saktinocompose.viewmodel.ApprovalHistoryViewModel
@@ -147,15 +146,6 @@ fun DetailFormTeknisiPage(
                             notes = "Requesting revision: $notes"
                         )
 
-                        // Kirim notifikasi ke end user
-                        notificationViewModel.createNotification(
-                            userId = changeRequest.userId,
-                            changeRequestId = changeRequest.id,
-                            ticketId = changeRequest.ticketId,
-                            fromStatus = changeRequest.status,
-                            toStatus = "Revision"
-                        )
-
                         showInspectionDialog = false
                         successMessage = "Revision request successfully sent to End User"
                         showSuccessDialog = true
@@ -268,15 +258,6 @@ fun DetailFormTeknisiPage(
                     fromStatus = "Implementing",
                     toStatus = "Completed",
                     notes = "Implementation completed. Residual score: $skorResidual, Residual risk level: $levelRisikoResidual"
-                )
-
-                // Kirim notifikasi ke end user
-                notificationViewModel.createNotification(
-                    userId = changeRequest.userId,
-                    changeRequestId = changeRequest.id,
-                    ticketId = changeRequest.ticketId,
-                    fromStatus = "Implementing",
-                    toStatus = "Completed"
                 )
 
                 showImplementationDialog = false
@@ -970,14 +951,7 @@ fun DetailFormTeknisiPage(
                                 toStatus = "Implementing",
                                 notes = "Starting implementation"
                             )
-                            // Kirim notifikasi ke end user
-                            notificationViewModel.createNotification(
-                                userId = changeRequest.userId,
-                                changeRequestId = changeRequest.id,
-                                ticketId = changeRequest.ticketId,
-                                fromStatus = "Scheduled",
-                                toStatus = "Implementing"
-                            )
+
                             successMessage = "Status changed to 'Implementing'"
                             showSuccessDialog = true
                         },
@@ -1042,14 +1016,7 @@ fun DetailFormTeknisiPage(
                                 toStatus = "Closed",
                                 notes = "Change requests are closed"
                             )
-                            // Kirim notifikasi ke end user
-                            notificationViewModel.createNotification(
-                                userId = changeRequest.userId,
-                                changeRequestId = changeRequest.id,
-                                ticketId = changeRequest.ticketId,
-                                fromStatus = "Completed",
-                                toStatus = "Closed"
-                            )
+
                             successMessage = "Change request closed successfully"
                             showSuccessDialog = true
                         },

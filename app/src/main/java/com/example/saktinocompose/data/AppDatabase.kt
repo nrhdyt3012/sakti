@@ -45,74 +45,10 @@ abstract class AppDatabase : RoomDatabase() {
                     "sakti_database"
                 )
                     .fallbackToDestructiveMigration()
-                    .addCallback(DatabaseCallback())
                     .build()
                 INSTANCE = instance
                 instance
             }
-        }
-
-        private class DatabaseCallback : RoomDatabase.Callback() {
-            override fun onCreate(db: SupportSQLiteDatabase) {
-                super.onCreate(db)
-                INSTANCE?.let { database ->
-                    CoroutineScope(Dispatchers.IO).launch {
-                        populateDatabase(database.userDao())
-                    }
-                }
-            }
-        }
-
-        private suspend fun populateDatabase(userDao: UserDao) {
-            fun hashPassword(password: String): String {
-                val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
-                return bytes.joinToString("") { "%02x".format(it) }
-            }
-
-            // Insert Teknisi
-            userDao.insertUser(
-                User(
-                    email = "test@example.com",
-                    name = "Budi",
-                    passwordHash = hashPassword("password123"),
-                    role = "TEKNISI"
-                )
-            )
-
-            userDao.insertUser(
-                User(
-                    email = "teknisi@example.com",
-                    name = "Bahlil",
-                    passwordHash = hashPassword("password111"),
-                    role = "TEKNISI"
-                )
-            )
-
-            // Insert 3 End Users
-            userDao.insertUser(
-                User(
-                    email = "enduser1@example.com",
-                    name = "Andi",
-                    passwordHash = hashPassword("password456"),
-                    role = "END_USER"
-                )
-            )
-            userDao.insertUser(
-                User(
-                    email = "enduser2@example.com",
-                    name = "Siti",
-                    passwordHash = hashPassword("password789"),
-                    role = "END_USER"
-                )
-            )
-            userDao.insertUser(
-                User(
-                    email = "enduser3@example.com",
-                    name = "Rudi",
-                    passwordHash = hashPassword("password000"),
-                    role = "END_USER"
-                )
-            )
         }
     }
 }

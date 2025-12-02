@@ -1,6 +1,3 @@
-// Updated LoginViewModel untuk support API
-// File: app/src/main/java/com/example/saktinocompose/login/LoginViewModel.kt
-
 package com.example.saktinocompose.login
 
 import android.app.Application
@@ -18,11 +15,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-
-enum class UserRole {
-    TEKNISI,
-    END_USER
-}
 
 data class LoginUiState(
     val username: String = "",

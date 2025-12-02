@@ -227,15 +227,6 @@ fun EmergencyActionDialog(
                             notes = "EMERGENCY: ${if (notes.isBlank()) "No notes" else notes}"
                         )
 
-                        // Kirim notifikasi ke end user
-                        notificationViewModel.createNotification(
-                            userId = changeRequest.userId,
-                            changeRequestId = changeRequest.id,
-                            ticketId = changeRequest.ticketId,
-                            fromStatus = changeRequest.status,
-                            toStatus = selectedAction!!
-                        )
-
                         onSuccess()
                     }
                 },

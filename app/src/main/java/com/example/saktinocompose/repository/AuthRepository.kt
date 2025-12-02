@@ -38,9 +38,6 @@ class AuthRepository(
                             role = userData.role
                         )
 
-                        // Cache to local database
-                        syncUserToLocal(user)
-
                         return@withContext Result.Success(user)
                     } else {
                         return@withContext Result.Error(
@@ -84,8 +81,6 @@ class AuthRepository(
                             passwordHash = "",
                             role = userData.role
                         )
-
-                        syncUserToLocal(user)
                         return@withContext Result.Success(user)
                     } else {
                         return@withContext Result.Error(
@@ -103,15 +98,6 @@ class AuthRepository(
                     "Network error: ${e.message}"
                 )
             }
-        }
-    }
-
-    private suspend fun syncUserToLocal(user: User) {
-        val existingUser = userDao.getUserById(user.id)
-        if (existingUser != null) {
-            userDao.updateUser(user)
-        } else {
-            userDao.insertUser(user)
         }
     }
 
