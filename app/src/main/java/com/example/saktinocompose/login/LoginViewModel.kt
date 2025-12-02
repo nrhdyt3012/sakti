@@ -32,8 +32,6 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
 
     private val database = AppDatabase.getDatabase(application)
     private val userDao = database.userDao()
-
-    // Repository untuk handle offline/online login
     private val authRepository = AuthRepository(userDao)
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -62,21 +60,25 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
 
             _uiState.update { it.copy(isLoading = true) }
 
-            delay(1000) // Simulasi network delay
+            // ✅ HAPUS delay simulasi
+            // delay(1000)
 
             try {
-                // Gunakan repository yang sudah handle offline/online
                 when (val result = authRepository.login(username, password)) {
                     is Result.Success -> {
                         val user = result.data
-
-                        // Set token ke RetrofitClient jika ada
-                        // Token akan di-set di AuthRepository jika login online berhasil
                         val token = RetrofitClient.authToken
 
+                        // ✅ Set loading false SEBELUM emit success
+                        _uiState.update { it.copy(isLoading = false) }
+
+                        // ✅ Emit success event
                         _loginEvent.emit(LoginEvent.LoginSuccess(user, token))
                     }
                     is Result.Error -> {
+                        // ✅ Set loading false SEBELUM emit error
+                        _uiState.update { it.copy(isLoading = false) }
+
                         _loginEvent.emit(
                             LoginEvent.LoginError(
                                 result.message ?: "Login gagal"
@@ -84,13 +86,13 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
                         )
                     }
                     else -> {
+                        _uiState.update { it.copy(isLoading = false) }
                         _loginEvent.emit(LoginEvent.LoginError("Login gagal"))
                     }
                 }
             } catch (e: Exception) {
-                _loginEvent.emit(LoginEvent.LoginError("Terjadi kesalahan: ${e.message}"))
-            } finally {
                 _uiState.update { it.copy(isLoading = false) }
+                _loginEvent.emit(LoginEvent.LoginError("Terjadi kesalahan: ${e.message}"))
             }
         }
     }

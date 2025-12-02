@@ -36,7 +36,7 @@ import com.example.saktinocompose.ui.components.AsetTerdampakDisplay
 @Composable
 fun DetailFormTeknisiPage(
     changeRequest: ChangeRequest,
-    teknisiId: Int,
+    teknisiId: String,
     teknisiName: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -121,7 +121,7 @@ fun DetailFormTeknisiPage(
                             status = "Revision",
                             revisionNotes = notes,
                             revisionCount = changeRequest.revisionCount + 1,
-                            updatedAt = System.currentTimeMillis()
+                            updatedAt = System.currentTimeMillis().toString()
                         )
                         changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
@@ -145,7 +145,7 @@ fun DetailFormTeknisiPage(
                         val updatedRequest = changeRequest.copy(
                             status = "Failed",
                             revisionNotes = notes,
-                            updatedAt = System.currentTimeMillis()
+                            updatedAt = System.currentTimeMillis().toString()
                         )
                         changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
@@ -160,13 +160,6 @@ fun DetailFormTeknisiPage(
                         )
 
                         // Kirim notifikasi ke end user
-                        notificationViewModel.createNotification(
-                            userId = changeRequest.userId,
-                            changeRequestId = changeRequest.id,
-                            ticketId = changeRequest.ticketId,
-                            fromStatus = changeRequest.status,
-                            toStatus = "Failed"
-                        )
 
                         showInspectionDialog = false
                         successMessage = "Application successfully rejected"
@@ -193,7 +186,7 @@ fun DetailFormTeknisiPage(
                     scheduledDate = scheduledDate,
                     scheduledTimestamp = scheduledTimestamp,
                     status = "Scheduled",
-                    updatedAt = System.currentTimeMillis()
+                    updatedAt = System.currentTimeMillis().toString()
                 )
                 changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
@@ -208,14 +201,6 @@ fun DetailFormTeknisiPage(
                 )
 
                 // Kirim notifikasi ke end user
-                notificationViewModel.createNotification(
-                    userId = changeRequest.userId,
-                    changeRequestId = changeRequest.id,
-                    ticketId = changeRequest.ticketId,
-                    fromStatus = changeRequest.status,
-                    toStatus = "Scheduled"
-                )
-
                 showSchedulingDialog = false
                 successMessage = "Implementation successfully scheduled!"
                 showSuccessDialog = true
@@ -236,7 +221,7 @@ fun DetailFormTeknisiPage(
                     levelRisikoResidual = levelRisikoResidual,
                     keteranganHasilImplementasi = keteranganHasilImplementasi,
                     status = "Completed",
-                    updatedAt = System.currentTimeMillis()
+                    updatedAt = System.currentTimeMillis().toString()
                 )
                 changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
@@ -390,8 +375,8 @@ fun DetailFormTeknisiPage(
                     HorizontalDivider()
                     DetailItem(label = "Change Id", value = changeRequest.idPerubahan)
                     DetailItem(label = "Type of Change", value = changeRequest.jenisPerubahan)
-                    DetailItem(label = "Change Request Title", value = changeRequest.alasan)
-                    DetailItem(label = "Description", value = changeRequest.tujuan)
+                    DetailItem(label = "Change Request Title", value = changeRequest.title)
+                    DetailItem(label = "Description", value = changeRequest.description)
                     HorizontalDivider()
 
 // ✅ ID Aset
@@ -434,7 +419,7 @@ fun DetailFormTeknisiPage(
                     }
                     DetailItem(label = "Implementation Plan", value = changeRequest.rencanaImplementasi)
                     DetailItem(label = "Proposed Schedule", value = changeRequest.usulanJadwal)
-                    DetailItem(label = "Rollback Plan", value = changeRequest.rencanaRollback)
+                    DetailItem(label = "Rollback Plan", value = changeRequest.rollbackPlan)
                     if (changeRequest.assignedTeknisiName != null) {
                         DetailItem(label = "Technician Assigned", value = changeRequest.assignedTeknisiName)
                     }

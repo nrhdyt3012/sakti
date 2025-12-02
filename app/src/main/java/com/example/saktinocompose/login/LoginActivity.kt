@@ -34,8 +34,6 @@ class LoginActivity: ComponentActivity() {
                     RetrofitClient.updateAuthToken(token)
                 }
 
-                // ❌ HAPUS syncManager.initializeSync()
-
                 navigateToHome(
                     userId = userSession.userId.toString(),
                     email = userSession.email,
@@ -52,20 +50,32 @@ class LoginActivity: ComponentActivity() {
         setContent {
             LoginScreen(
                 onLoginSuccess = { userId, email, name, role, token ->
+                    // ✅ PERBAIKAN: Simpan session dulu, baru navigasi
                     lifecycleScope.launch {
-                        sessionManager.saveSession(
-                            userId = userId,
-                            email = email,
-                            name = name,
-                            role = role,
-                            authToken = token
-                        )
+                        try {
+                            // 1. Save session
+                            sessionManager.saveSession(
+                                userId = userId,
+                                email = email,
+                                name = name,
+                                role = role,
+                                authToken = token
+                            )
 
-                        token?.let { RetrofitClient.updateAuthToken(it) }
+                            // 2. Update Retrofit token
+                            token?.let { RetrofitClient.updateAuthToken(it) }
 
-                        // ❌ HAPUS syncManager.initializeSync()
+                            // 3. Navigate SETELAH save selesai
+                            navigateToHome(userId, email, name, role)
 
-                        navigateToHome(userId, email, name, role)
+                        } catch (e: Exception) {
+                            // Handle error saat save session
+                            Toast.makeText(
+                                this@LoginActivity,
+                                "Error saving session: ${e.message}",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
                     }
                 }
             )
@@ -79,11 +89,15 @@ class LoginActivity: ComponentActivity() {
             return
         }
 
-        val intent = Intent(this, TeknisiActivity::class.java)
-        intent.putExtra("USER_ID", userId)
-        intent.putExtra("USER_EMAIL", email)
-        intent.putExtra("USER_NAME", name)
-        intent.putExtra("USER_ROLE", role)
+        val intent = Intent(this, TeknisiActivity::class.java).apply {
+            putExtra("USER_ID", userId)
+            putExtra("USER_EMAIL", email)
+            putExtra("USER_NAME", name)
+            putExtra("USER_ROLE", role)
+            // ✅ Clear back stack
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
         startActivity(intent)
         finish()
     }

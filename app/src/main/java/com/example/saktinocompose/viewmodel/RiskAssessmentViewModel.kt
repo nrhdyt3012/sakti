@@ -22,8 +22,8 @@ class RiskAssessmentViewModel(application: Application) : AndroidViewModel(appli
     }
 
     fun saveRiskAssessment(
-        changeRequestId: String,  // ✅ Changed from Int to String
-        teknisiId: Int,
+        changeRequestId: String,  // ✅ Already String
+        teknisiId: String,  // ✅ Changed from Int to String
         teknisiName: String,
         skorDampak: Int,
         skorKemungkinan: Int,
@@ -34,10 +34,11 @@ class RiskAssessmentViewModel(application: Application) : AndroidViewModel(appli
         viewModelScope.launch {
             val existing = riskAssessmentDao.getRiskAssessmentByChangeRequest(changeRequestId)
 
+            val teknisiIdInt = teknisiId.toIntOrNull() ?: 0  // ✅ Convert to Int
+
             if (existing != null) {
-                // Update existing
                 val updated = existing.copy(
-                    teknisiId = teknisiId,
+                    teknisiId = teknisiIdInt,
                     teknisiName = teknisiName,
                     skorDampak = skorDampak,
                     skorKemungkinan = skorKemungkinan,
@@ -48,10 +49,9 @@ class RiskAssessmentViewModel(application: Application) : AndroidViewModel(appli
                 )
                 riskAssessmentDao.updateRiskAssessment(updated)
             } else {
-                // Insert new
                 val riskAssessment = RiskAssessment(
                     changeRequestId = changeRequestId,
-                    teknisiId = teknisiId,
+                    teknisiId = teknisiIdInt,
                     teknisiName = teknisiName,
                     skorDampak = skorDampak,
                     skorKemungkinan = skorKemungkinan,

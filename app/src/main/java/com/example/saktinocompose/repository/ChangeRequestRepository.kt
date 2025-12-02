@@ -60,7 +60,7 @@ class ChangeRequestRepository(
     }
 
     /**
-     * ✅ Mapping dari API response ke local entity
+     * ✅ IMPROVED Mapping dari API response ke local entity
      */
     private fun apiDataToChangeRequest(apiData: ChangeRequestApiData): ChangeRequest {
         return ChangeRequest(
@@ -70,10 +70,10 @@ class ChangeRequestRepository(
             title = apiData.title,
             description = apiData.description ?: "",
 
-            // Asset
+            // Asset - handle format "id:nama" atau plain string
             assetId = apiData.assetId ?: "",
-            asetTerdampak = apiData.assetId ?: "",  // Fallback
-            relasiConfigurationItem = "",  // ⚠️ Tidak ada di API, biarkan kosong
+            asetTerdampak = apiData.assetId ?: "",
+            relasiConfigurationItem = "",  // ⚠️ Tidak ada di API response
 
             // Implementation
             rencanaImplementasi = apiData.mitigationPlan ?: "",
@@ -84,45 +84,60 @@ class ChangeRequestRepository(
             assignedTeknisiName = apiData.picImplementation,
             scheduledDate = apiData.scheduleImplementation,
 
-            // Inspection
+            // Schedule
             scheduleStart = apiData.scheduleStart,
             scheduleEnd = apiData.scheduleEnd,
-            scoreImpact = apiData.scoreImpact,
 
-            // Schedule
+            // Risk scores
+            scoreImpact = apiData.scoreImpact,
             scoreLikelihood = apiData.scoreLikelihood,
             scoreRisk = apiData.scoreRisk,
             riskLevel = apiData.riskLevel,
 
-            // Risk
+            // Post-implementation
             postImpact = apiData.postImpact,
             postLikelihood = apiData.postLikelihood,
             postResidualScore = apiData.postResidualScore,
             postRiskLevel = apiData.postRiskLevel,
-
-            // Post-implementation
             implementationResult = apiData.implementationResult,
+
+            // Status
             status = mapApiStatusToLocalStatus(apiData.status),
             approvalStatus = apiData.approvalStatus,
             createdAt = apiData.createdAt,
             updatedAt = apiData.updatedAt,
 
-            // Status
+            // Additional from API
             dinas = apiData.dinas,
             impactDesc = apiData.impactDesc,
             controlExisting = apiData.controlExisting,
             controlEffectiveness = apiData.controlEffectiveness,
-
-            // Additional
             mitigationPlan = apiData.mitigationPlan,
-            picImplementation = apiData.picImplementation,
+
+            // ✅ TAMBAHKAN field yang missing
+            jenisPerubahan = apiData.changeType ?: apiData.type,
+            skorEksposur = calculateExposure(apiData.scoreImpact, apiData.scoreLikelihood, apiData.scoreRisk)
         )
+    }
+
+    /**
+     * ✅ Calculate exposure from existing scores
+     */
+    private fun calculateExposure(impact: Int?, likelihood: Int?, totalRisk: Int?): Int {
+        if (impact == null || likelihood == null || totalRisk == null) return 0
+        if (impact == 0 || likelihood == 0) return 0
+
+        val baseRisk = impact * likelihood
+        if (baseRisk == 0) return 0
+
+        return (totalRisk / baseRisk).coerceIn(1, 4)
     }
 
     private fun mapApiStatusToLocalStatus(apiStatus: String): String {
         return when (apiStatus.uppercase()) {
             "SUBMITTED" -> "Submitted"
             "REVIEWED" -> "Reviewed"
+            "REVISION" -> "Revision"
             "APPROVED" -> "Approved"
             "SCHEDULED" -> "Scheduled"
             "IMPLEMENTING" -> "Implementing"

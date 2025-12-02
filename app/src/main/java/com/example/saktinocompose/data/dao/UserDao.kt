@@ -9,11 +9,11 @@ interface UserDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertUser(user: User): Long
 
-    @Query("SELECT * FROM users WHERE username = :email LIMIT 1")
-    suspend fun getUserByEmail(email: String): User?
+    @Query("SELECT * FROM users WHERE username = :username LIMIT 1")
+    suspend fun getUserByUsername(username: String): User?  // ✅ Changed from email
 
     @Query("SELECT * FROM users WHERE id = :userId LIMIT 1")
-    suspend fun getUserById(userId: Int): User?
+    suspend fun getUserById(userId: String): User?  // ✅ Changed to String
 
     @Query("SELECT * FROM users")
     fun getAllUsers(): Flow<List<User>>

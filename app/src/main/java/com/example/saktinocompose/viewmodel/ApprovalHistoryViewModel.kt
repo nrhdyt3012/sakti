@@ -18,8 +18,8 @@ class ApprovalHistoryViewModel(application: Application) : AndroidViewModel(appl
     }
 
     fun addApprovalHistory(
-        changeRequestId: String,  // ✅ Changed from Int to String
-        approverUserId: Int,
+        changeRequestId: String,  // ✅ Already String
+        approverUserId: String,  // ✅ Changed from Int to String
         approverName: String,
         fromStatus: String,
         toStatus: String,
@@ -28,7 +28,7 @@ class ApprovalHistoryViewModel(application: Application) : AndroidViewModel(appl
         viewModelScope.launch {
             val approvalHistory = ApprovalHistory(
                 changeRequestId = changeRequestId,
-                approverUserId = approverUserId,
+                approverUserId = approverUserId.toIntOrNull() ?: 0,  // ✅ Convert to Int for DB
                 approverName = approverName,
                 fromStatus = fromStatus,
                 toStatus = toStatus,

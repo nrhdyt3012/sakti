@@ -27,7 +27,7 @@ import java.util.*
 @Composable
 fun CMDBCategoryListPage(
     categoryName: String,
-    teknisiId: Int,
+    teknisiId: String,
     teknisiName: String,
     onBackClick: () -> Unit,
     onDetailClick: (ChangeRequest) -> Unit,

@@ -6,9 +6,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
@@ -22,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -45,24 +49,21 @@ fun LoginScreen(
     onLoginSuccess: (userId: String, email: String, name: String, role: String, token: String?) -> Unit
 ) {
     val uiState by loginViewModel.uiState.collectAsState()
-    var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf<String?>(null) }
-    var successUserId: String by remember { mutableStateOf("") }
-    var successEmail by remember { mutableStateOf("") }
-    var successName by remember { mutableStateOf("") }
-    var successRole by remember { mutableStateOf("") }
-    var successToken by remember { mutableStateOf<String?>(null) }
 
+    // ✅ Langsung navigasi tanpa dialog success
     LaunchedEffect(Unit) {
         loginViewModel.loginEvent.collect { event ->
             when (event) {
                 is LoginEvent.LoginSuccess -> {
-                    successUserId = event.user.id
-                    successUsername = event.user.username
-                    successName = event.user.name
-                    successRole = event.user.role
-                    successToken = event.token
-                    showSuccessDialog = true
+                    // ✅ Langsung callback tanpa dialog
+                    onLoginSuccess(
+                        event.user.id,
+                        event.user.username,
+                        event.user.name,
+                        event.user.role,
+                        event.token
+                    )
                 }
                 is LoginEvent.LoginError -> {
                     showErrorDialog = event.message
@@ -71,69 +72,48 @@ fun LoginScreen(
         }
     }
 
-    // Success Dialog
-    if (showSuccessDialog) {
-        val roleText = when (successRole.uppercase()) {
-            "TEKNISI" -> "Teknisi"
-            "END_USER" -> "End User"
-            else -> successRole
-        }
-
-        AlertDialog(
-            onDismissRequest = { showSuccessDialog = false },
-            title = { Text("Selamat Datang!") },
-            text = {
-                Column {
-                    Text("Login berhasil!")
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Nama: $successName")
-                    Text("Role: $roleText")
-                    if (successToken != null) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            "✓ Terhubung ke server",
-                            fontSize = 12.sp,
-                            color = Color(0xFF4CAF50)
-                        )
-                    }
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    showSuccessDialog = false
-                    onLoginSuccess(successUserId, successEmail, successName, successRole, successToken)
-                }) {
-                    Text("Lanjut")
-                }
-            }
-        )
-    }
-
-    // Error Dialog
+    // ✅ HANYA Error Dialog
     if (showErrorDialog != null) {
         AlertDialog(
-            onDismissRequest = { showErrorDialog = null },
-            title = { Text("Gagal") },
-            text = { Text(showErrorDialog ?: "Terjadi kesalahan") },
-            confirmButton = {
-                Button(onClick = { showErrorDialog = null }) {
-                    Text("Kembali")
+            onDismissRequest = { /* Tidak bisa dismiss */ },
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Error,
+                        contentDescription = "Error",
+                        tint = Color(0xFFD32F2F),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Text(
+                        "Login Gagal",
+                        fontWeight = FontWeight.Bold
+                    )
                 }
-            }
-        )
-    }
-
-    val viewAlphas = List(7) { remember { Animatable(0f) } }
-    LaunchedEffect(Unit) {
-        launch {
-            viewAlphas.forEachIndexed { index, animatable ->
-                delay(150)
-                animatable.animateTo(
-                    targetValue = 1f,
-                    animationSpec = tween(durationMillis = 200)
+            },
+            text = {
+                Text(
+                    showErrorDialog ?: "Terjadi kesalahan",
+                    fontSize = 14.sp,
+                    color = Color.Black
                 )
-            }
-        }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showErrorDialog = null },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD32F2F)
+                    ),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text("Kembali", fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = Color.White,
+            shape = RoundedCornerShape(16.dp)
+        )
     }
 
     Box(
@@ -149,7 +129,7 @@ fun LoginScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Image
+            // Logo
             Image(
                 painter = painterResource(id = R.drawable.image_login),
                 contentDescription = "Login Image",
@@ -165,12 +145,12 @@ fun LoginScreen(
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = White,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.alpha(viewAlphas[0].value)
+                textAlign = TextAlign.Center
             )
-            Spacer(modifier = Modifier.height(8.dp))
 
-            // ✅ Username Field (changed from email)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Username Field
             OutlinedTextField(
                 value = uiState.username,
                 onValueChange = loginViewModel::onUsernameChange,
@@ -186,15 +166,24 @@ fun LoginScreen(
                         )
                     }
                 },
-                leadingIcon = { Icon(Icons.Default.Person, contentDescription = "Username Icon") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Person,
+                        contentDescription = "Username Icon",
+                        tint = if (uiState.isLoading) Color.Gray else Color.Black
+                    )
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
                 singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(viewAlphas[2].value),
+                enabled = !uiState.isLoading,
+                modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White.copy(alpha = 0.7f),
                     focusedLabelColor = Color.Black,
                     unfocusedLabelColor = Color.Gray,
                     cursorColor = MediumGreen
@@ -221,22 +210,45 @@ fun LoginScreen(
                         )
                     }
                 },
-                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "Password Icon") },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = "Password Icon",
+                        tint = if (uiState.isLoading) Color.Gray else Color.Black
+                    )
+                },
                 singleLine = true,
+                enabled = !uiState.isLoading,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (!uiState.isLoading) {
+                            loginViewModel.login()
+                        }
+                    }
+                ),
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(image, "Toggle password visibility")
+                    IconButton(
+                        onClick = { passwordVisible = !passwordVisible },
+                        enabled = !uiState.isLoading
+                    ) {
+                        Icon(
+                            image,
+                            "Toggle password visibility",
+                            tint = if (uiState.isLoading) Color.Gray else Color.Black
+                        )
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .alpha(viewAlphas[3].value),
+                modifier = Modifier.fillMaxWidth(),
                 colors = TextFieldDefaults.colors(
                     unfocusedContainerColor = Color.White,
                     focusedContainerColor = Color.White,
+                    disabledContainerColor = Color.White.copy(alpha = 0.7f),
                     focusedLabelColor = Color.Black,
                     unfocusedLabelColor = Color.Gray,
                     cursorColor = MediumGreen
@@ -251,20 +263,37 @@ fun LoginScreen(
                 enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp)
-                    .alpha(viewAlphas[4].value),
+                    .height(56.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = White,
-                    contentColor = Black
-                )
+                    contentColor = Black,
+                    disabledContainerColor = White.copy(alpha = 0.7f),
+                    disabledContentColor = Black.copy(alpha = 0.5f)
+                ),
+                shape = RoundedCornerShape(12.dp)
             ) {
                 if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = Black
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Black,
+                            strokeWidth = 2.dp
+                        )
+                        Text(
+                            "Logging in...",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 } else {
-                    Text("Login", fontSize = 18.sp)
+                    Text(
+                        "Login",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 

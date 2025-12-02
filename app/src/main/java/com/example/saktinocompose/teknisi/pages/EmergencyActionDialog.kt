@@ -26,7 +26,7 @@ import com.example.saktinocompose.R
 @Composable
 fun EmergencyActionDialog(
     changeRequest: ChangeRequest,
-    teknisiId: Int,
+    teknisiId: String,
     teknisiName: String,
     onDismiss: () -> Unit,
     onSuccess: () -> Unit,

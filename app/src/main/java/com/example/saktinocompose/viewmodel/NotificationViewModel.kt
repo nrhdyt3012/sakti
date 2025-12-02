@@ -22,18 +22,20 @@ class NotificationViewModel(application: Application) : AndroidViewModel(applica
     }
 
     fun createNotification(
-        userId: Int,
-        changeRequestId: String,  // ✅ Changed from Int to String
+        userId: String,  // ✅ Changed from Int to String
+        changeRequestId: String,  // ✅ Already String
         ticketId: String,
         fromStatus: String,
         toStatus: String
     ) {
         viewModelScope.launch {
+            val userIdInt = userId.toIntOrNull() ?: 0  // ✅ Convert to Int for DB
+
             val title = "Status Update: $ticketId"
             val message = "Status berubah dari '$fromStatus' menjadi '$toStatus'"
 
             val notification = Notification(
-                userId = userId,
+                userId = userIdInt,
                 changeRequestId = changeRequestId,
                 ticketId = ticketId,
                 title = title,
