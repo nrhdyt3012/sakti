@@ -74,9 +74,18 @@ class LoginActivity: ComponentActivity() {
             val exp = json.getLong("exp")
             val now = System.currentTimeMillis() / 1000
 
-            Log.d("LoginActivity", "Token exp: $exp, now: $now, valid: ${exp > now}")
+            // ✅ PERBAIKAN: Tambahkan buffer 60 detik untuk toleransi waktu
+            val isValid = exp > (now + 60)
 
-            exp > now  // token masih valid jika belum expired
+            Log.d("LoginActivity", """
+                Token Validation:
+                - Exp: $exp
+                - Now: $now
+                - Valid: $isValid
+                - Time left: ${exp - now} seconds
+            """.trimIndent())
+
+            isValid
         } catch (e: Exception) {
             Log.e("LoginActivity", "Token validation failed", e)
             false

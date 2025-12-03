@@ -48,6 +48,7 @@ fun TeknisiScreen(
 ) {
     val navItemList = listOf(
         NavItem("Beranda", R.drawable.home),
+        NavItem("Emergency", R.drawable.add_emergency), // 🔥 NEW MENU
         NavItem("CMDB", R.drawable.database)
     )
 
@@ -62,7 +63,7 @@ fun TeknisiScreen(
     var filterType by remember { mutableStateOf<TeknisiFilterType?>(null) }
     var showExitDialog by remember { mutableStateOf(false) }
 
-    // Back Handler untuk menangani tombol back
+    // Back Handler
     BackHandler {
         when {
             showProfile -> showProfile = false
@@ -85,11 +86,11 @@ fun TeknisiScreen(
                 selectedCategory = null
             }
             selectedIndex != 0 -> selectedIndex = 0
-            else -> showExitDialog = true // Tampilkan dialog konfirmasi keluar
+            else -> showExitDialog = true
         }
     }
 
-    // Dialog konfirmasi keluar aplikasi
+    // Exit Dialog
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
@@ -98,7 +99,6 @@ fun TeknisiScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        // Keluar dari aplikasi
                         android.os.Process.killProcess(android.os.Process.myPid())
                     }
                 ) {
@@ -241,21 +241,18 @@ fun TeknisiScreen(
                                     )
                                 },
                                 alwaysShowLabel = true,
-
-                                // 🔥 inilah yang hilangin bubble
                                 colors = NavigationBarItemDefaults.colors(
                                     indicatorColor = Color.Transparent
                                 )
                             )
-
                         }
                     }
                 }
-
             ) { innerPadding ->
                 ContentScreen(
                     modifier = Modifier.padding(innerPadding),
                     userName = userName,
+                    userId = userId,
                     selectedIndex = selectedIndex,
                     onDetailClick = { request ->
                         selectedChangeRequest = request
@@ -280,6 +277,7 @@ fun TeknisiScreen(
 fun ContentScreen(
     modifier: Modifier = Modifier,
     userName: String,
+    userId: String,
     selectedIndex: Int,
     onDetailClick: (ChangeRequest) -> Unit,
     onCategoryClick: (String) -> Unit,
@@ -291,7 +289,11 @@ fun ContentScreen(
             onDetailClick = onDetailClick,
             onFilterClick = onFilterClick
         )
-        1 -> CMDBPage(
+        1 -> EmergencyFormPage( // 🔥 NEW PAGE
+            userId = userId,
+            userName = userName
+        )
+        2 -> CMDBPage(
             onCategoryClick = onCategoryClick
         )
     }

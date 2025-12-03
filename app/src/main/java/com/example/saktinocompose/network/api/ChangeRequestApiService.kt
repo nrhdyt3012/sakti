@@ -9,8 +9,6 @@ interface ChangeRequestApiService {
     @GET("change-requests")
     suspend fun getChangeRequests(
         @Header("Authorization") token: String,
-        @Query("status") status: String? = null,
-        @Query("deskripsi") deskripsi: String? = null
     ): Response<ChangeRequestListResponse>
 
     @PUT("change-requests/{id}/inspection")

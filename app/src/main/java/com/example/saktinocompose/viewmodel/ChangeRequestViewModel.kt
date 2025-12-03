@@ -64,13 +64,16 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 is Result.Error -> {
                     val errorMsg = result.message ?: "Failed to fetch data"
                     Log.e("ChangeRequestVM", "Refresh error: $errorMsg")
+
+                    // ✅ PERBAIKAN: Jangan langsung clear token
+                    // Tampilkan error saja, biar user yang logout manual
                     _error.value = errorMsg
 
-                    // ✅ Check if token expired
-                    if (errorMsg.contains("401") || errorMsg.contains("Token") || errorMsg.contains("Session")) {
-                        Log.e("ChangeRequestVM", "Token expired, clearing...")
-                        RetrofitClient.clearAuthToken()
-                    }
+                    // Optional: Auto-clear token jika benar-benar expired
+                    // if (errorMsg.contains("401") || errorMsg.contains("Token expired")) {
+                    //     Log.e("ChangeRequestVM", "Token expired, clearing...")
+                    //     RetrofitClient.clearAuthToken()
+                    // }
                 }
                 else -> {
                     Log.e("ChangeRequestVM", "Unknown refresh result")
