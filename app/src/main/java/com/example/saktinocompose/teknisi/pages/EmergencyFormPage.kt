@@ -1,12 +1,16 @@
 package com.example.saktinocompose.teknisi.pages
 
 import android.app.DatePickerDialog
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -14,9 +18,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -32,6 +39,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 import com.example.saktinocompose.data.model.AsetData
 import com.example.saktinocompose.data.model.AsetHelper
+import kotlin.compareTo
+import kotlin.toString
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -61,6 +70,21 @@ fun EmergencyFormPage(
     var idAset by remember { mutableStateOf(existingRequest?.idAset ?: "") }
     var asetTerdampakId by remember { mutableStateOf("") }
     var asetTerdampakNama by remember { mutableStateOf("") }
+    var estimasiBiaya by remember { mutableStateOf(existingRequest?.estimasiBiaya ?: "") }
+    var estimasiWaktu by remember { mutableStateOf(existingRequest?.estimasiWaktu ?: "") }
+    var skorDampak by remember { mutableIntStateOf(0) }
+    var skorKemungkinan by remember { mutableIntStateOf(0) }
+    var skorEksposur by remember { mutableIntStateOf(0) }
+    var showEksposurDropdown by remember { mutableStateOf(false) }
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
+    var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var showImagePickerDialog by remember { mutableStateOf(false) }
+    var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+    val skorRisiko = skorDampak * skorKemungkinan * skorEksposur
+    val levelRisiko = calculateRiskLevel(skorDampak, skorKemungkinan)
+
+    var scheduledDate by remember { mutableStateOf("") }
+    var notes by remember { mutableStateOf("") }
 
     var selectedRelasiCI by remember {
         mutableStateOf<List<AsetData>>(
@@ -96,6 +120,20 @@ fun EmergencyFormPage(
     var selectedTeknisiId: String? by remember { mutableStateOf(existingRequest?.assignedTeknisiId) }
     var selectedTeknisiName by remember { mutableStateOf<String?>(existingRequest?.assignedTeknisiName) }
     var showTeknisiDropdown by remember { mutableStateOf(false) }
+
+    var dampakSetelahMitigasi by remember { mutableIntStateOf(0) }
+    var kemungkinanSetelahMitigasi by remember { mutableIntStateOf(0) }
+    var exposur by remember { mutableIntStateOf(0) }
+    var keteranganHasilImplementasi by remember { mutableStateOf("") }
+
+    var showDampakDropdown by remember { mutableStateOf(false) }
+    var showKemungkinanDropdown by remember { mutableStateOf(false) }
+    var showExposurDropdown by remember { mutableStateOf(false) }
+
+    val skorResidual = dampakSetelahMitigasi * kemungkinanSetelahMitigasi * exposur
+    val levelRisikoResidual = calculateRiskLevel(dampakSetelahMitigasi, kemungkinanSetelahMitigasi)
+    val levelColor = getRiskLevelColor(levelRisikoResidual)
+
 
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
@@ -712,6 +750,583 @@ fun EmergencyFormPage(
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.cost_estimate) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                    OutlinedTextField(
+                        value = estimasiBiaya,
+                        onValueChange = { estimasiBiaya = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Example: Rp 5.000.000") },
+                        leadingIcon = {
+                            Icon(Icons.Default.AttachMoney, contentDescription = null, tint = Color.Black)
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    // 3. Estimasi Waktu
+                    Text(
+                        text = stringResource(R.string.time_estimate) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                    OutlinedTextField(
+                        value = estimasiWaktu,
+                        onValueChange = { estimasiWaktu = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Example: 2 hari / 4 jam") },
+                        leadingIcon = {
+                            Icon(Icons.Default.Schedule, contentDescription = null, tint = Color.Black)
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    // 4. Skor Dampak
+                    Text(
+                        text = stringResource(R.string.impact_score) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = showDampakDropdown,
+                        onExpandedChange = { showDampakDropdown = !showDampakDropdown }
+                    ) {
+                        OutlinedTextField(
+                            value = if (skorDampak == 0) "" else "$skorDampak - ${getImpactLabel(skorDampak)}",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Choose Impact score") },
+                            trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showDampakDropdown,
+                            onDismissRequest = { showDampakDropdown = false }
+                        ) {
+                            (1..5).forEach { score ->
+                                DropdownMenuItem(
+                                    text = { Text("$score - ${getImpactLabel(score)}") },
+                                    onClick = {
+                                        skorDampak = score
+                                        showDampakDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // 5. Skor Kemungkinan
+                    Text(
+                        text = stringResource(R.string.probability_score) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = showKemungkinanDropdown,
+                        onExpandedChange = { showKemungkinanDropdown = !showKemungkinanDropdown }
+                    ) {
+                        OutlinedTextField(
+                            value = if (skorKemungkinan == 0) "" else "$skorKemungkinan - ${getProbabilityLabel(skorKemungkinan)}",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Choose Probability Score") },
+                            trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showKemungkinanDropdown,
+                            onDismissRequest = { showKemungkinanDropdown = false }
+                        ) {
+                            (1..5).forEach { score ->
+                                DropdownMenuItem(
+                                    text = { Text("$score - ${getProbabilityLabel(score)}") },
+                                    onClick = {
+                                        skorKemungkinan = score
+                                        showKemungkinanDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // 6. Skor Eksposur (BARU)
+                    Text(
+                        text = stringResource(R.string.exposure_score) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = showEksposurDropdown,
+                        onExpandedChange = { showEksposurDropdown = !showEksposurDropdown }
+                    ) {
+                        OutlinedTextField(
+                            value = if (skorEksposur == 0) "" else skorEksposur.toString(),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Choose exposure score (1-4)") },
+                            trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null, tint = Color.Black) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showEksposurDropdown,
+                            onDismissRequest = { showEksposurDropdown = false }
+                        ) {
+                            (1..4).forEach { score ->
+                                DropdownMenuItem(
+                                    text = { Text(score.toString()) },
+                                    onClick = {
+                                        skorEksposur = score
+                                        showEksposurDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Risk Result (Auto calculated)
+                    if (skorDampak > 0 && skorKemungkinan > 0 && skorEksposur > 0) {
+                        HorizontalDivider()
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFF5F5F5)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.risk_calculation_result),
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Skor Risiko:", fontSize = 13.sp)
+                                    Text(
+                                        "$skorRisiko",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Risk Level:", fontSize = 13.sp)
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = levelColor
+                                        ),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            text = levelRisiko,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 7. Foto Bukti Lapangan
+                    Text(
+                        text = stringResource(R.string.field_evidence_photo) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+
+                    if (photoBitmap != null) {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                Image(
+                                    bitmap = photoBitmap!!.asImageBitmap(),
+                                    contentDescription = "Preview Photo",
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+
+                                IconButton(
+                                    onClick = {
+                                        photoUri = null
+                                        photoBitmap = null
+                                    },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(8.dp)
+                                        .background(Color.Red.copy(alpha = 0.7f), CircleShape)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = "Delete Photo",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        OutlinedButton(
+                            onClick = { showImagePickerDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Change Photo")
+                        }
+                    } else {
+                        OutlinedButton(
+                            onClick = { showImagePickerDialog = true },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.AddAPhoto, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Add evidence photo")
+                        }
+                    }
+
+                    // 8. Catatan
+                    Text(
+                        text = stringResource(R.string.approve),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color.Black
+                    )
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        placeholder = { Text("Explain the reason for rejection or revision if necessary...") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+                    Text(
+                        text = stringResource(R.string.implementation_date) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    OutlinedTextField(
+                        value = scheduledDate,
+                        onValueChange = {},
+                        readOnly = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Choose date") },
+                        leadingIcon = {
+                            Icon(Icons.Default.CalendarToday, contentDescription = null)
+                        },
+                        trailingIcon = {
+                            IconButton(onClick = { datePickerDialog.show() }) {
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null)
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    // Catatan
+                    Text(
+                        text = stringResource(R.string.notes) + " (Optional)",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    OutlinedTextField(
+                        value = notes,
+                        onValueChange = { notes = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        placeholder = { Text("Add a note for scheduling...") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+
+                    // Info peringatan
+                    if (scheduledDate.isNotEmpty()) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF2196F3).copy(alpha = 0.1f)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    tint = Color(0xFF2196F3),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Column {
+                                    Text(
+                                        text = "Implementasi Terjadwal",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF2196F3)
+                                    )
+                                    Text(
+                                        text = scheduledDate,
+                                        fontSize = 11.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Text(
+                        text = stringResource(R.string.impact_after_mitigation) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = showDampakDropdown,
+                        onExpandedChange = { showDampakDropdown = !showDampakDropdown }
+                    ) {
+                        OutlinedTextField(
+                            value = if (dampakSetelahMitigasi == 0) "" else "$dampakSetelahMitigasi - ${getImpactLabel(dampakSetelahMitigasi)}",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Choose Impact Score") },
+                            trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showDampakDropdown,
+                            onDismissRequest = { showDampakDropdown = false }
+                        ) {
+                            (1..5).forEach { score ->
+                                DropdownMenuItem(
+                                    text = { Text("$score - ${getImpactLabel(score)}") },
+                                    onClick = {
+                                        dampakSetelahMitigasi = score
+                                        showDampakDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Kemungkinan Setelah Mitigasi
+                    Text(
+                        text = stringResource(R.string.probability_after_mitigation) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = showKemungkinanDropdown,
+                        onExpandedChange = { showKemungkinanDropdown = !showKemungkinanDropdown }
+                    ) {
+                        OutlinedTextField(
+                            value = if (kemungkinanSetelahMitigasi == 0) "" else "$kemungkinanSetelahMitigasi - ${getProbabilityLabel(kemungkinanSetelahMitigasi)}",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Choose Probabilit Score") },
+                            trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showKemungkinanDropdown,
+                            onDismissRequest = { showKemungkinanDropdown = false }
+                        ) {
+                            (1..5).forEach { score ->
+                                DropdownMenuItem(
+                                    text = { Text("$score - ${getProbabilityLabel(score)}") },
+                                    onClick = {
+                                        kemungkinanSetelahMitigasi = score
+                                        showKemungkinanDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Exposur
+                    Text(
+                        text = "3. Exposure *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    ExposedDropdownMenuBox(
+                        expanded = showExposurDropdown,
+                        onExpandedChange = { showExposurDropdown = !showExposurDropdown }
+                    ) {
+                        OutlinedTextField(
+                            value = if (exposur == 0) "" else exposur.toString(),
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Choose Exposure Score") },
+                            trailingIcon = { Icon(Icons.Default.KeyboardArrowDown, null) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = Color.White,
+                                unfocusedContainerColor = Color.White
+                            )
+                        )
+                        ExposedDropdownMenu(
+                            expanded = showExposurDropdown,
+                            onDismissRequest = { showExposurDropdown = false }
+                        ) {
+                            (1..4).forEach { score ->
+                                DropdownMenuItem(
+                                    text = { Text(score.toString()) },
+                                    onClick = {
+                                        exposur = score
+                                        showExposurDropdown = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    // Hasil Perhitungan
+                    if (dampakSetelahMitigasi > 0 && kemungkinanSetelahMitigasi > 0 && exposur > 0) {
+                        HorizontalDivider()
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFF5F5F5)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Residual Risk Calculation Results",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Residual Score:", fontSize = 13.sp)
+                                    Text(
+                                        "$skorResidual",
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(stringResource(R.string.residual_risk_level) + ":", fontSize = 13.sp)
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = levelColor
+                                        ),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Text(
+                                            text = levelRisikoResidual,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Keterangan Hasil Implementasi
+                    Text(
+                        text = stringResource(R.string.implementation_description) + " *",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    OutlinedTextField(
+                        value = keteranganHasilImplementasi,
+                        onValueChange = { keteranganHasilImplementasi = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 4,
+                        placeholder = { Text("Explain the results of implementing changes...") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        )
+                    )
+                }
+            }
+
+
 
                     Button(
                         onClick = {
@@ -788,8 +1403,6 @@ fun EmergencyFormPage(
 
             Spacer(modifier = Modifier.height(80.dp))
         }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -906,7 +1519,10 @@ fun AsetSearchDialog(
                                             fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color.White,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            modifier = Modifier.padding(
+                                                horizontal = 8.dp,
+                                                vertical = 4.dp
+                                            )
                                         )
                                     }
 
@@ -934,7 +1550,7 @@ fun AsetSearchDialog(
             }
         }
     }
-}
+    }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
