@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import android.util.Log
 
 data class LoginUiState(
     val username: String = "",
@@ -66,13 +67,16 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
                         val user = result.data
                         val token = RetrofitClient.authToken
 
-                        // ✅ Tunggu sebentar sebelum emit success
-                        delay(200)
+                        Log.d("LoginViewModel", "✅ Login success, token: ${token?.take(20)}...")
+
+                        // ✅ PERBAIKAN: Tunggu lebih lama untuk memastikan token ter-sync
+                        delay(800)
 
                         _uiState.update { it.copy(isLoading = false) }
                         _loginEvent.emit(LoginEvent.LoginSuccess(user, token))
                     }
                     is Result.Error -> {
+                        Log.e("LoginViewModel", "❌ Login error: ${result.message}")
                         _uiState.update { it.copy(isLoading = false) }
                         _loginEvent.emit(LoginEvent.LoginError(result.message ?: "Login gagal"))
                     }
@@ -82,6 +86,7 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
                     }
                 }
             } catch (e: Exception) {
+                Log.e("LoginViewModel", "❌ Login exception", e)
                 _uiState.update { it.copy(isLoading = false) }
                 _loginEvent.emit(LoginEvent.LoginError("Error: ${e.message}"))
             }

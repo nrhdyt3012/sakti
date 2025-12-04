@@ -27,7 +27,7 @@ class LoginActivity: ComponentActivity() {
         lifecycleScope.launch {
             val userSession = sessionManager.userSession.first()
 
-            // ✅ CHECK TOKEN EXPIRY
+            // ✅ CHECK TOKEN EXPIRY dengan toleransi lebih besar
             val isTokenValid = userSession.authToken?.let { token ->
                 checkTokenValidity(token)
             } ?: false
@@ -62,11 +62,14 @@ class LoginActivity: ComponentActivity() {
         }
     }
 
-    // ✅ Helper function untuk check token validity
+    // ✅ PERBAIKAN: Helper function dengan toleransi waktu lebih besar
     private fun checkTokenValidity(token: String): Boolean {
         return try {
             val parts = token.split(".")
-            if (parts.size != 3) return false
+            if (parts.size != 3) {
+                Log.e("LoginActivity", "Invalid token format")
+                return false
+            }
 
             val payload = String(android.util.Base64.decode(parts[1], android.util.Base64.URL_SAFE))
             val json = org.json.JSONObject(payload)
@@ -74,15 +77,18 @@ class LoginActivity: ComponentActivity() {
             val exp = json.getLong("exp")
             val now = System.currentTimeMillis() / 1000
 
-            // ✅ PERBAIKAN: Tambahkan buffer 60 detik untuk toleransi waktu
-            val isValid = exp > (now + 60)
+            // ✅ PERBAIKAN UTAMA: Tambahkan buffer 5 MENIT (300 detik)
+            // Ini untuk mengatasi perbedaan waktu server-client
+            val bufferSeconds = 300L
+            val isValid = exp > (now + bufferSeconds)
 
             Log.d("LoginActivity", """
-                Token Validation:
-                - Exp: $exp
-                - Now: $now
+                Token Validation (with 5min buffer):
+                - Exp: $exp (${java.util.Date(exp * 1000)})
+                - Now: $now (${java.util.Date(now * 1000)})
+                - Buffer: $bufferSeconds seconds
                 - Valid: $isValid
-                - Time left: ${exp - now} seconds
+                - Time left: ${exp - now} seconds (${(exp - now) / 60} minutes)
             """.trimIndent())
 
             isValid
@@ -101,28 +107,25 @@ class LoginActivity: ComponentActivity() {
                             token?.let {
                                 RetrofitClient.updateAuthToken(it)
                                 Log.d("LoginActivity", "✅ Token set to Retrofit: ${it.take(20)}...")
-
                             }
 
-                            // ✅ Pastikan semua operasi async selesai
+                            // ✅ TAMBAHKAN: Delay untuk memastikan token ter-set dengan benar
+                            delay(500)
+
                             withContext(Dispatchers.IO) {
-                                // 1. Save session dengan konfirmasi
                                 sessionManager.saveSession(
                                     userId = userId,
                                     email = email,
                                     name = name,
-                                    role = role.uppercase().trim(), // ✅ Normalize role
+                                    role = role.uppercase().trim(),
                                     authToken = token
                                 )
                                 Log.d("LoginActivity", "✅ Session saved")
-
-                                // 2. Update Retrofit token
                             }
 
-                            // ✅ Tunggu 100ms untuk memastikan save selesai
-                            delay(100)
+                            // ✅ Tunggu sebentar lagi
+                            delay(300)
 
-                            // 3. Navigate di Main thread
                             withContext(Dispatchers.Main) {
                                 navigateToHome(userId, email, name, role.uppercase().trim())
                             }
@@ -134,8 +137,6 @@ class LoginActivity: ComponentActivity() {
                                     "Login error: ${e.message}",
                                     Toast.LENGTH_LONG
                                 ).show()
-
-                                // ✅ Reset UI agar user bisa retry
                             }
                         }
                     }
@@ -145,11 +146,9 @@ class LoginActivity: ComponentActivity() {
     }
 
     private fun navigateToHome(userId: String, email: String, name: String, role: String) {
-        // ✅ Normalize dan validate role
         val normalizedRole = role.uppercase().trim()
 
         if (normalizedRole != "TEKNISI") {
-            // ✅ Log untuk debugging
             Log.e("LoginActivity", "Access denied. Role: '$role' (normalized: '$normalizedRole')")
 
             Toast.makeText(
@@ -158,7 +157,6 @@ class LoginActivity: ComponentActivity() {
                 Toast.LENGTH_LONG
             ).show()
 
-            // ✅ JANGAN langsung return, clear session dulu
             lifecycleScope.launch {
                 sessionManager.clearSession()
                 RetrofitClient.clearAuthToken()

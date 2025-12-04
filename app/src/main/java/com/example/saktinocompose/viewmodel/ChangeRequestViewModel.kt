@@ -9,6 +9,7 @@ import com.example.saktinocompose.data.entity.ChangeRequest
 import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.repository.ChangeRequestRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,22 +29,29 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
 
+    // ✅ TAMBAHAN: Track retry attempts
+    private var retryAttempts = 0
+    private val maxRetryAttempts = 2
+
     init {
-        // ✅ Auto refresh jika ada token
         if (RetrofitClient.authToken != null) {
             Log.d("ChangeRequestVM", "Token found, auto-refreshing data...")
-            refreshData()
+
+            // ✅ PERBAIKAN: Delay sebelum refresh untuk memastikan token siap
+            viewModelScope.launch {
+                delay(1000) // Wait 1 second
+                refreshData()
+            }
         } else {
             Log.w("ChangeRequestVM", "No token found, skipping auto-refresh")
         }
     }
 
     /**
-     * ✅ Refresh data from API with better error handling
+     * ✅ PERBAIKAN: Refresh data dengan retry logic
      */
     fun refreshData() {
         viewModelScope.launch {
-            // ✅ Check token before fetching
             val token = RetrofitClient.authToken
             if (token == null) {
                 Log.w("ChangeRequestVM", "No token, cannot refresh")
@@ -54,30 +62,46 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             _isLoading.value = true
             _error.value = null
 
-            Log.d("ChangeRequestVM", "Starting refresh with token: ${token.take(20)}...")
+            Log.d("ChangeRequestVM", "Starting refresh (attempt ${retryAttempts + 1}/$maxRetryAttempts)")
+            Log.d("ChangeRequestVM", "Token: ${token.take(20)}...")
 
             when (val result = repository.fetchFromApi()) {
                 is Result.Success -> {
-                    Log.d("ChangeRequestVM", "Refresh successful: ${result.data.size} items")
+                    Log.d("ChangeRequestVM", "✅ Refresh successful: ${result.data.size} items")
                     _error.value = null
+                    retryAttempts = 0 // Reset retry counter
                 }
                 is Result.Error -> {
                     val errorMsg = result.message ?: "Failed to fetch data"
-                    Log.e("ChangeRequestVM", "Refresh error: $errorMsg")
+                    Log.e("ChangeRequestVM", "❌ Refresh error: $errorMsg")
 
-                    // ✅ PERBAIKAN: Jangan langsung clear token
-                    // Tampilkan error saja, biar user yang logout manual
+                    // ✅ PERBAIKAN: Retry logic untuk token yang baru di-set
+                    if ((errorMsg.contains("401") || errorMsg.contains("invalid token"))
+                        && retryAttempts < maxRetryAttempts) {
+
+                        retryAttempts++
+                        Log.w("ChangeRequestVM", "Token might need time to sync, retrying in 2 seconds...")
+
+                        delay(2000) // Wait 2 seconds
+                        _isLoading.value = false
+                        refreshData() // Retry
+                        return@launch
+                    }
+
+                    // ✅ Jika masih gagal setelah retry
                     _error.value = errorMsg
+                    retryAttempts = 0
 
-                    // Optional: Auto-clear token jika benar-benar expired
-                    // if (errorMsg.contains("401") || errorMsg.contains("Token expired")) {
-                    //     Log.e("ChangeRequestVM", "Token expired, clearing...")
-                    //     RetrofitClient.clearAuthToken()
-                    // }
+                    // ✅ HANYA clear token jika benar-benar expired (bukan error lain)
+                    if (errorMsg.contains("kadaluarsa") || errorMsg.contains("expired")) {
+                        Log.e("ChangeRequestVM", "Token truly expired, clearing...")
+                        RetrofitClient.clearAuthToken()
+                    }
                 }
                 else -> {
                     Log.e("ChangeRequestVM", "Unknown refresh result")
                     _error.value = "Failed to fetch data"
+                    retryAttempts = 0
                 }
             }
 
@@ -151,9 +175,6 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    /**
-     * ✅ Helper untuk generate ISO 8601 timestamp
-     */
     private fun getCurrentIsoTimestamp(): String {
         val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         sdf.timeZone = TimeZone.getTimeZone("UTC")
