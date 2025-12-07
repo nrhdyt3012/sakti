@@ -39,6 +39,7 @@ import java.util.*
 import com.example.saktinocompose.data.model.AsetData
 import com.example.saktinocompose.data.model.AsetHelper
 import com.example.saktinocompose.data.model.Teknisi
+import com.example.saktinocompose.utils.NetworkHelper
 
 import kotlin.compareTo
 import kotlin.toString
@@ -56,6 +57,177 @@ fun EmergencyFormPage(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
+
+    // ✅ CHECK INTERNET CONNECTION
+    var isOnline by remember { mutableStateOf(NetworkHelper.isInternetAvailable(context)) }
+    var showOfflineDialog by remember { mutableStateOf(false) }
+
+    // ✅ Monitor koneksi secara berkala
+    LaunchedEffect(Unit) {
+        while (true) {
+            isOnline = NetworkHelper.isInternetAvailable(context)
+            kotlinx.coroutines.delay(3000) // Check setiap 3 detik
+        }
+    }
+
+    // ✅ OFFLINE DIALOG
+    if (showOfflineDialog) {
+        AlertDialog(
+            onDismissRequest = { showOfflineDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.CloudOff,
+                    contentDescription = "No Internet",
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(48.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = "No Internet Connection",
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFD32F2F)
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("This feature requires an internet connection.")
+                    Text(
+                        "Please check your connection and try again.",
+                        fontSize = 13.sp,
+                        color = Color.Gray
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showOfflineDialog = false
+                        isOnline = NetworkHelper.isInternetAvailable(context)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF2196F3)
+                    )
+                ) {
+                    Icon(Icons.Default.Refresh, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Retry")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showOfflineDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFF5F5F5))
+    ) {
+        TopAppBar(
+            title = {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        if (existingRequest != null)
+                            stringResource(R.string.revision_request)
+                        else
+                            stringResource(R.string.change_request_form),
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // ✅ CONNECTION INDICATOR
+                    if (!isOnline) {
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFD32F2F)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.CloudOff,
+                                    contentDescription = "Offline",
+                                    modifier = Modifier.size(14.dp),
+                                    tint = Color.White
+                                )
+                                Text(
+                                    "Offline",
+                                    fontSize = 11.sp,
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                    }
+                }
+            },
+            navigationIcon = {
+                IconButton(onClick = onBackClick) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back"
+                    )
+                }
+            },
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = Color(0xFF384E66),
+                titleContentColor = Color.White,
+                navigationIconContentColor = Color.White
+            )
+        )
+
+        // ✅ OFFLINE WARNING BANNER
+        if (!isOnline) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFFF9800).copy(alpha = 0.1f)
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = Color(0xFFFF9800),
+                        modifier = Modifier.size(32.dp)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "You are currently offline",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFF9800)
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            "Please connect to the internet to submit the form",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+        }
+    }
     val idPerubahan = remember {
         existingRequest?.idPerubahan ?: UUID.randomUUID().toString()
     }

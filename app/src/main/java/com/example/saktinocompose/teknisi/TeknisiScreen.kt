@@ -55,7 +55,7 @@ fun TeknisiScreen(
     val navItemList = listOf(
         NavItem("Beranda", R.drawable.home),
         NavItem("Emergency", R.drawable.add_emergency), // 🔥 NEW MENU
-        NavItem("CMDB", R.drawable.database)
+        NavItem("Category", R.drawable.database)
     )
 
     var selectedIndex by remember { mutableIntStateOf(0) }
