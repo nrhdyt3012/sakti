@@ -14,6 +14,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.saktinocompose.login.White
 
 @Composable
 fun EmptyStateCard(
@@ -27,7 +28,7 @@ fun EmptyStateCard(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(32.dp),
+            .padding(top = 30.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(16.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -73,10 +74,11 @@ fun EmptyStateCard(
                     Icon(
                         imageVector = Icons.Default.Refresh,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(20.dp),
+                        tint = White
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(actionLabel)
+                    Text(actionLabel, color = White)
                 }
             }
         }
@@ -86,7 +88,7 @@ fun EmptyStateCard(
 @Composable
 fun NoInternetCard(
     onRetry: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier.padding(top = 60.dp)
 ) {
     EmptyStateCard(
         icon = Icons.Default.CloudOff,

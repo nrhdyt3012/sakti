@@ -27,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.data.model.ChangeRequest
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
@@ -1205,6 +1206,492 @@ fun EmergencyFormPage(
 
             // ✅ EXTRA SPACER UNTUK BOTTOM NAV
             Spacer(modifier = Modifier.height(100.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RelasiCIDialog(
+    selectedRelasi: List<AsetData>,
+    onDismiss: () -> Unit,
+    onSave: (List<AsetData>) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val asetOptions = AsetHelper.getAllAsetKategori()
+    val tempSelectedRelasi = remember {
+        mutableStateListOf<AsetData>().apply { addAll(selectedRelasi) }
+    }
+
+    // State untuk edit tipe relasi
+    var editingAsetId by remember { mutableStateOf<String?>(null) }
+    var showTipeRelasiDropdown by remember { mutableStateOf(false) }
+
+    val tipeRelasiOptions = listOf("INSTALLED_ON", "DEPENDS_ON", "CONNECTED_TO", "RUNS_ON")
+
+    val filteredAsets = remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            asetOptions
+        } else {
+            asetOptions.filter {
+                it.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 650.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Relasi Configuration Item",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${tempSelectedRelasi.size} chosen",
+                            fontSize = 12.sp,
+                            color = Color.Gray
+                        )
+                    }
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Search Field
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Click to search...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotBlank()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Selected Items Preview
+                if (tempSelectedRelasi.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFF384E66).copy(alpha = 0.1f)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Text(
+                                text = "Dipilih:",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray
+                            )
+                            tempSelectedRelasi.forEach { aset ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color.White
+                                    ),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color(0xFF384E66)
+                                            ),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = aset.id,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                                            )
+                                        }
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = aset.nama,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Black,
+                                                maxLines = 1
+                                            )
+                                            if (aset.tipeRelasi.isNotBlank()) {
+                                                Text(
+                                                    text = aset.tipeRelasi,
+                                                    fontSize = 9.sp,
+                                                    color = Color(0xFF2196F3),
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            }
+                                        }
+
+                                        // Edit Tipe Relasi Button
+                                        IconButton(
+                                            onClick = {
+                                                editingAsetId = aset.id
+                                                showTipeRelasiDropdown = true
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Edit,
+                                                contentDescription = "Edit type",
+                                                modifier = Modifier.size(16.dp),
+                                                tint = Color(0xFF2196F3)
+                                            )
+                                        }
+
+                                        // Remove Button
+                                        IconButton(
+                                            onClick = {
+                                                tempSelectedRelasi.removeAll { it.id == aset.id }
+                                            },
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Close,
+                                                contentDescription = "Delete",
+                                                modifier = Modifier.size(16.dp),
+                                                tint = Color(0xFFD32F2F)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                // Aset List
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(filteredAsets) { asetNama ->
+                        val generatedId = AsetHelper.generateAsetId(asetNama)
+                        val isSelected = tempSelectedRelasi.any { it.id == generatedId }
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    if (!isSelected) {
+                                        // Add dengan tipe relasi default
+                                        tempSelectedRelasi.add(
+                                            AsetData(
+                                                id = generatedId,
+                                                nama = asetNama,
+                                                tipeRelasi = "DEPENDS_ON" // Default
+                                            )
+                                        )
+                                    }
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isSelected)
+                                    Color(0xFF384E66).copy(alpha = 0.15f)
+                                else
+                                    Color(0xFFF5F5F5)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Checkbox(
+                                    checked = isSelected,
+                                    onCheckedChange = null
+                                )
+
+                                Card(
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF384E66)
+                                    ),
+                                    shape = RoundedCornerShape(4.dp)
+                                ) {
+                                    Text(
+                                        text = generatedId,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                    )
+                                }
+
+                                Text(
+                                    text = asetNama,
+                                    fontSize = 13.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = Color.Black,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Save Button
+                Button(
+                    onClick = {
+                        onSave(tempSelectedRelasi.toList())
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF384E66)
+                    ),
+                    enabled = tempSelectedRelasi.isNotEmpty()
+                ) {
+                    Text("Sve (${tempSelectedRelasi.size} chosen)")
+                }
+            }
+        }
+    }
+
+    // Dialog Edit Tipe Relasi
+    if (showTipeRelasiDropdown && editingAsetId != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showTipeRelasiDropdown = false
+                editingAsetId = null
+            },
+            title = { Text("Select Relationship Type") },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    tipeRelasiOptions.forEach { tipe ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val index =
+                                        tempSelectedRelasi.indexOfFirst { it.id == editingAsetId }
+                                    if (index != -1) {
+                                        tempSelectedRelasi[index] = tempSelectedRelasi[index].copy(
+                                            tipeRelasi = tipe
+                                        )
+                                    }
+                                    showTipeRelasiDropdown = false
+                                    editingAsetId = null
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFF5F5F5)
+                            ),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                text = tipe,
+                                fontSize = 14.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp)
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = {
+                    showTipeRelasiDropdown = false
+                    editingAsetId = null
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AsetSearchDialog(
+    selectedAsetNama: String,
+    onDismiss: () -> Unit,
+    onSelect: (id: String, nama: String) -> Unit
+) {
+    var searchQuery by remember { mutableStateOf("") }
+    val asetOptions = AsetHelper.getAllAsetKategori()
+    val filteredAsets = remember(searchQuery) {
+        if (searchQuery.isBlank()) {
+            asetOptions
+        } else {
+            asetOptions.filter {
+                it.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 550.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Select the Asset to Repair",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.Default.Close, contentDescription = "Close")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Click to search...") },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotBlank()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear")
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (filteredAsets.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("No Result", color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(filteredAsets) { aset ->
+                            val isSelected = selectedAsetNama == aset
+                            val generatedId = AsetHelper.generateAsetId(aset)
+
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        onSelect(generatedId, aset)
+                                    },
+                                colors = CardDefaults.cardColors(
+                                    containerColor = if (isSelected)
+                                        Color(0xFF384E66).copy(alpha = 0.15f)
+                                    else
+                                        Color(0xFFF5F5F5)
+                                ),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Card(
+                                        colors = CardDefaults.cardColors(
+                                            containerColor = Color(0xFF384E66)
+                                        ),
+                                        shape = RoundedCornerShape(4.dp)
+                                    ) {
+                                        Text(
+                                            text = generatedId,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(
+                                                horizontal = 8.dp,
+                                                vertical = 4.dp
+                                            )
+                                        )
+                                    }
+
+                                    Text(
+                                        text = aset,
+                                        fontSize = 14.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = Color.Black,
+                                        modifier = Modifier.weight(1f)
+                                    )
+
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = "Selected",
+                                            tint = Color(0xFF384E66),
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

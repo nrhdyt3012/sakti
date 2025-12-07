@@ -46,10 +46,7 @@ fun BerandaPage(
     viewModel: ChangeRequestViewModel = viewModel()
 ) {
     val context = LocalContext.current
-
-    val allChangeRequestsRaw by viewModel.getAllChangeRequests()
-        .collectAsState()
-
+    val allChangeRequestsRaw by viewModel.getAllChangeRequests().collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
@@ -57,7 +54,6 @@ fun BerandaPage(
     val pullRefreshState = rememberPullRefreshState(
         refreshing = refreshing,
         onRefresh = {
-            // ✅ Check internet before refresh
             if (!NetworkHelper.isInternetAvailable(context)) {
                 Toast.makeText(
                     context,
@@ -70,7 +66,6 @@ fun BerandaPage(
         }
     )
 
-    // ✅ Auto refresh on first load (only if online)
     LaunchedEffect(Unit) {
         if (allChangeRequestsRaw.isEmpty() && !isLoading) {
             if (NetworkHelper.isInternetAvailable(context)) {
@@ -79,7 +74,6 @@ fun BerandaPage(
         }
     }
 
-    // ✅ Show specific error messages
     LaunchedEffect(error) {
         error?.let { errorMsg ->
             val message = when {
@@ -108,14 +102,18 @@ fun BerandaPage(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(50.dp))
+            // ✅ TAMBAHKAN PADDING TOP DI SINI
+            Spacer(modifier = Modifier.height(80.dp)) // Ubah dari 50.dp ke 80.dp atau sesuai kebutuhan
 
-            // ✅ Show error dialog if exists
+            // ✅ ERROR CARD DENGAN PADDING TOP LEBIH BESAR
             if (error != null) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                        .padding(
+                            top = 16.dp,  // ✅ Tambah padding top
+                            bottom = 16.dp
+                        ),
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFFD32F2F).copy(alpha = 0.1f)
                     ),

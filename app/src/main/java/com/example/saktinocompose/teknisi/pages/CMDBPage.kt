@@ -93,7 +93,8 @@ fun CMDBPage(
                     color = Color.Black,
                     textAlign = TextAlign.Center,
                     modifier = Modifier
-                        .padding(top = 60.dp)
+                        .padding(top = 40.dp)
+                        .fillMaxWidth()
                 )
                 Text(
                     text = stringResource(R.string.manage_ci_by_category),
