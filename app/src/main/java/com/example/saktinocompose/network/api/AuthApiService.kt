@@ -1,6 +1,3 @@
-// 1. Retrofit API Service untuk Authentication
-// File: app/src/main/java/com/example/saktinocompose/network/api/AuthApiService.kt
-
 package com.example.saktinocompose.network.api
 
 import com.example.saktinocompose.network.dto.*

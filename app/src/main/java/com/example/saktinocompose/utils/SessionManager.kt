@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_session")
@@ -16,7 +17,7 @@ class SessionManager(private val context: Context) {
         private val EMAIL_KEY = stringPreferencesKey("user_email")
         private val NAME_KEY = stringPreferencesKey("user_name")
         private val ROLE_KEY = stringPreferencesKey("user_role")
-        private val IS_LOGGED_IN_KEY = stringPreferencesKey("is_logged_in")
+        private val IS_LOGGED_IN_KEY = booleanPreferencesKey("is_logged_in")
         private val AUTH_TOKEN_KEY = stringPreferencesKey("auth_token")
         private val TOKEN_EXPIRY_KEY = longPreferencesKey("token_expiry")
         private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
@@ -36,7 +37,7 @@ class SessionManager(private val context: Context) {
             preferences[EMAIL_KEY] = email
             preferences[NAME_KEY] = name
             preferences[ROLE_KEY] = role
-            preferences[IS_LOGGED_IN_KEY] = "true"
+            preferences[IS_LOGGED_IN_KEY] = true
             authToken?.let { preferences[AUTH_TOKEN_KEY] = it }
             refreshToken?.let { preferences[REFRESH_TOKEN_KEY] = it }
             tokenExpiry?.let { preferences[TOKEN_EXPIRY_KEY] = it }
@@ -65,17 +66,12 @@ class SessionManager(private val context: Context) {
     }
 
     suspend fun isTokenExpired(): Boolean {
-        var isExpired = true
-        context.dataStore.data.collect { preferences ->
-            val expiry = preferences[TOKEN_EXPIRY_KEY]
-            isExpired = if (expiry != null) {
-                System.currentTimeMillis() > expiry
-            } else {
-                true
-            }
-        }
-        return isExpired
+        val preferences = context.dataStore.data.first()
+        val expiry = preferences[TOKEN_EXPIRY_KEY]
+
+        return expiry == null || System.currentTimeMillis() > expiry
     }
+
 
     suspend fun clearSession() {
         context.dataStore.edit { preferences ->
@@ -100,7 +96,7 @@ class SessionManager(private val context: Context) {
             email = preferences[EMAIL_KEY],
             name = preferences[NAME_KEY],
             role = preferences[ROLE_KEY],
-            isLoggedIn = preferences[IS_LOGGED_IN_KEY] == "true",
+            isLoggedIn = preferences[IS_LOGGED_IN_KEY] == true,
             authToken = preferences[AUTH_TOKEN_KEY],
             refreshToken = preferences[REFRESH_TOKEN_KEY],
             tokenExpiry = preferences[TOKEN_EXPIRY_KEY]
@@ -115,9 +111,10 @@ suspend fun SessionManager.getAuthTokenOrNull(): String? {
 }
 
 suspend fun SessionManager.isAuthenticated(): Boolean {
-    var isAuth = false
-    userSession.collect { session ->
-        isAuth = session.isLoggedIn && !session.authToken.isNullOrEmpty()
-    }
-    return isAuth && !isTokenExpired()
+    val session = userSession.first()
+
+    val hasToken = !session.authToken.isNullOrEmpty()
+    val notExpired = !isTokenExpired()
+
+    return session.isLoggedIn && hasToken && notExpired
 }

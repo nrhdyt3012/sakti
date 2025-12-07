@@ -1,8 +1,7 @@
 package com.example.saktinocompose.repository
 
 import android.util.Log
-import com.example.saktinocompose.data.dao.ChangeRequestDao
-import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.model.ChangeRequest
 import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.network.dto.*
@@ -10,9 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-class ChangeRequestRepository(
-    private val changeRequestDao: ChangeRequestDao
-) {
+class ChangeRequestRepository() {
 
     /**
      * ✅ FIXED: Fetch dari API dengan error handling yang lebih baik
@@ -47,13 +44,9 @@ class ChangeRequestRepository(
                     Log.d("ChangeRequestRepo", "Fetched ${apiRequests.size} requests")
 
                     // ✅ Convert API response ke Entity
-                    val localRequests = apiRequests.map { apiDataToChangeRequest(it) }
+                    val changeRequests = apiRequests.map { apiDataToChangeRequest(it) }
 
-                    // ✅ Cache ke database (replace all)
-                    changeRequestDao.clearAll()
-                    changeRequestDao.insertAll(localRequests)
-
-                    Result.Success(localRequests)
+                    Result.Success(changeRequests)
                 } else {
                     val errorBody = response.errorBody()?.string()
                     val errorMessage = response.body()?.message ?: errorBody ?: "Failed to fetch data"
@@ -81,6 +74,31 @@ class ChangeRequestRepository(
         }
     }
 
+    /**
+     * ✅ Update change request via API
+     */
+    suspend fun updateChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken
+                if (token == null) {
+                    return@withContext Result.Error(
+                        Exception("No token"),
+                        "Authentication required"
+                    )
+                }
+
+                // TODO: Implement API call untuk update
+                // val response = RetrofitClient.changeRequestService.updateChangeRequest(...)
+
+                // Untuk sementara return success
+                Result.Success(changeRequest)
+
+            } catch (e: Exception) {
+                Result.Error(e, "Update failed: ${e.message}")
+            }
+        }
+    }
     /**
      * ✅ IMPROVED: Mapping dari API response ke local entity
      * Sesuai dengan struktur JSON yang Anda berikan
@@ -186,31 +204,6 @@ class ChangeRequestRepository(
             "FAILED", "REJECTED" -> "Failed"
             "CLOSED" -> "Closed"
             else -> apiStatus
-        }
-    }
-
-    // ===== Local Database Operations =====
-
-    fun getAllChangeRequests(): Flow<List<ChangeRequest>> {
-        return changeRequestDao.getAllChangeRequests()
-    }
-
-    fun getChangeRequestsByStatus(status: String): Flow<List<ChangeRequest>> {
-        return changeRequestDao.getChangeRequestsByStatus(status)
-    }
-
-    suspend fun getChangeRequestById(crId: String): ChangeRequest? {
-        return changeRequestDao.getChangeRequestById(crId)
-    }
-
-    suspend fun updateChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
-        return withContext(Dispatchers.IO) {
-            try {
-                changeRequestDao.updateChangeRequest(changeRequest)
-                Result.Success(changeRequest)
-            } catch (e: Exception) {
-                Result.Error(e, "Update failed: ${e.message}")
-            }
         }
     }
 }

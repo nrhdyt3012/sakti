@@ -3,20 +3,6 @@ package com.example.saktinocompose.network.dto
 
 import com.google.gson.annotations.SerializedName
 
-/**
- * Generic API Response wrapper
- * Digunakan untuk semua response dari API yang mengikuti format standar
- *
- * Format standar response:
- * {
- *   "status": "success" | "error",
- *   "message": "Message dari server",
- *   "data": { ... } | null,
- *   "details": { ... } | null
- * }
- *
- * @param T tipe data yang dikembalikan di field "data"
- */
 data class ApiResponse<T>(
     @SerializedName("status")
     val status: String, // "success" atau "error"
@@ -30,23 +16,15 @@ data class ApiResponse<T>(
     @SerializedName("details")
     val details: Any? = null // Additional details (optional)
 ) {
-    /**
-     * Check apakah response sukses
-     */
+
     fun isSuccess(): Boolean {
         return status.equals("success", ignoreCase = true)
     }
 
-    /**
-     * Check apakah response error
-     */
     fun isError(): Boolean {
         return status.equals("error", ignoreCase = true)
     }
 
-    /**
-     * Get data atau throw exception jika error
-     */
     fun getDataOrThrow(): T {
         return if (isSuccess()) {
             data ?: throw ApiException("Data is null despite success status")
@@ -55,9 +33,6 @@ data class ApiResponse<T>(
         }
     }
 
-    /**
-     * Get data atau return default value
-     */
     fun getDataOrDefault(default: T): T {
         return if (isSuccess()) {
             data ?: default
@@ -67,9 +42,7 @@ data class ApiResponse<T>(
     }
 
     companion object {
-        /**
-         * Create success response
-         */
+
         fun <T> success(data: T, message: String = "Success"): ApiResponse<T> {
             return ApiResponse(
                 status = "success",
@@ -79,9 +52,6 @@ data class ApiResponse<T>(
             )
         }
 
-        /**
-         * Create error response
-         */
         fun <T> error(message: String, details: Any? = null): ApiResponse<T> {
             return ApiResponse(
                 status = "error",
@@ -93,22 +63,13 @@ data class ApiResponse<T>(
     }
 }
 
-/**
- * Exception untuk API errors
- */
 class ApiException(
     message: String,
     val statusCode: Int? = null,
     val errorDetails: Any? = null
 ) : Exception(message)
 
-/**
- * Extension functions untuk handling API Response
- */
 
-/**
- * Convert ApiResponse to Result
- */
 fun <T> ApiResponse<T>.toResult(): com.example.saktinocompose.network.Result<T> {
     return if (isSuccess() && data != null) {
         com.example.saktinocompose.network.Result.Success(data)
@@ -120,9 +81,6 @@ fun <T> ApiResponse<T>.toResult(): com.example.saktinocompose.network.Result<T> 
     }
 }
 
-/**
- * Map data dari ApiResponse
- */
 fun <T, R> ApiResponse<T>.mapData(transform: (T) -> R): ApiResponse<R> {
     return ApiResponse(
         status = status,
@@ -132,9 +90,7 @@ fun <T, R> ApiResponse<T>.mapData(transform: (T) -> R): ApiResponse<R> {
     )
 }
 
-/**
- * Execute block jika response success
- */
+
 inline fun <T> ApiResponse<T>.onSuccess(block: (T) -> Unit): ApiResponse<T> {
     if (isSuccess() && data != null) {
         block(data)
@@ -142,9 +98,6 @@ inline fun <T> ApiResponse<T>.onSuccess(block: (T) -> Unit): ApiResponse<T> {
     return this
 }
 
-/**
- * Execute block jika response error
- */
 inline fun <T> ApiResponse<T>.onError(block: (String) -> Unit): ApiResponse<T> {
     if (isError()) {
         block(message)
@@ -152,9 +105,6 @@ inline fun <T> ApiResponse<T>.onError(block: (String) -> Unit): ApiResponse<T> {
     return this
 }
 
-/**
- * Response wrapper untuk list data
- */
 data class ApiListResponse<T>(
     @SerializedName("status")
     val status: String,
@@ -184,9 +134,6 @@ data class ApiListResponse<T>(
     }
 }
 
-/**
- * Pagination data (jika API support pagination)
- */
 data class PaginationData(
     @SerializedName("current_page")
     val currentPage: Int,
@@ -204,21 +151,12 @@ data class PaginationData(
     val hasMore: Boolean
 )
 
-/**
- * Response wrapper untuk operation tanpa data
- */
 typealias ApiEmptyResponse = ApiResponse<Unit>
 
-/**
- * Helper untuk create empty success response
- */
 fun createEmptySuccessResponse(message: String = "Operation successful"): ApiEmptyResponse {
     return ApiResponse.success(Unit, message)
 }
 
-/**
- * Response wrapper untuk error dengan error code
- */
 data class ApiErrorResponse(
     @SerializedName("status")
     val status: String,

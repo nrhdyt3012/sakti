@@ -2,7 +2,6 @@ package com.example.saktinocompose.network.dto
 
 import com.google.gson.annotations.SerializedName
 
-// InspectionDto.kt - DTO untuk Inspection
 data class InspectionRequest(
     @SerializedName("jenis_perubahan")
     val jenisPerubahan: String,

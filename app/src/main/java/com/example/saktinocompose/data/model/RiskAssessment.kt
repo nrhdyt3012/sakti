@@ -1,13 +1,9 @@
-package com.example.saktinocompose.data.entity
+package com.example.saktinocompose.data.model
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
 
-@Entity(tableName = "risk_assessments")
 data class RiskAssessment(
-    @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val changeRequestId: String,  // ✅ Changed from Int to String
+    val changeRequestId: String,
     val teknisiId: Int,
     val teknisiName: String,
     val skorDampak: Int,

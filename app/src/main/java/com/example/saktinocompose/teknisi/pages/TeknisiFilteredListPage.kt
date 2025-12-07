@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.model.ChangeRequest
 import java.text.SimpleDateFormat
 import java.util.*
 

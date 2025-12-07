@@ -4,24 +4,21 @@ import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.saktinocompose.data.AppDatabase
-import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.model.ChangeRequest
 import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.repository.ChangeRequestRepository
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.*
 
 class ChangeRequestViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val database = AppDatabase.getDatabase(application)
-    private val changeRequestDao = database.changeRequestDao()
-    private val repository = ChangeRequestRepository(changeRequestDao)
+    private val repository = ChangeRequestRepository()
+
+    // ✅ In-memory storage (tidak persist)
+    private val _changeRequests = MutableStateFlow<List<ChangeRequest>>(emptyList())
+    val changeRequests = _changeRequests.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -29,32 +26,20 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
     private val _error = MutableStateFlow<String?>(null)
     val error = _error.asStateFlow()
 
-    // ✅ TAMBAHAN: Track retry attempts
-    private var retryAttempts = 0
-    private val maxRetryAttempts = 2
-
     init {
+        // ✅ Auto refresh saat ViewModel dibuat
         if (RetrofitClient.authToken != null) {
-            Log.d("ChangeRequestVM", "Token found, auto-refreshing data...")
-
-            // ✅ PERBAIKAN: Delay sebelum refresh untuk memastikan token siap
-            viewModelScope.launch {
-                delay(1000) // Wait 1 second
-                refreshData()
-            }
-        } else {
-            Log.w("ChangeRequestVM", "No token found, skipping auto-refresh")
+            refreshData()
         }
     }
 
     /**
-     * ✅ PERBAIKAN: Refresh data dengan retry logic
+     * ✅ Refresh data dari API (tanpa caching)
      */
     fun refreshData() {
         viewModelScope.launch {
             val token = RetrofitClient.authToken
             if (token == null) {
-                Log.w("ChangeRequestVM", "No token, cannot refresh")
                 _error.value = "Please login to view data"
                 return@launch
             }
@@ -62,46 +47,20 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             _isLoading.value = true
             _error.value = null
 
-            Log.d("ChangeRequestVM", "Starting refresh (attempt ${retryAttempts + 1}/$maxRetryAttempts)")
-            Log.d("ChangeRequestVM", "Token: ${token.take(20)}...")
-
             when (val result = repository.fetchFromApi()) {
                 is Result.Success -> {
-                    Log.d("ChangeRequestVM", "✅ Refresh successful: ${result.data.size} items")
+                    _changeRequests.value = result.data
                     _error.value = null
-                    retryAttempts = 0 // Reset retry counter
                 }
                 is Result.Error -> {
-                    val errorMsg = result.message ?: "Failed to fetch data"
-                    Log.e("ChangeRequestVM", "❌ Refresh error: $errorMsg")
-
-                    // ✅ PERBAIKAN: Retry logic untuk token yang baru di-set
-                    if ((errorMsg.contains("401") || errorMsg.contains("invalid token"))
-                        && retryAttempts < maxRetryAttempts) {
-
-                        retryAttempts++
-                        Log.w("ChangeRequestVM", "Token might need time to sync, retrying in 2 seconds...")
-
-                        delay(2000) // Wait 2 seconds
-                        _isLoading.value = false
-                        refreshData() // Retry
-                        return@launch
-                    }
-
-                    // ✅ Jika masih gagal setelah retry
-                    _error.value = errorMsg
-                    retryAttempts = 0
-
-                    // ✅ HANYA clear token jika benar-benar expired (bukan error lain)
-                    if (errorMsg.contains("kadaluarsa") || errorMsg.contains("expired")) {
-                        Log.e("ChangeRequestVM", "Token truly expired, clearing...")
+                    _error.value = result.message
+                    // ✅ Jika token expired, clear
+                    if (result.message?.contains("401") == true) {
                         RetrofitClient.clearAuthToken()
                     }
                 }
                 else -> {
-                    Log.e("ChangeRequestVM", "Unknown refresh result")
                     _error.value = "Failed to fetch data"
-                    retryAttempts = 0
                 }
             }
 
@@ -113,56 +72,43 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         _error.value = null
     }
 
-    // ===== Read Operations =====
+    /**
+     * ✅ Get all change requests dari memory
+     */
+    fun getAllChangeRequests() = changeRequests
 
-    fun getAllChangeRequests(): Flow<List<ChangeRequest>> {
-        return repository.getAllChangeRequests()
+    /**
+     * ✅ Filter by status
+     */
+    fun getChangeRequestsByStatus(status: String): List<ChangeRequest> {
+        return _changeRequests.value.filter { it.status == status }
     }
 
-    fun getChangeRequestsByStatus(status: String): Flow<List<ChangeRequest>> {
-        return repository.getChangeRequestsByStatus(status)
+    /**
+     * ✅ Get by ID
+     */
+    fun getChangeRequestById(crId: String): ChangeRequest? {
+        return _changeRequests.value.find { it.id == crId }
     }
 
-    suspend fun getChangeRequestById(crId: String): ChangeRequest? {
-        return repository.getChangeRequestById(crId)
-    }
-
-    // ===== Update Operations =====
-
-    fun updateChangeRequestStatus(
-        changeRequest: ChangeRequest,
-        newStatus: String
-    ) {
-        viewModelScope.launch {
-            _isLoading.value = true
-
-            val updated = changeRequest.copy(
-                status = newStatus,
-                updatedAt = getCurrentIsoTimestamp()
-            )
-
-            when (val result = repository.updateChangeRequest(updated)) {
-                is Result.Error -> {
-                    _error.value = result.message
-                }
-                else -> {
-                    _error.value = null
-                }
-            }
-
-            _isLoading.value = false
-        }
-    }
-
+    /**
+     * ✅ Update change request (in-memory + API)
+     */
     fun updateFullChangeRequest(updatedRequest: ChangeRequest) {
         viewModelScope.launch {
             _isLoading.value = true
 
-            val updated = updatedRequest.copy(
-                updatedAt = getCurrentIsoTimestamp()
-            )
+            // Update di memory dulu
+            val currentList = _changeRequests.value.toMutableList()
+            val index = currentList.indexOfFirst { it.id == updatedRequest.id }
 
-            when (val result = repository.updateChangeRequest(updated)) {
+            if (index != -1) {
+                currentList[index] = updatedRequest
+                _changeRequests.value = currentList
+            }
+
+            // TODO: Kirim update ke API
+            when (val result = repository.updateChangeRequest(updatedRequest)) {
                 is Result.Error -> {
                     _error.value = result.message
                 }
@@ -175,9 +121,17 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         }
     }
 
-    private fun getCurrentIsoTimestamp(): String {
-        val sdf = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-        sdf.timeZone = TimeZone.getTimeZone("UTC")
-        return sdf.format(Date())
+    /**
+     * ✅ Update status only
+     */
+    fun updateChangeRequestStatus(changeRequest: ChangeRequest, newStatus: String) {
+        val updated = changeRequest.copy(
+            status = newStatus,
+            updatedAt = java.text.SimpleDateFormat(
+                "yyyy-MM-dd'T'HH:mm:ss",
+                java.util.Locale.getDefault()
+            ).format(java.util.Date())
+        )
+        updateFullChangeRequest(updated)
     }
 }

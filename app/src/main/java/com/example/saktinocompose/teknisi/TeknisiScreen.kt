@@ -1,5 +1,6 @@
 package com.example.saktinocompose.teknisi
 
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -23,6 +24,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -30,12 +32,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.example.saktinocompose.R
-import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.model.ChangeRequest
 import com.example.saktinocompose.menu.NavItem
 import com.example.saktinocompose.teknisi.pages.*
+import com.example.saktinocompose.utils.NetworkHelper
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,6 +50,8 @@ fun TeknisiScreen(
     userRole: String,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
     val navItemList = listOf(
         NavItem("Beranda", R.drawable.home),
         NavItem("Emergency", R.drawable.add_emergency), // 🔥 NEW MENU
@@ -63,6 +69,15 @@ fun TeknisiScreen(
     var filterType by remember { mutableStateOf<TeknisiFilterType?>(null) }
     var showExitDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        if(!NetworkHelper.isInternetAvailable(context)) {
+            Toast.makeText(
+                context,
+                "No Internet Connection.",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
     // Back Handler
     BackHandler {
         when {

@@ -15,8 +15,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.saktinocompose.data.entity.ChangeRequest
-import com.example.saktinocompose.viewmodel.NotificationViewModel
+import com.example.saktinocompose.data.model.ChangeRequest
 import androidx.compose.ui.res.stringResource
 import com.example.saktinocompose.R
 @OptIn(ExperimentalMaterial3Api::class)

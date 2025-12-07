@@ -1,6 +1,3 @@
-// 4. DTO untuk Risk Assessment
-// File: app/src/main/java/com/example/saktinocompose/network/dto/RiskAssessmentDto.kt
-
 package com.example.saktinocompose.network.dto
 
 import com.google.gson.annotations.SerializedName

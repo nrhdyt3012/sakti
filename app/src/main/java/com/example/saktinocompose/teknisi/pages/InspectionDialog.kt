@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
-import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.model.ChangeRequest
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat

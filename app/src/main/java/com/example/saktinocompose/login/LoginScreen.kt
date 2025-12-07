@@ -1,6 +1,5 @@
 package com.example.saktinocompose.login
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,7 +19,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -34,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.R
+import kotlinx.coroutines.delay
 
 val White = Color(0xFFFFFFFF)
 val MediumGreen = Color(0xFF009951)
@@ -48,12 +47,13 @@ fun LoginScreen(
     val uiState by loginViewModel.uiState.collectAsState()
     var showErrorDialog by remember { mutableStateOf<String?>(null) }
 
-    // ✅ Langsung navigasi tanpa dialog success
     LaunchedEffect(Unit) {
         loginViewModel.loginEvent.collect { event ->
             when (event) {
                 is LoginEvent.LoginSuccess -> {
-                    // ✅ Langsung callback tanpa dialog
+                    // ✅ PERBAIKAN: Tambah delay sebelum navigate
+                    // Untuk memastikan token sudah ter-set di semua tempat
+                    delay(500)
                     onLoginSuccess(
                         event.user.id,
                         event.user.username,
@@ -69,7 +69,6 @@ fun LoginScreen(
         }
     }
 
-    // ✅ HANYA Error Dialog
     if (showErrorDialog != null) {
         AlertDialog(
             onDismissRequest = { /* Tidak bisa dismiss */ },

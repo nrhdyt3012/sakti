@@ -32,13 +32,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.R
-import com.example.saktinocompose.data.AppDatabase
-import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.model.ChangeRequest
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 import com.example.saktinocompose.data.model.AsetData
 import com.example.saktinocompose.data.model.AsetHelper
+import com.example.saktinocompose.data.model.Teknisi
+
 import kotlin.compareTo
 import kotlin.toString
 
@@ -55,8 +56,6 @@ fun EmergencyFormPage(
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
-    val database = AppDatabase.getDatabase(context)
-
     val idPerubahan = remember {
         existingRequest?.idPerubahan ?: UUID.randomUUID().toString()
     }
@@ -138,8 +137,6 @@ fun EmergencyFormPage(
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
-
-    val teknisiList by database.userDao().getAllTeknisi().collectAsState(initial = emptyList())
 
     val jenisOptions = listOf("Standar", "Minor", "Major", "Emergency")
 
@@ -736,6 +733,11 @@ fun EmergencyFormPage(
                             expanded = showTeknisiDropdown,
                             onDismissRequest = { showTeknisiDropdown = false }
                         ) {
+                            val teknisiList = listOf(
+                                Teknisi(id = "1", name = "Bahli"),
+                                Teknisi(id = "2", name = "Budi")
+                            )
+
                             teknisiList.forEach { teknisi ->
                                 DropdownMenuItem(
                                     text = { Text(teknisi.name) },
@@ -746,6 +748,7 @@ fun EmergencyFormPage(
                                     }
                                 )
                             }
+
                         }
                     }
 
@@ -1851,7 +1854,8 @@ fun RelasiCIDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    val index = tempSelectedRelasi.indexOfFirst { it.id == editingAsetId }
+                                    val index =
+                                        tempSelectedRelasi.indexOfFirst { it.id == editingAsetId }
                                     if (index != -1) {
                                         tempSelectedRelasi[index] = tempSelectedRelasi[index].copy(
                                             tipeRelasi = tipe

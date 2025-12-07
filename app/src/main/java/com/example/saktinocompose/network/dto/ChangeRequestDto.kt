@@ -1,6 +1,3 @@
-// 3. DTO untuk Change Request
-// File: app/src/main/java/com/example/saktinocompose/network/dto/ChangeRequestDto.kt
-
 package com.example.saktinocompose.network.dto
 
 import com.google.gson.annotations.SerializedName

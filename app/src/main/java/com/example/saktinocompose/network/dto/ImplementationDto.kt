@@ -3,19 +3,6 @@ package com.example.saktinocompose.network.dto
 
 import com.google.gson.annotations.SerializedName
 
-/**
- * Request untuk complete implementation
- * POST /change-requests/{id}/implementation
- *
- * Contoh request body:
- * {
- *   "dampak_setelah_mitigasi": 2,
- *   "kemungkinan_setelah_mitigasi": 2,
- *   "exposure_setelah_mitigasi": 1,
- *   "keterangan": "Implementasi berhasil dilakukan...",
- *   "status": "COMPLETED"
- * }
- */
 data class ImplementationRequest(
     @SerializedName("dampak_setelah_mitigasi")
     val dampakSetelahMitigasi: Int, // 1-5: Impact score after mitigation
@@ -85,9 +72,6 @@ data class ImplementationResponse(
     val data: ImplementationData?
 )
 
-/**
- * Data hasil implementation (jika API mengembalikan data)
- */
 data class ImplementationData(
     @SerializedName("cr_id")
     val crId: String?,

@@ -1,17 +1,14 @@
 package com.example.saktinocompose.repository
 
 import android.util.Log
-import com.example.saktinocompose.data.dao.UserDao
-import com.example.saktinocompose.data.entity.User
+import com.example.saktinocompose.data.model.User
 import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.network.dto.LoginRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class AuthRepository(
-    private val userDao: UserDao
-) {
+class AuthRepository() {
 
     suspend fun login(username: String, password: String): Result<User> {
         return withContext(Dispatchers.IO) {
@@ -23,7 +20,7 @@ class AuthRepository(
                 val body = response.body()
 
                 // ✔ VALIDASI SUKSES LOGIN
-                if (response.isSuccessful && body?.status == "success") {
+                if (response.isSuccessful && body?.success == true) {
 
                     val userData = body.data.user
                     val token = body.data.token
@@ -50,35 +47,8 @@ class AuthRepository(
             } catch (e: Exception) {
                 return@withContext Result.Error(
                     e,
-                    "Network error: ${e.message}. Please check your internet connection."
+                    "Network error: ${e.message}."
                 )
-            }
-        }
-        suspend fun validateToken(): Boolean {
-            return withContext(Dispatchers.IO) {
-                try {
-                    val token = RetrofitClient.authToken
-                    if (token == null) {
-                        Log.w("AuthRepository", "No token found")
-                        return@withContext false
-                    }
-
-                    Log.d("AuthRepository", "Validating token...")
-                    val response = RetrofitClient.authService.getProfile("Bearer $token")
-
-                    val isValid = response.isSuccessful && response.body()?.status == "success"
-                    Log.d("AuthRepository", "Token validation result: $isValid")
-
-                    if (!isValid) {
-                        Log.w("AuthRepository", "Token invalid, clearing...")
-                        RetrofitClient.clearAuthToken()
-                    }
-
-                    isValid
-                } catch (e: Exception) {
-                    Log.e("AuthRepository", "Token validation failed", e)
-                    false
-                }
             }
         }
     }

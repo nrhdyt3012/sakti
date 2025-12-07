@@ -16,10 +16,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.model.ChangeRequest
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import com.example.saktinocompose.viewmodel.ApprovalHistoryViewModel
-import com.example.saktinocompose.viewmodel.NotificationViewModel
 import androidx.compose.ui.res.stringResource
 import com.example.saktinocompose.R
 @OptIn(ExperimentalMaterial3Api::class)
@@ -32,7 +31,6 @@ fun EmergencyActionDialog(
     onSuccess: () -> Unit,
     changeRequestViewModel: ChangeRequestViewModel = viewModel(),
     approvalHistoryViewModel: ApprovalHistoryViewModel = viewModel(),
-    notificationViewModel: NotificationViewModel = viewModel()
 ) {
     var selectedAction by remember { mutableStateOf<String?>(null) }
     var notes by remember { mutableStateOf("") }
@@ -216,17 +214,6 @@ fun EmergencyActionDialog(
                             changeRequest = changeRequest,
                             newStatus = selectedAction!!
                         )
-
-                        // Add approval history
-                        approvalHistoryViewModel.addApprovalHistory(
-                            changeRequestId = changeRequest.id,
-                            approverUserId = teknisiId,
-                            approverName = teknisiName,
-                            fromStatus = changeRequest.status,
-                            toStatus = selectedAction!!,
-                            notes = "EMERGENCY: ${if (notes.isBlank()) "No notes" else notes}"
-                        )
-
                         onSuccess()
                     }
                 },

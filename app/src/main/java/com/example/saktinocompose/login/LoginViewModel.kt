@@ -3,12 +3,10 @@ package com.example.saktinocompose.login
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.saktinocompose.data.AppDatabase
-import com.example.saktinocompose.data.entity.User
+import com.example.saktinocompose.data.model.User
 import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.repository.AuthRepository
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -31,9 +29,7 @@ sealed interface LoginEvent {
 
 class LoginViewModelCompose(application: Application) : AndroidViewModel(application) {
 
-    private val database = AppDatabase.getDatabase(application)
-    private val userDao = database.userDao()
-    private val authRepository = AuthRepository(userDao)
+    private val authRepository = AuthRepository()
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState = _uiState.asStateFlow()
@@ -68,9 +64,6 @@ class LoginViewModelCompose(application: Application) : AndroidViewModel(applica
                         val token = RetrofitClient.authToken
 
                         Log.d("LoginViewModel", "✅ Login success, token: ${token?.take(20)}...")
-
-                        // ✅ PERBAIKAN: Tunggu lebih lama untuk memastikan token ter-sync
-                        delay(800)
 
                         _uiState.update { it.copy(isLoading = false) }
                         _loginEvent.emit(LoginEvent.LoginSuccess(user, token))

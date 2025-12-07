@@ -13,6 +13,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -26,7 +29,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.model.ChangeRequest
+import com.example.saktinocompose.ui.components.NoDataCard
+import com.example.saktinocompose.utils.NetworkHelper
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -42,66 +47,59 @@ fun BerandaPage(
 ) {
     val context = LocalContext.current
 
-    // ✅ Data dari ViewModel
     val allChangeRequestsRaw by viewModel.getAllChangeRequests()
-        .collectAsState(initial = emptyList())
+        .collectAsState()
 
-    // ✅ Loading & Error states
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // ✅ Pull-to-refresh state
     val refreshing by remember { derivedStateOf { isLoading } }
     val pullRefreshState = rememberPullRefreshState(
         refreshing = refreshing,
-        onRefresh = { viewModel.refreshData() }
+        onRefresh = {
+            // ✅ Check internet before refresh
+            if (!NetworkHelper.isInternetAvailable(context)) {
+                Toast.makeText(
+                    context,
+                    "No internet connection. Please connect to internet.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                viewModel.refreshData()
+            }
+        }
     )
-    // ✅ Show error untuk token invalid
-    LaunchedEffect(error) {
-        if (error?.contains("401") == true || error?.contains("Token") == true) {
-            Toast.makeText(
-                context,
-                "Session expired. Please login again.",
-                Toast.LENGTH_LONG
-            ).show()
+
+    // ✅ Auto refresh on first load (only if online)
+    LaunchedEffect(Unit) {
+        if (allChangeRequestsRaw.isEmpty() && !isLoading) {
+            if (NetworkHelper.isInternetAvailable(context)) {
+                viewModel.refreshData()
+            }
         }
     }
 
-    // Process data
-    val allChangeRequests = remember(allChangeRequestsRaw) {
-        allChangeRequestsRaw.sortedByJenisPriority()
+    // ✅ Show specific error messages
+    LaunchedEffect(error) {
+        error?.let { errorMsg ->
+            val message = when {
+                errorMsg.contains("Network error") || errorMsg.contains("No internet") ->
+                    "No internet connection"
+                errorMsg.contains("401") || errorMsg.contains("Token") || errorMsg.contains("Session") ->
+                    "Session expired. Please login again."
+                errorMsg.contains("timeout") ->
+                    "Connection timeout. Please try again."
+                else -> errorMsg
+            }
+
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        }
     }
 
-    val thisMonth = remember {
-        val calendar = Calendar.getInstance()
-        SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(calendar.time)
-    }
-
-    val thisWeek = remember {
-        val calendar = Calendar.getInstance()
-        calendar.firstDayOfWeek = Calendar.MONDAY
-        calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-        calendar.time
-    }
-
-    val monthlyRequests = allChangeRequests.filter { cr ->
-        val date = Date(cr.createdAt)
-        val dateMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(date)
-        dateMonth == thisMonth
-    }
-
-    val weeklyRequests = allChangeRequests.filter { cr ->
-        val date = Date(cr.createdAt)
-        date.after(thisWeek) || date == thisWeek
-    }
-
-    // ========================================
-    // ✅ MULAI DARI SINI - BOX WRAPPER
-    // ========================================
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .pullRefresh(pullRefreshState) // ← Pull refresh gesture
+            .pullRefresh(pullRefreshState)
     ) {
         Column(
             modifier = modifier
@@ -112,40 +110,114 @@ fun BerandaPage(
         ) {
             Spacer(modifier = Modifier.height(50.dp))
 
-            // ✅ Error message jika ada
-            // POPUP ERROR DIALOG
+            // ✅ Show error dialog if exists
             if (error != null) {
-                AlertDialog(
-                    onDismissRequest = { viewModel.clearError() },
-                    confirmButton = {
-                        TextButton(onClick = { viewModel.clearError() }) {
-                            Text("OK")
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFFD32F2F).copy(alpha = 0.1f)
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Error,
+                            contentDescription = "Error",
+                            tint = Color(0xFFD32F2F),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Error",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFD32F2F)
+                            )
+                            Text(
+                                text = error ?: "",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
                         }
-                    },
-                    title = {
-                        Text(
-                            text = "Error",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
-                    },
-                    text = {
-                        Text(
-                            text = error ?: "",
-                            fontSize = 14.sp,
-                            color = Color.Black
-                        )
-                    },
-                    containerColor = Color.White
-                )
+                        IconButton(onClick = { viewModel.clearError() }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Close",
+                                tint = Color.Gray
+                            )
+                        }
+                    }
+                }
             }
 
+            // ✅ Empty State
+            if (allChangeRequestsRaw.isEmpty() && !isLoading) {
+                NoDataCard(
+                    onRefresh = {
+                        if (NetworkHelper.isInternetAvailable(context)) {
+                            viewModel.refreshData()
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "No internet connection",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                    }
+                )
+                return@Column
+            }
 
-            // ========================================
-            // ✅ GREETING CARD (existing code tetap sama)
-            // ========================================
+            // Process data
+            val allChangeRequests = remember(allChangeRequestsRaw) {
+                allChangeRequestsRaw.sortedByJenisPriority()
+            }
+
+            val thisMonth = remember {
+                val calendar = Calendar.getInstance()
+                SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(calendar.time)
+            }
+
+            val thisWeek = remember {
+                val calendar = Calendar.getInstance()
+                calendar.firstDayOfWeek = Calendar.MONDAY
+                calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+                calendar.time
+            }
+
+            val monthlyRequests = allChangeRequests.filter { cr ->
+                try {
+                    val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                    val date = isoFormat.parse(cr.createdAt)
+                    val dateMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(date ?: Date())
+                    dateMonth == thisMonth
+                } catch (e: Exception) {
+                    false
+                }
+            }
+
+            val weeklyRequests = allChangeRequests.filter { cr ->
+                try {
+                    val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                    val date = isoFormat.parse(cr.createdAt)
+                    date != null && (date.after(thisWeek) || date == thisWeek)
+                } catch (e: Exception) {
+                    false
+                }
+            }
+
+            // Greeting Card
             Card(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .padding(top = 40.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66)),
                 shape = RoundedCornerShape(12.dp),
@@ -171,9 +243,7 @@ fun BerandaPage(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ========================================
-            // ✅ SUMMARY SECTION (existing code tetap sama)
-            // ========================================
+            // Summary Section
             Text(
                 text = "Request Summary (All Users)",
                 fontSize = 18.sp,
@@ -252,9 +322,7 @@ fun BerandaPage(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // ========================================
-            // ✅ STATUS CHANGES (existing code tetap sama)
-            // ========================================
+            // Status Changes
             Text(
                 text = "Status Changes",
                 fontSize = 18.sp,
@@ -338,11 +406,7 @@ fun BerandaPage(
             Spacer(modifier = Modifier.height(80.dp))
         }
 
-        // ========================================
-        // ✅ PULL REFRESH INDICATOR - DI SINI!
-        // Letaknya di LUAR Column, tapi DALAM Box
-        // Aligned ke TopCenter
-        // ========================================
+        // Pull Refresh Indicator
         PullRefreshIndicator(
             refreshing = refreshing,
             state = pullRefreshState,
@@ -351,9 +415,6 @@ fun BerandaPage(
             contentColor = Color(0xFF384E66)
         )
     }
-    // ========================================
-    // ✅ AKHIR BOX WRAPPER
-    // ========================================
 }
 
 // ========================================

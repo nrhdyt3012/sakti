@@ -1,11 +1,7 @@
-// 2. Data Transfer Objects (DTO) untuk API Request/Response
-// File: app/src/main/java/com/example/saktinocompose/network/dto/AuthDto.kt
-
 package com.example.saktinocompose.network.dto
 
 import com.google.gson.annotations.SerializedName
 
-// Login Request
 data class LoginRequest(
     @SerializedName("username")
     val username: String,
@@ -14,7 +10,7 @@ data class LoginRequest(
 )
 
 data class LoginResponse(
-    val status: String,
+    val success: Boolean,
     val message: String,
     val data: LoginData
 )

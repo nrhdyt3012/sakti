@@ -21,7 +21,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.saktinocompose.data.entity.ChangeRequest
+import com.example.saktinocompose.data.model.ChangeRequest
+import com.example.saktinocompose.data.model.RiskAssessment
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
 import com.example.saktinocompose.viewmodel.RiskAssessmentViewModel
 import com.example.saktinocompose.viewmodel.ApprovalHistoryViewModel
@@ -46,8 +47,21 @@ fun DetailFormTeknisiPage(
 ) {
     val scrollState = rememberScrollState()
     val dateFormat = SimpleDateFormat("dd MMMM yyyy, HH:mm", Locale.getDefault())
-    val createdDate = dateFormat.format(Date(changeRequest.createdAt))
-    val updatedDate = dateFormat.format(Date(changeRequest.updatedAt))
+    val createdDate = try {
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val date = isoFormat.parse(changeRequest.createdAt)
+        dateFormat.format(date ?: Date())
+    } catch (e: Exception) {
+        changeRequest.createdAt
+    }
+
+    val updatedDate = try {
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val date = isoFormat.parse(changeRequest.updatedAt)
+        dateFormat.format(date ?: Date())
+    } catch (e: Exception) {
+        changeRequest.updatedAt
+    }
 
     var showInspectionDialog by remember { mutableStateOf(false) }
     var showSchedulingDialog by remember { mutableStateOf(false) }
@@ -57,8 +71,9 @@ fun DetailFormTeknisiPage(
     var showFullImage by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
 
-    val existingRiskAssessment by riskAssessmentViewModel.getRiskAssessmentFlow(changeRequest.id)
-        .collectAsState(initial = null)
+
+    var existingRiskAssessment by remember { mutableStateOf<RiskAssessment?>(null)
+    }
 
     val isEmergency = changeRequest.jenisPerubahan == "Emergency"
     val isSubmitted = changeRequest.status == "Submitted"
@@ -89,9 +104,9 @@ fun DetailFormTeknisiPage(
                         changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
                         // Save Risk Assessment
-                        riskAssessmentViewModel.saveRiskAssessment(
+                        existingRiskAssessment = RiskAssessment(
                             changeRequestId = changeRequest.id,
-                            teknisiId = teknisiId,
+                            teknisiId = teknisiId.toIntOrNull() ?: 0,
                             teknisiName = teknisiName,
                             skorDampak = skorDampak,
                             skorKemungkinan = skorKemungkinan,
@@ -99,17 +114,6 @@ fun DetailFormTeknisiPage(
                             skorRisiko = skorRisiko,
                             levelRisiko = levelRisiko
                         )
-
-                        // Add Approval History
-                        approvalHistoryViewModel.addApprovalHistory(
-                            changeRequestId = changeRequest.id,
-                            approverUserId = teknisiId,
-                            approverName = teknisiName,
-                            fromStatus = changeRequest.status,
-                            toStatus = "Reviewed",
-                            notes = "Inspection completed. Cost estimate $estimasiBiaya, Time estimate: $estimasiWaktu, Risk Level : $levelRisiko"
-                        )
-
                         showInspectionDialog = false
                         successMessage = "Inspection successful! Status changed to 'Reviewed'"
                         showSuccessDialog = true
@@ -125,16 +129,6 @@ fun DetailFormTeknisiPage(
                         )
                         changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
-                        // Add Approval History
-                        approvalHistoryViewModel.addApprovalHistory(
-                            changeRequestId = changeRequest.id,
-                            approverUserId = teknisiId,
-                            approverName = teknisiName,
-                            fromStatus = changeRequest.status,
-                            toStatus = "Revision",
-                            notes = "Requesting revision: $notes"
-                        )
-
                         showInspectionDialog = false
                         successMessage = "Revision request successfully sent to End User"
                         showSuccessDialog = true
@@ -148,16 +142,6 @@ fun DetailFormTeknisiPage(
                             updatedAt = System.currentTimeMillis().toString()
                         )
                         changeRequestViewModel.updateFullChangeRequest(updatedRequest)
-
-                        // Add Approval History
-                        approvalHistoryViewModel.addApprovalHistory(
-                            changeRequestId = changeRequest.id,
-                            approverUserId = teknisiId,
-                            approverName = teknisiName,
-                            fromStatus = changeRequest.status,
-                            toStatus = "Failed",
-                            notes = "Rejected: $notes"
-                        )
 
                         // Kirim notifikasi ke end user
 
@@ -190,16 +174,6 @@ fun DetailFormTeknisiPage(
                 )
                 changeRequestViewModel.updateFullChangeRequest(updatedRequest)
 
-                // Add Approval History
-                approvalHistoryViewModel.addApprovalHistory(
-                    changeRequestId = changeRequest.id,
-                    approverUserId = teknisiId,
-                    approverName = teknisiName,
-                    fromStatus = changeRequest.status,
-                    toStatus = "Scheduled",
-                    notes = "Implementation is scheduled for $scheduledDate"
-                )
-
                 // Kirim notifikasi ke end user
                 showSchedulingDialog = false
                 successMessage = "Implementation successfully scheduled!"
@@ -224,15 +198,6 @@ fun DetailFormTeknisiPage(
                     updatedAt = System.currentTimeMillis().toString()
                 )
                 changeRequestViewModel.updateFullChangeRequest(updatedRequest)
-
-                approvalHistoryViewModel.addApprovalHistory(
-                    changeRequestId = changeRequest.id,
-                    approverUserId = teknisiId,
-                    approverName = teknisiName,
-                    fromStatus = "Implementing",
-                    toStatus = "Completed",
-                    notes = "Implementation completed. Residual score: $skorResidual, Residual risk level: $levelRisikoResidual"
-                )
 
                 showImplementationDialog = false
                 successMessage = "Implementation successfully completed!"

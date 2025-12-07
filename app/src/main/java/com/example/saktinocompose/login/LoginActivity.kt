@@ -11,7 +11,6 @@ import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.teknisi.TeknisiActivity
 import com.example.saktinocompose.utils.SessionManager
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,8 +25,6 @@ class LoginActivity: ComponentActivity() {
 
         lifecycleScope.launch {
             val userSession = sessionManager.userSession.first()
-
-            // ✅ CHECK TOKEN EXPIRY dengan toleransi lebih besar
             val isTokenValid = userSession.authToken?.let { token ->
                 checkTokenValidity(token)
             } ?: false
@@ -62,7 +59,6 @@ class LoginActivity: ComponentActivity() {
         }
     }
 
-    // ✅ PERBAIKAN: Helper function dengan toleransi waktu lebih besar
     private fun checkTokenValidity(token: String): Boolean {
         return try {
             val parts = token.split(".")
@@ -77,8 +73,6 @@ class LoginActivity: ComponentActivity() {
             val exp = json.getLong("exp")
             val now = System.currentTimeMillis() / 1000
 
-            // ✅ PERBAIKAN UTAMA: Tambahkan buffer 5 MENIT (300 detik)
-            // Ini untuk mengatasi perbedaan waktu server-client
             val bufferSeconds = 300L
             val isValid = exp > (now + bufferSeconds)
 
@@ -106,29 +100,19 @@ class LoginActivity: ComponentActivity() {
                         try {
                             token?.let {
                                 RetrofitClient.updateAuthToken(it)
-                                Log.d("LoginActivity", "✅ Token set to Retrofit: ${it.take(20)}...")
+                                Log.d("LoginActivity", "✅ Token set for Retrofit instance.")
                             }
 
-                            // ✅ TAMBAHKAN: Delay untuk memastikan token ter-set dengan benar
-                            delay(500)
+                            sessionManager.saveSession(
+                                userId = userId,
+                                email = email,
+                                name = name,
+                                role = role.uppercase().trim(),
+                                authToken = token
+                            )
+                            Log.d("LoginActivity", "✅ Session saved successfully.")
 
-                            withContext(Dispatchers.IO) {
-                                sessionManager.saveSession(
-                                    userId = userId,
-                                    email = email,
-                                    name = name,
-                                    role = role.uppercase().trim(),
-                                    authToken = token
-                                )
-                                Log.d("LoginActivity", "✅ Session saved")
-                            }
-
-                            // ✅ Tunggu sebentar lagi
-                            delay(300)
-
-                            withContext(Dispatchers.Main) {
-                                navigateToHome(userId, email, name, role.uppercase().trim())
-                            }
+                            navigateToHome(userId, email, name, role.uppercase().trim())
 
                         } catch (e: Exception) {
                             withContext(Dispatchers.Main) {
