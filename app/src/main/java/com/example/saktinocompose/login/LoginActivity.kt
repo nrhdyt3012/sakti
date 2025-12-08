@@ -11,6 +11,7 @@ import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.teknisi.TeknisiActivity
 import com.example.saktinocompose.utils.SessionManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,7 +40,10 @@ class LoginActivity: ComponentActivity() {
 
             if (userSession.isLoggedIn && isTokenValid) {
                 userSession.authToken?.let { token ->
+                    // ✅ CRITICAL: Set token BEFORE navigation
                     RetrofitClient.updateAuthToken(token)
+                    // ✅ Wait a bit to ensure token is set
+                    delay(100)
                 }
 
                 navigateToHome(
@@ -49,7 +53,6 @@ class LoginActivity: ComponentActivity() {
                     role = userSession.role!!
                 )
             } else {
-                // ✅ Clear invalid session
                 if (userSession.isLoggedIn && !isTokenValid) {
                     sessionManager.clearSession()
                     RetrofitClient.clearAuthToken()
@@ -80,9 +83,8 @@ class LoginActivity: ComponentActivity() {
                 Token Validation (with 5min buffer):
                 - Exp: $exp (${java.util.Date(exp * 1000)})
                 - Now: $now (${java.util.Date(now * 1000)})
-                - Buffer: $bufferSeconds seconds
                 - Valid: $isValid
-                - Time left: ${exp - now} seconds (${(exp - now) / 60} minutes)
+                - Time left: ${(exp - now) / 60} minutes
             """.trimIndent())
 
             isValid
@@ -98,11 +100,18 @@ class LoginActivity: ComponentActivity() {
                 onLoginSuccess = { userId, email, name, role, token ->
                     lifecycleScope.launch {
                         try {
+                            // ✅ CRITICAL: SEQUENCE MATTERS!
+
+                            // 1. Set token to RetrofitClient FIRST
                             token?.let {
                                 RetrofitClient.updateAuthToken(it)
-                                Log.d("LoginActivity", "✅ Token set for Retrofit instance.")
+                                Log.d("LoginActivity", "✅ Step 1: Token set to Retrofit")
                             }
 
+                            // 2. Wait to ensure token is propagated
+                            delay(200)
+
+                            // 3. Save to SessionManager
                             sessionManager.saveSession(
                                 userId = userId,
                                 email = email,
@@ -110,11 +119,17 @@ class LoginActivity: ComponentActivity() {
                                 role = role.uppercase().trim(),
                                 authToken = token
                             )
-                            Log.d("LoginActivity", "✅ Session saved successfully.")
+                            Log.d("LoginActivity", "✅ Step 2: Session saved")
 
+                            // 4. Wait again before navigation
+                            delay(200)
+
+                            // 5. Navigate
+                            Log.d("LoginActivity", "✅ Step 3: Navigating to home")
                             navigateToHome(userId, email, name, role.uppercase().trim())
 
                         } catch (e: Exception) {
+                            Log.e("LoginActivity", "❌ Login error", e)
                             withContext(Dispatchers.Main) {
                                 Toast.makeText(
                                     this@LoginActivity,
@@ -133,7 +148,7 @@ class LoginActivity: ComponentActivity() {
         val normalizedRole = role.uppercase().trim()
 
         if (normalizedRole != "TEKNISI") {
-            Log.e("LoginActivity", "Access denied. Role: '$role' (normalized: '$normalizedRole')")
+            Log.e("LoginActivity", "Access denied. Role: '$normalizedRole'")
 
             Toast.makeText(
                 this,

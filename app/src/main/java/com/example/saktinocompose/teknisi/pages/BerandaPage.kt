@@ -33,6 +33,7 @@ import com.example.saktinocompose.data.model.ChangeRequest
 import com.example.saktinocompose.ui.components.NoDataCard
 import com.example.saktinocompose.utils.NetworkHelper
 import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -66,9 +67,12 @@ fun BerandaPage(
         }
     )
 
+    // ✅ FIXED: Manual trigger dengan delay untuk ensure token ready
     LaunchedEffect(Unit) {
         if (allChangeRequestsRaw.isEmpty() && !isLoading) {
             if (NetworkHelper.isInternetAvailable(context)) {
+                // ✅ CRITICAL: Wait for token to be ready
+                delay(300)
                 viewModel.refreshData()
             }
         }
