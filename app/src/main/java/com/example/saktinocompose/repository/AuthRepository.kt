@@ -62,21 +62,21 @@ class AuthRepository() {
                         "Authentication required"
                     )
 
-                val response = RetrofitClient.authService.getProfile("Bearer $token")
+                // ✅ JANGAN tambah "Bearer" di sini
+                // authInterceptor sudah menambahkannya
+                val response = RetrofitClient.authService.getProfile() // ← Tanpa "Bearer"
+
                 val body = response.body()
 
                 if (response.isSuccessful && body?.status == "success") {
-
                     val u = body.data
-
                     val user = User(
-                        id = u!!.id ,
+                        id = u!!.id,
                         username = u.username,
                         name = u.username,
                         passwordHash = "",
-                        role = u?.role.toString()
+                        role = u.role
                     )
-
                     return@withContext Result.Success(user)
                 }
 

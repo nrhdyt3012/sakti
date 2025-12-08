@@ -101,15 +101,20 @@ object RetrofitClient {
      */
     private val authInterceptor = Interceptor { chain ->
         val originalRequest = chain.request()
-
-        // ✅ CRITICAL: Get token dengan fallback
         val currentToken = getTokenWithFallback()
 
         val newRequest = if (currentToken != null) {
-            Log.d("RetrofitClient", "🔑 Adding token to request: ${currentToken.take(20)}...")
+            // ✅ PERBAIKAN: Cek apakah token sudah punya "Bearer"
+            val authHeader = if (currentToken.startsWith("Bearer ", ignoreCase = true)) {
+                currentToken  // Sudah ada Bearer
+            } else {
+                "Bearer $currentToken"  // Tambah Bearer
+            }
+
+            Log.d("RetrofitClient", "🔑 Adding auth header: ${authHeader.take(30)}...")
 
             originalRequest.newBuilder()
-                .addHeader("Authorization", "Bearer $currentToken")
+                .addHeader("Authorization", authHeader)
                 .addHeader("Accept", "application/json")
                 .addHeader("Content-Type", "application/json")
                 .build()
@@ -170,16 +175,30 @@ object RetrofitClient {
     /**
      * ✅ FIXED: Synchronized token update dengan SessionManager
      */
+    /**
+     * ✅ BARU: Sanitize token untuk menghindari double Bearer
+     */
+    private fun sanitizeToken(token: String): String {
+        return token
+            .replace("Bearer ", "", ignoreCase = true)
+            .replace("bearer ", "", ignoreCase = true)
+            .trim()
+    }
+
+    /**
+     * ✅ UPDATE: updateAuthToken dengan sanitization
+     */
     @Synchronized
     fun updateAuthToken(token: String?) {
-        authToken = token
-        Log.d("RetrofitClient", "✅ Token updated in memory: ${token?.take(20)}...")
+        // ✅ Sanitize token sebelum disimpan
+        val cleanToken = token?.let { sanitizeToken(it) }
+        authToken = cleanToken
 
-        // ✅ PERBAIKAN: Save to SessionManager juga
-        token?.let {
+        Log.d("RetrofitClient", "✅ Token updated (clean): ${cleanToken?.take(20)}...")
+
+        cleanToken?.let {
             verifyToken(it)
 
-            // Save to SessionManager async
             applicationContext?.let { context ->
                 GlobalScope.launch {
                     try {
@@ -187,7 +206,7 @@ object RetrofitClient {
                         sm.saveAuthToken(it)
                         Log.d("RetrofitClient", "✅ Token saved to SessionManager")
                     } catch (e: Exception) {
-                        Log.e("RetrofitClient", "❌ Failed to save token to SessionManager", e)
+                        Log.e("RetrofitClient", "❌ Failed to save token", e)
                     }
                 }
             }
@@ -263,7 +282,7 @@ object RetrofitClient {
 
         return try {
             withContext(Dispatchers.IO) {
-                val response = authService.getProfile("Bearer $token")
+                val response = authService.getProfile()
                 response.isSuccessful
             }
         } catch (e: Exception) {

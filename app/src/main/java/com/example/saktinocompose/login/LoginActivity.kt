@@ -64,7 +64,12 @@ class LoginActivity: ComponentActivity() {
 
     private fun checkTokenValidity(token: String): Boolean {
         return try {
-            val parts = token.split(".")
+            // ✅ Clean token dari Bearer prefix
+            val cleanToken = token
+                .replace("Bearer ", "", ignoreCase = true)
+                .trim()
+
+            val parts = cleanToken.split(".")
             if (parts.size != 3) {
                 Log.e("LoginActivity", "Invalid token format")
                 return false
@@ -76,16 +81,15 @@ class LoginActivity: ComponentActivity() {
             val exp = json.getLong("exp")
             val now = System.currentTimeMillis() / 1000
 
-            // ✅ PERBAIKAN: Kurangi buffer atau hapus
-            val bufferSeconds = 60L  // Dari 300L (5 menit) jadi 60L (1 menit)
+            val bufferSeconds = 60L
             val isValid = exp > (now + bufferSeconds)
 
             Log.d("LoginActivity", """
-            Token Validation:
-            - Exp: $exp (${java.util.Date(exp * 1000)})
-            - Now: $now (${java.util.Date(now * 1000)})
-            - Valid: $isValid
-            - Time left: ${(exp - now) / 60} minutes
+        Token Validation:
+        - Exp: $exp (${java.util.Date(exp * 1000)})
+        - Now: $now (${java.util.Date(now * 1000)})
+        - Valid: $isValid
+        - Time left: ${(exp - now) / 60} minutes
         """.trimIndent())
 
             isValid
