@@ -8,7 +8,6 @@ interface SiladanApiService {
 
     @POST("integrations/siladan/change-requests")
     suspend fun createSiladanChangeRequest(
-        @Header("Authorization") token: String,
         @Body request: SiladanChangeRequestRequest
     ): Response<ApiResponse<Any>>
 }

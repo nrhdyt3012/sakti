@@ -32,9 +32,7 @@ class ChangeRequestRepository() {
                     )
                 }
 
-                val response = RetrofitClient.changeRequestService.getChangeRequests(
-                    token,  // Tanpa "Bearer "
-                )
+                val response = RetrofitClient.changeRequestService.getChangeRequests()
 
                 Log.d("ChangeRequestRepo", "Response code: ${response.code()}")
 
