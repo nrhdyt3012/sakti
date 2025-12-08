@@ -13,7 +13,6 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
     private const val BASE_URL = "https://sakti-backend-674826252080.asia-southeast2.run.app/"
-
     var authToken: String? = null
     private var applicationContext: Context? = null
 
