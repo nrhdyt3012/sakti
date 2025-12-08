@@ -11,6 +11,7 @@ import com.example.saktinocompose.repository.ChangeRequestRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class ChangeRequestViewModel(application: Application) : AndroidViewModel(application) {
@@ -39,11 +40,11 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
             val token = RetrofitClient.authToken
 
             Log.d("ChangeRequestVM", """
-                ========== REFRESH DATA ==========
-                Token available: ${token != null}
-                Token value: ${token?.take(20)}...
-                ==================================
-            """.trimIndent())
+            ========== REFRESH DATA ==========
+            Token available: ${token != null}
+            Token value: ${token?.take(20)}...
+            ==================================
+        """.trimIndent())
 
             if (token == null) {
                 _error.value = "Please login to view data"
@@ -51,18 +52,15 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 return@launch
             }
 
-            // ✅ CRITICAL: Verify token is valid before making request
-            if (!isTokenValid(token)) {
-                _error.value = "Session expired. Please login again."
+            // ✅ PERBAIKAN: Verify token dengan server dulu
+            if (!RetrofitClient.verifyTokenWithServer()) {
+                _error.value = "Token invalid. Please login again."
                 RetrofitClient.clearAuthToken()
                 return@launch
             }
 
             _isLoading.value = true
             _error.value = null
-
-            // ✅ Add small delay to ensure token is propagated
-            delay(100)
 
             Log.d("ChangeRequestVM", "🔄 Starting API fetch...")
 
@@ -77,7 +75,6 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                     _error.value = errorMsg
                     Log.e("ChangeRequestVM", "❌ Fetch error: $errorMsg")
 
-                    // ✅ Handle auth errors
                     if (errorMsg.contains("401") ||
                         errorMsg.contains("Token") ||
                         errorMsg.contains("Session")) {
@@ -86,11 +83,23 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 }
                 else -> {
                     _error.value = "Failed to fetch data"
-                    Log.e("ChangeRequestVM", "❌ Unknown result type")
                 }
             }
 
             _isLoading.value = false
+        }
+    }
+    private suspend fun ensureTokenLoaded() {
+        if (RetrofitClient.authToken == null) {
+            val context = getApplication<Application>().applicationContext
+            val sessionManager = com.example.saktinocompose.utils.SessionManager(context)
+
+            val token = sessionManager.authToken.first()
+            if (token != null) {
+                RetrofitClient.updateAuthToken(token)
+                Log.d("ChangeRequestVM", "🔄 Token restored: ${token.take(20)}...")
+                delay(200) // Wait for propagation
+            }
         }
     }
 

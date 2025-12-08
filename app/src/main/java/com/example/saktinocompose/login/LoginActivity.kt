@@ -76,16 +76,17 @@ class LoginActivity: ComponentActivity() {
             val exp = json.getLong("exp")
             val now = System.currentTimeMillis() / 1000
 
-            val bufferSeconds = 300L
+            // ✅ PERBAIKAN: Kurangi buffer atau hapus
+            val bufferSeconds = 60L  // Dari 300L (5 menit) jadi 60L (1 menit)
             val isValid = exp > (now + bufferSeconds)
 
             Log.d("LoginActivity", """
-                Token Validation (with 5min buffer):
-                - Exp: $exp (${java.util.Date(exp * 1000)})
-                - Now: $now (${java.util.Date(now * 1000)})
-                - Valid: $isValid
-                - Time left: ${(exp - now) / 60} minutes
-            """.trimIndent())
+            Token Validation:
+            - Exp: $exp (${java.util.Date(exp * 1000)})
+            - Now: $now (${java.util.Date(now * 1000)})
+            - Valid: $isValid
+            - Time left: ${(exp - now) / 60} minutes
+        """.trimIndent())
 
             isValid
         } catch (e: Exception) {
@@ -100,31 +101,29 @@ class LoginActivity: ComponentActivity() {
                 onLoginSuccess = { userId, email, name, role, token ->
                     lifecycleScope.launch {
                         try {
-                            // ✅ CRITICAL: SEQUENCE MATTERS!
-
-                            // 1. Set token to RetrofitClient FIRST
+                            // ✅ PERBAIKAN: Simpan ke SessionManager DULU
                             token?.let {
+                                // 1. Save to SessionManager FIRST (persistent)
+                                sessionManager.saveSession(
+                                    userId = userId,
+                                    email = email,
+                                    name = name,
+                                    role = role.uppercase().trim(),
+                                    authToken = it
+                                )
+                                Log.d("LoginActivity", "✅ Step 1: Session saved with token")
+
+                                // 2. Wait for SessionManager to write
+                                delay(1000)
+
+                                // 3. Set to RetrofitClient (memory cache)
                                 RetrofitClient.updateAuthToken(it)
-                                Log.d("LoginActivity", "✅ Step 1: Token set to Retrofit")
+                                Log.d("LoginActivity", "✅ Step 2: Token set to Retrofit")
+
+                                // 4. Wait for token to propagate
+                                delay(500)
                             }
 
-                            // 2. Wait to ensure token is propagated
-                            delay(200)
-
-                            // 3. Save to SessionManager
-                            sessionManager.saveSession(
-                                userId = userId,
-                                email = email,
-                                name = name,
-                                role = role.uppercase().trim(),
-                                authToken = token
-                            )
-                            Log.d("LoginActivity", "✅ Step 2: Session saved")
-
-                            // 4. Wait again before navigation
-                            delay(200)
-
-                            // 5. Navigate
                             Log.d("LoginActivity", "✅ Step 3: Navigating to home")
                             navigateToHome(userId, email, name, role.uppercase().trim())
 
