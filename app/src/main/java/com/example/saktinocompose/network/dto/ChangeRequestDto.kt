@@ -3,8 +3,8 @@ package com.example.saktinocompose.network.dto
 import com.google.gson.annotations.SerializedName
 
 data class ChangeRequestListResponse(
-    @SerializedName("status")
-    val status: String,
+    @SerializedName("success")
+    val success: Boolean,
     @SerializedName("message")
     val message: String,
     @SerializedName("data")

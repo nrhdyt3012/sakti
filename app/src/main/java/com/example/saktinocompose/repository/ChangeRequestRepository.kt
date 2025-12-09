@@ -33,10 +33,10 @@ class ChangeRequestRepository() {
                 }
 
                 val response = RetrofitClient.changeRequestService.getChangeRequests()
-
+                val body = response.body()
                 Log.d("ChangeRequestRepo", "Response code: ${response.code()}")
 
-                if (response.isSuccessful && response.body()?.status == "success") {
+                if (response.isSuccessful && response.body()?.success == true) {
                     val apiRequests = response.body()?.data ?: emptyList()
 
                     Log.d("ChangeRequestRepo", "Fetched ${apiRequests.size} requests")
