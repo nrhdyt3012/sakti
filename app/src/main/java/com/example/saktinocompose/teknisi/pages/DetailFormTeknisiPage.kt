@@ -88,6 +88,48 @@ fun DetailFormTeknisiPage(
     var showEmergencyDialog by remember { mutableStateOf(false) }
     var showFullImage by remember { mutableStateOf(false) }
     var successMessage by remember { mutableStateOf("") }
+    var showSubmittedDialog by remember { mutableStateOf(false) }
+    var showImplementationPlanDialog by remember { mutableStateOf(false) }
+
+    // ✅ TAMBAH DIALOG HANDLERS:
+    if (showSubmittedDialog) {
+        SubmittedDetailDialog(
+            changeRequest = changeRequest,
+            onDismiss = { showSubmittedDialog = false },
+            onSave = { description, asetTerdampak, ciRelation, proposedSchedule ->
+                val updatedRequest = changeRequest.copy(
+                    description = description,
+                    asetTerdampak = asetTerdampak,
+                    relasiConfigurationItem = ciRelation,
+                    usulanJadwal = proposedSchedule,
+                    status = "Reviewed",
+                    updatedAt = System.currentTimeMillis().toString()
+                )
+                changeRequestViewModel.updateFullChangeRequest(updatedRequest)
+                showSubmittedDialog = false
+                successMessage = "Details saved! Status changed to 'Reviewed'"
+                showSuccessDialog = true
+            }
+        )
+    }
+
+    if (showImplementationPlanDialog) {
+        ImplementationPlanDialog(
+            changeRequest = changeRequest,
+            onDismiss = { showImplementationPlanDialog = false },
+            onSave = { implementationPlan, rollbackPlan ->
+                val updatedRequest = changeRequest.copy(
+                    rencanaImplementasi = implementationPlan,
+                    rollbackPlan = rollbackPlan,
+                    updatedAt = System.currentTimeMillis().toString()
+                )
+                changeRequestViewModel.updateFullChangeRequest(updatedRequest)
+                showImplementationPlanDialog = false
+                successMessage = "Implementation plan saved successfully!"
+                showSuccessDialog = true
+            }
+        )
+    }
 
     var existingRiskAssessment by remember { mutableStateOf<RiskAssessment?>(null) }
 
@@ -982,8 +1024,36 @@ fun DetailFormTeknisiPage(
                     }
                 }
 
-                // ✅ SUBMITTED - APPROVE/REVISE ONLY
+                // ✅ 1. SUBMITTED - Complete Details
                 isSubmitted -> {
+                    Button(
+                        onClick = {
+                            if (!isOnline) showOfflineDialog = true
+                            else showSubmittedDialog = true
+                        },
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (isOnline) Color(0xFF2196F3) else Color.Gray
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = isOnline
+                    ) {
+                        if (!isOnline) {
+                            Icon(Icons.Default.CloudOff, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        Icon(Icons.Default.Edit, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (isOnline) "Complete Request Details" else "Offline",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+
+                // ✅ 2. REVIEWED - Inspection (PINDAH KE SINI)
+                isReviewed -> {
                     Button(
                         onClick = {
                             if (!isOnline) showOfflineDialog = true
@@ -1003,81 +1073,88 @@ fun DetailFormTeknisiPage(
                         Icon(Icons.Default.AssignmentTurnedIn, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = if (isOnline) "Take an Inspection" else "Offline",
+                            text = if (isOnline) "Perform Inspection" else "Offline",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                isReviewed -> {
-                    Button(
-                        onClick = {
-                            if (!isOnline) showOfflineDialog = true
-                            else showSchedulingDialog = true
-                        },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isOnline) Color(0xFFFF9800) else Color.Gray
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = isOnline
-                    ) {
-                        if (!isOnline) {
-                            Icon(Icons.Default.CloudOff, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                        }
-                        Icon(Icons.Default.Schedule, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isOnline) "Schedule Implementation" else "Offline",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
+                // ✅ 3. SCHEDULED - Implementation Plan (BARU)
                 isScheduled -> {
-                    Button(
-                        onClick = {
-                            if (!isOnline) showOfflineDialog = true
-                            else {
-                                changeRequestViewModel.updateChangeRequestStatus(
-                                    changeRequest = changeRequest,
-                                    newStatus = "Implementing"
-                                )
-                                successMessage = "Status changed to 'Implementing'"
-                                showSuccessDialog = true
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isOnline) Color(0xFFFF5722) else Color.Gray
-                        ),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = isOnline
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (!isOnline) {
-                            Icon(Icons.Default.CloudOff, contentDescription = null)
+                        // Implementation Plan Dialog Button
+                        Button(
+                            onClick = {
+                                if (!isOnline) showOfflineDialog = true
+                                else showImplementationPlanDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth().height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = if (isOnline) Color(0xFF2196F3) else Color.Gray
+                            ),
+                            shape = RoundedCornerShape(12.dp),
+                            enabled = isOnline
+                        ) {
+                            if (!isOnline) {
+                                Icon(Icons.Default.CloudOff, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            Icon(Icons.Default.Description, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = if (isOnline) "Add Implementation Plan" else "Offline",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-                        Icon(Icons.Default.PlayArrow, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isOnline) "Start Implementation" else "Offline",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+
+                        // Start Implementation Button (hanya muncul setelah ada implementation plan)
+                        if (changeRequest.rencanaImplementasi.isNotBlank()) {
+                            Button(
+                                onClick = {
+                                    if (!isOnline) showOfflineDialog = true
+                                    else {
+                                        changeRequestViewModel.updateChangeRequestStatus(
+                                            changeRequest = changeRequest,
+                                            newStatus = "Implementing"
+                                        )
+                                        successMessage = "Status changed to 'Implementing'"
+                                        showSuccessDialog = true
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = if (isOnline) Color(0xFFFF5722) else Color.Gray
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                enabled = isOnline
+                            ) {
+                                if (!isOnline) {
+                                    Icon(Icons.Default.CloudOff, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                }
+                                Icon(Icons.Default.PlayArrow, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = if (isOnline) "Start Implementation" else "Offline",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
                     }
                 }
 
-                // ✅ IMPLEMENTING - 2 OPTIONS: COMPLETE or MARK AS FAILED
+                // ✅ 4. IMPLEMENTING - Same as before
                 isImplementing -> {
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Complete Implementation Button
                         Button(
                             onClick = {
                                 if (!isOnline) showOfflineDialog = true
@@ -1103,7 +1180,6 @@ fun DetailFormTeknisiPage(
                             )
                         }
 
-                        // ✅ Mark as Failed Button
                         OutlinedButton(
                             onClick = {
                                 if (!isOnline) showOfflineDialog = true
@@ -1117,8 +1193,7 @@ fun DetailFormTeknisiPage(
                             enabled = isOnline
                         ) {
                             if (!isOnline) {
-                                Icon(Icons.Default.CloudOff, contentDescription = null,
-                                    tint = Color.Gray)
+                                Icon(Icons.Default.CloudOff, contentDescription = null, tint = Color.Gray)
                                 Spacer(modifier = Modifier.width(8.dp))
                             }
                             Icon(Icons.Default.Cancel, contentDescription = null)
