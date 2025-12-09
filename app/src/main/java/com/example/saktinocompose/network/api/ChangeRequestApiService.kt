@@ -6,8 +6,13 @@ import retrofit2.http.*
 
 interface ChangeRequestApiService {
 
+    // ✅ FIXED: Add query parameters
     @GET("change-requests")
     suspend fun getChangeRequests(
+        @Query("page") page: Int? = null,
+        @Query("limit") limit: Int? = null,
+        @Query("status") status: String? = null,
+        @Query("type") type: String? = null
     ): Response<ChangeRequestListResponse>
 
     @PUT("change-requests/{id}/inspection")

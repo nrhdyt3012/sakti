@@ -168,7 +168,15 @@ fun TeknisiFilteredRequestCard(
     }
 
     val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-    val createdDate = dateFormat.format(Date(changeRequest.createdAt))
+    // ✅ FIXED: Parse ISO 8601 string properly
+    val createdDate = try {
+        val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val date = isoFormat.parse(changeRequest.createdAt)
+        val displayFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+        displayFormat.format(date ?: Date())
+    } catch (e: Exception) {
+        changeRequest.createdAt // Fallback to raw string
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),

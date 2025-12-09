@@ -6,23 +6,35 @@ import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
 import com.example.saktinocompose.network.dto.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 
-class ChangeRequestRepository() {
+class ChangeRequestRepository {
 
     /**
-     * ✅ FIXED: Fetch dari API dengan error handling yang lebih baik
+     * ✅ FIXED: Fetch all data by default (no filters)
+     * Parameters are optional for future use
      */
     suspend fun fetchFromApi(
+        page: Int? = null,
+        limit: Int? = null,
         status: String? = null,
-        deskripsi: String? = null
+        type: String? = null
     ): Result<List<ChangeRequest>> {
         return withContext(Dispatchers.IO) {
             try {
                 val token = RetrofitClient.authToken
 
-                Log.d("ChangeRequestRepo", "Fetching with token: ${token?.take(20)}...")
+                Log.d("ChangeRequestRepo", """
+                    🔄 Fetching change requests:
+                    - Token: ${token?.take(20)}...
+                    ${if (page != null || limit != null || status != null || type != null) {
+                    """
+                        - Filters: page=$page, limit=$limit, status=$status, type=$type
+                        """.trimIndent()
+                } else {
+                    "- Fetching ALL data (no filters)"
+                }}
+                """.trimIndent())
 
                 if (token == null) {
                     Log.e("ChangeRequestRepo", "No token available")
@@ -32,26 +44,27 @@ class ChangeRequestRepository() {
                     )
                 }
 
-                val response = RetrofitClient.changeRequestService.getChangeRequests()
-                val body = response.body()
+                // ✅ Call API - parameters are optional (null = fetch all)
+                val response = RetrofitClient.changeRequestService.getChangeRequests(
+                    page = page,
+                    limit = limit,
+                    status = status,
+                    type = type
+                )
+
                 Log.d("ChangeRequestRepo", "Response code: ${response.code()}")
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val apiRequests = response.body()?.data ?: emptyList()
-
                     Log.d("ChangeRequestRepo", "Fetched ${apiRequests.size} requests")
 
-                    // ✅ Convert API response ke Entity
                     val changeRequests = apiRequests.map { apiDataToChangeRequest(it) }
-
                     Result.Success(changeRequests)
                 } else {
                     val errorBody = response.errorBody()?.string()
                     val errorMessage = response.body()?.message ?: errorBody ?: "Failed to fetch data"
-
                     Log.e("ChangeRequestRepo", "API Error: $errorMessage")
 
-                    // ✅ Check for auth error
                     if (response.code() == 401) {
                         RetrofitClient.clearAuthToken()
                         return@withContext Result.Error(
@@ -60,10 +73,7 @@ class ChangeRequestRepository() {
                         )
                     }
 
-                    Result.Error(
-                        Exception("Fetch failed"),
-                        errorMessage
-                    )
+                    Result.Error(Exception("Fetch failed"), errorMessage)
                 }
             } catch (e: Exception) {
                 Log.e("ChangeRequestRepo", "Exception during fetch", e)
@@ -73,8 +83,26 @@ class ChangeRequestRepository() {
     }
 
     /**
-     * ✅ Update change request via API
+     * ✅ Main method: Fetch all data (default - no filters)
      */
+    suspend fun fetchAll(): Result<List<ChangeRequest>> {
+        return fetchFromApi() // ✅ No parameters = fetch all
+    }
+
+    /**
+     * ✅ Optional: Fetch by status (for future use if needed)
+     */
+    suspend fun fetchByStatus(status: String): Result<List<ChangeRequest>> {
+        return fetchFromApi(status = status)
+    }
+
+    /**
+     * ✅ Optional: Fetch by type (for future use if needed)
+     */
+    suspend fun fetchByType(type: String): Result<List<ChangeRequest>> {
+        return fetchFromApi(type = type)
+    }
+
     suspend fun updateChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
         return withContext(Dispatchers.IO) {
             try {
@@ -87,19 +115,15 @@ class ChangeRequestRepository() {
                 }
 
                 // TODO: Implement API call untuk update
-                // val response = RetrofitClient.changeRequestService.updateChangeRequest(...)
-
-                // Untuk sementara return success
                 Result.Success(changeRequest)
-
             } catch (e: Exception) {
                 Result.Error(e, "Update failed: ${e.message}")
             }
         }
     }
+
     /**
      * ✅ IMPROVED: Mapping dari API response ke local entity
-     * Sesuai dengan struktur JSON yang Anda berikan
      */
     private fun apiDataToChangeRequest(apiData: ChangeRequestApiData): ChangeRequest {
         Log.d("ChangeRequestRepo", "Mapping CR: ${apiData.crId}")
@@ -107,61 +131,37 @@ class ChangeRequestRepository() {
         return ChangeRequest(
             id = apiData.crId,
             ticketId = apiData.ticketId ?: apiData.crId,
-
-            // ✅ Type dari API response
             type = apiData.type ?: apiData.changeType ?: "Standard",
-
-            // ✅ Title dan Description
             title = apiData.title ?: "No Title",
             description = apiData.description ?: "",
-
-            // ✅ Asset - handle null values
             assetId = apiData.assetId ?: "",
             asetTerdampak = apiData.assetId ?: "",
             relasiConfigurationItem = "",
-
-            // ✅ Implementation
             rencanaImplementasi = apiData.mitigationPlan ?: "",
             usulanJadwal = apiData.targetCompletion ?: "",
             rollbackPlan = apiData.rollbackPlan ?: "",
-
-            // ✅ Technician
             assignedTeknisiName = apiData.picImplementation,
             scheduledDate = apiData.scheduleImplementation,
-
-            // ✅ Schedule
             scheduleStart = apiData.scheduleStart,
             scheduleEnd = apiData.scheduleEnd,
-
-            // ✅ Risk scores (handle null)
             scoreImpact = apiData.scoreImpact ?: 0,
             scoreLikelihood = apiData.scoreLikelihood ?: 0,
             scoreRisk = apiData.scoreRisk ?: 0,
             riskLevel = apiData.riskLevel ?: "Low",
-
-            // ✅ Post-implementation
             postImpact = apiData.postImpact,
             postLikelihood = apiData.postLikelihood,
             postResidualScore = apiData.postResidualScore,
             postRiskLevel = apiData.postRiskLevel,
             implementationResult = apiData.implementationResult,
-
-            // ✅ Status mapping
             status = mapApiStatusToLocalStatus(apiData.status),
             approvalStatus = apiData.approvalStatus,
-
-            // ✅ Timestamps
             createdAt = apiData.createdAt,
             updatedAt = apiData.updatedAt,
-
-            // ✅ Additional fields
             dinas = apiData.dinas,
             impactDesc = apiData.impactDesc,
             controlExisting = apiData.controlExisting,
             controlEffectiveness = apiData.controlEffectiveness,
             mitigationPlan = apiData.mitigationPlan,
-
-            // ✅ CRITICAL: Field yang diperlukan UI
             jenisPerubahan = apiData.changeType ?: apiData.type ?: "Standard",
             skorEksposur = calculateExposure(
                 apiData.scoreImpact,
@@ -171,9 +171,6 @@ class ChangeRequestRepository() {
         )
     }
 
-    /**
-     * ✅ Calculate exposure from existing scores
-     */
     private fun calculateExposure(impact: Int?, likelihood: Int?, totalRisk: Int?): Int {
         if (impact == null || likelihood == null || totalRisk == null) return 1
         if (impact == 0 || likelihood == 0) return 1
@@ -181,15 +178,10 @@ class ChangeRequestRepository() {
         val baseRisk = impact * likelihood
         if (baseRisk == 0) return 1
 
-        // Formula: totalRisk = impact * likelihood * exposure
-        // exposure = totalRisk / (impact * likelihood)
         val calculatedExposure = (totalRisk.toDouble() / baseRisk.toDouble()).toInt()
         return calculatedExposure.coerceIn(1, 4)
     }
 
-    /**
-     * ✅ Map API status to local status
-     */
     private fun mapApiStatusToLocalStatus(apiStatus: String): String {
         return when (apiStatus.uppercase()) {
             "SUBMITTED", "PENDING" -> "Submitted"
