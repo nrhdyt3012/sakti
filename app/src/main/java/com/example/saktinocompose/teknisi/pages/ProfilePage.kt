@@ -241,12 +241,16 @@ fun ProfilePage(
                             )
                         }
                     }
+
+                    HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Work,
+                            imageVector = Icons.Default.Apartment,
                             contentDescription = "Agency",
                             tint = Color(0xFF37474F),
                             modifier = Modifier.size(24.dp)
