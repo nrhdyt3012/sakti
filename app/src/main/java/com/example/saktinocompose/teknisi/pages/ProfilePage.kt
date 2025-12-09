@@ -32,6 +32,7 @@ fun ProfilePage(
     userEmail: String,
     userName: String,
     userRole: String,
+    userInstansi: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -235,6 +236,30 @@ fun ProfilePage(
                             )
                             Text(
                                 text = userRole,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Work,
+                            contentDescription = "Agency",
+                            tint = Color(0xFF37474F),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(
+                                text = "Agency",
+                                fontSize = 12.sp,
+                                color = Color.Gray
+                            )
+                            Text(
+                                text = userInstansi,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Medium
                             )

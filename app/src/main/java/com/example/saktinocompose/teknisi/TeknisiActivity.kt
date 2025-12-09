@@ -14,6 +14,8 @@ class TeknisiActivity : ComponentActivity() {
         val userEmail = intent.getStringExtra("USER_EMAIL") ?: "Unknown"
         val userName = intent.getStringExtra("USER_NAME") ?: "Unknown"
         val userRole = intent.getStringExtra("USER_ROLE") ?: "Unknown"
+        val userInstansi = intent.getStringExtra("USER_INSTANSI") ?: "Unknown"
+
 
         setContent {
             SaktiNoComposeTheme {
@@ -21,7 +23,8 @@ class TeknisiActivity : ComponentActivity() {
                     userId = userId,
                     userEmail = userEmail,
                     userName = userName,
-                    userRole = userRole
+                    userRole = userRole,
+                    userInstansi= userInstansi
                 )
             }
         }

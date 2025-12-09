@@ -42,7 +42,7 @@ val Black = Color(0xFF000000)
 @Composable
 fun LoginScreen(
     loginViewModel: LoginViewModelCompose = viewModel(),
-    onLoginSuccess: (userId: String, email: String, name: String, role: String, token: String?) -> Unit
+    onLoginSuccess: (userId: String, email: String, name: String,  role: String, instansi:String, token: String?) -> Unit
 ) {
     val uiState by loginViewModel.uiState.collectAsState()
     var showErrorDialog by remember { mutableStateOf<String?>(null) }
@@ -59,6 +59,7 @@ fun LoginScreen(
                         event.user.username,
                         event.user.name,
                         event.user.role,
+                        event.user.instansi,
                         event.token
                     )
                 }

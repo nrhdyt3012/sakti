@@ -48,6 +48,7 @@ fun TeknisiScreen(
     userEmail: String,
     userName: String,
     userRole: String,
+    userInstansi: String,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -135,6 +136,7 @@ fun TeknisiScreen(
                 userEmail = userEmail,
                 userName = userName,
                 userRole = userRole,
+                userInstansi = userInstansi,
                 onBackClick = { showProfile = false }
             )
         }

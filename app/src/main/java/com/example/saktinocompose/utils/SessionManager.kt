@@ -17,6 +17,8 @@ class SessionManager(private val context: Context) {
         private val EMAIL_KEY = stringPreferencesKey("user_email")
         private val NAME_KEY = stringPreferencesKey("user_name")
         private val ROLE_KEY = stringPreferencesKey("user_role")
+        private val INSTANSI_KEY = stringPreferencesKey("user_instansi")
+
         private val IS_LOGGED_IN_KEY = booleanPreferencesKey("is_logged_in")
         private val AUTH_TOKEN_KEY = stringPreferencesKey("auth_token")
         private val TOKEN_EXPIRY_KEY = longPreferencesKey("token_expiry")
@@ -28,6 +30,7 @@ class SessionManager(private val context: Context) {
         email: String,
         name: String,
         role: String,
+        instansi: String,
         authToken: String? = null,
         refreshToken: String? = null,
         tokenExpiry: Long? = null
@@ -37,6 +40,7 @@ class SessionManager(private val context: Context) {
             preferences[EMAIL_KEY] = email
             preferences[NAME_KEY] = name
             preferences[ROLE_KEY] = role
+            preferences[INSTANSI_KEY] = instansi
             preferences[IS_LOGGED_IN_KEY] = true
             authToken?.let { preferences[AUTH_TOKEN_KEY] = it }
             refreshToken?.let { preferences[REFRESH_TOKEN_KEY] = it }
@@ -84,6 +88,7 @@ class SessionManager(private val context: Context) {
         val email: String?,
         val name: String?,
         val role: String?,
+        val instansi: String?,
         val isLoggedIn: Boolean,
         val authToken: String? = null,
         val refreshToken: String? = null,
@@ -96,6 +101,7 @@ class SessionManager(private val context: Context) {
             email = preferences[EMAIL_KEY],
             name = preferences[NAME_KEY],
             role = preferences[ROLE_KEY],
+            instansi = preferences[INSTANSI_KEY],
             isLoggedIn = preferences[IS_LOGGED_IN_KEY] == true,
             authToken = preferences[AUTH_TOKEN_KEY],
             refreshToken = preferences[REFRESH_TOKEN_KEY],

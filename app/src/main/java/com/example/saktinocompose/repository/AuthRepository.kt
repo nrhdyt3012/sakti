@@ -34,7 +34,8 @@ class AuthRepository() {
                         username = userData.username,
                         name = userData.name,
                         passwordHash = "",
-                        role = userData.role
+                        role = userData.role,
+                        instansi = userData.instansi
                     )
 
                     return@withContext Result.Success(user)
@@ -75,7 +76,8 @@ class AuthRepository() {
                         username = u.username,
                         name = u.username,
                         passwordHash = "",
-                        role = u.role
+                        role = u.role,
+                        instansi = u.instansi
                     )
                     return@withContext Result.Success(user)
                 }

@@ -50,7 +50,8 @@ class LoginActivity: ComponentActivity() {
                     userId = userSession.userId.toString(),
                     email = userSession.email!!,
                     name = userSession.name!!,
-                    role = userSession.role!!
+                    role = userSession.role!!,
+                    instansi = userSession.instansi!!
                 )
             } else {
                 if (userSession.isLoggedIn && !isTokenValid) {
@@ -102,7 +103,7 @@ class LoginActivity: ComponentActivity() {
     private fun showLoginScreen() {
         setContent {
             LoginScreen(
-                onLoginSuccess = { userId, email, name, role, token ->
+                onLoginSuccess = { userId, email, name, role,instansi, token ->
                     lifecycleScope.launch {
                         try {
                             // ✅ PERBAIKAN: Simpan ke SessionManager DULU
@@ -113,6 +114,7 @@ class LoginActivity: ComponentActivity() {
                                     email = email,
                                     name = name,
                                     role = role.uppercase().trim(),
+                                    instansi = instansi,
                                     authToken = it
                                 )
                                 Log.d("LoginActivity", "✅ Step 1: Session saved with token")
@@ -129,7 +131,7 @@ class LoginActivity: ComponentActivity() {
                             }
 
                             Log.d("LoginActivity", "✅ Step 3: Navigating to home")
-                            navigateToHome(userId, email, name, role.uppercase().trim())
+                            navigateToHome(userId, email, name, instansi,role.uppercase().trim())
 
                         } catch (e: Exception) {
                             Log.e("LoginActivity", "❌ Login error", e)
@@ -147,7 +149,7 @@ class LoginActivity: ComponentActivity() {
         }
     }
 
-    private fun navigateToHome(userId: String, email: String, name: String, role: String) {
+    private fun navigateToHome(userId: String, email: String, name: String, role: String, instansi:String) {
         val normalizedRole = role.uppercase().trim()
 
         if (normalizedRole != "TEKNISI") {
@@ -171,6 +173,7 @@ class LoginActivity: ComponentActivity() {
             putExtra("USER_EMAIL", email)
             putExtra("USER_NAME", name)
             putExtra("USER_ROLE", normalizedRole)
+            putExtra("USER_INSTANSI",instansi)
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
 
