@@ -167,15 +167,13 @@ fun TeknisiFilteredRequestCard(
         else -> Color.Gray
     }
 
-    val dateFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
-    // ✅ FIXED: Parse ISO 8601 string properly
     val createdDate = try {
         val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
         val date = isoFormat.parse(changeRequest.createdAt)
         val displayFormat = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
         displayFormat.format(date ?: Date())
     } catch (e: Exception) {
-        changeRequest.createdAt // Fallback to raw string
+        changeRequest.createdAt
     }
 
     Card(
@@ -187,18 +185,22 @@ fun TeknisiFilteredRequestCard(
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            // Header: Ticket ID dan Status
+            // Header: Title dan Status
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 Text(
-                    text = changeRequest.ticketId,
+                    text = changeRequest.title,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Color.Black,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2
                 )
+
+                Spacer(modifier = Modifier.width(8.dp))
 
                 Card(
                     colors = CardDefaults.cardColors(containerColor = statusColor),
@@ -223,6 +225,27 @@ fun TeknisiFilteredRequestCard(
             )
 
             Spacer(modifier = Modifier.height(12.dp))
+
+            // Ticket ID
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Ticket ID:",
+                    fontSize = 13.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = changeRequest.ticketId,
+                    fontSize = 13.sp,
+                    color = Color.Black,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Info Detail
             Row(
