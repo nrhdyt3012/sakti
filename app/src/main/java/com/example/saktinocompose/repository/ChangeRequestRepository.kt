@@ -10,10 +10,6 @@ import kotlinx.coroutines.withContext
 
 class ChangeRequestRepository {
 
-    /**
-     * ✅ FIXED: Fetch all data by default (no filters)
-     * Parameters are optional for future use
-     */
     suspend fun fetchFromApi(
         page: Int? = null,
         limit: Int? = null,
@@ -44,7 +40,6 @@ class ChangeRequestRepository {
                     )
                 }
 
-                // ✅ Call API - parameters are optional (null = fetch all)
                 val response = RetrofitClient.changeRequestService.getChangeRequests(
                     page = page,
                     limit = limit,
@@ -82,23 +77,14 @@ class ChangeRequestRepository {
         }
     }
 
-    /**
-     * ✅ Main method: Fetch all data (default - no filters)
-     */
     suspend fun fetchAll(): Result<List<ChangeRequest>> {
-        return fetchFromApi() // ✅ No parameters = fetch all
+        return fetchFromApi()
     }
 
-    /**
-     * ✅ Optional: Fetch by status (for future use if needed)
-     */
     suspend fun fetchByStatus(status: String): Result<List<ChangeRequest>> {
         return fetchFromApi(status = status)
     }
 
-    /**
-     * ✅ Optional: Fetch by type (for future use if needed)
-     */
     suspend fun fetchByType(type: String): Result<List<ChangeRequest>> {
         return fetchFromApi(type = type)
     }
@@ -123,14 +109,20 @@ class ChangeRequestRepository {
     }
 
     /**
-     * ✅ IMPROVED: Mapping dari API response ke local entity
+     * ✅ UPDATED: Mapping dengan Ticket ID yang benar
      */
     private fun apiDataToChangeRequest(apiData: ChangeRequestApiData): ChangeRequest {
-        Log.d("ChangeRequestRepo", "Mapping CR: ${apiData.crId}")
+        Log.d("ChangeRequestRepo", """
+            Mapping CR:
+            - CR ID: ${apiData.crId}
+            - Ticket ID: ${apiData.tiketId}
+            - Status: ${apiData.status}
+        """.trimIndent())
 
         return ChangeRequest(
             id = apiData.crId,
-            ticketId = apiData.ticketId ?: apiData.crId,
+            // ✅ PERBAIKAN: Gunakan tiketId dari API, bukan crId
+            ticketId = apiData.tiketId ?: apiData.crId,
             type = apiData.type ?: apiData.changeType ?: "Standard",
             title = apiData.title ?: "No Title",
             description = apiData.description ?: "",
@@ -153,7 +145,8 @@ class ChangeRequestRepository {
             postResidualScore = apiData.postResidualScore,
             postRiskLevel = apiData.postRiskLevel,
             implementationResult = apiData.implementationResult,
-            status = mapApiStatusToLocalStatus(apiData.status),
+            // ✅ PERBAIKAN: Map status dengan benar termasuk "NEED APPROVAL"
+            status = mapApiStatusToLocalStatus(apiData.status, apiData.approvalStatus),
             approvalStatus = apiData.approvalStatus,
             createdAt = apiData.createdAt,
             updatedAt = apiData.updatedAt,
@@ -182,7 +175,15 @@ class ChangeRequestRepository {
         return calculatedExposure.coerceIn(1, 4)
     }
 
-    private fun mapApiStatusToLocalStatus(apiStatus: String): String {
+    /**
+     * ✅ UPDATED: Tambah mapping untuk "NEED APPROVAL"
+     */
+    private fun mapApiStatusToLocalStatus(apiStatus: String, approvalStatus: String?): String {
+        // ✅ PERBAIKAN: Check approval_status dulu
+        if (approvalStatus == "NEED APPROVAL") {
+            return "Need Approval"
+        }
+
         return when (apiStatus.uppercase()) {
             "SUBMITTED", "PENDING" -> "Submitted"
             "REVIEWED", "IN_REVIEW" -> "Reviewed"
@@ -193,6 +194,7 @@ class ChangeRequestRepository {
             "COMPLETED", "DONE" -> "Completed"
             "FAILED", "REJECTED" -> "Failed"
             "CLOSED" -> "Closed"
+            "EMERGENCY" -> "Emergency"  // ✅ TAMBAH: Handle emergency status
             else -> apiStatus
         }
     }

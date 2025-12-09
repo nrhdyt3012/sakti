@@ -157,6 +157,7 @@ fun TeknisiFilteredRequestCard(
 ) {
     val statusColor = when (changeRequest.status) {
         "Submitted" -> Color(0xFF9E9E9E)
+        "Need Approval" -> Color(0xFFFFEB3B)  // ✅ TAMBAH
         "Reviewed" -> Color(0xFF2196F3)
         "Approved" -> Color(0xFF4CAF50)
         "Scheduled" -> Color(0xFFFF9800)
@@ -226,7 +227,7 @@ fun TeknisiFilteredRequestCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Ticket ID
+            // ✅ PERBAIKAN: Ticket ID
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -247,7 +248,29 @@ fun TeknisiFilteredRequestCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Info Detail
+            // ✅ TAMBAH: Change ID
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Change ID:",
+                    fontSize = 13.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = changeRequest.id,
+                    fontSize = 11.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Normal,
+                    maxLines = 1
+                )
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Type
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -268,6 +291,7 @@ fun TeknisiFilteredRequestCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Asset
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -288,6 +312,7 @@ fun TeknisiFilteredRequestCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // Created on
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween

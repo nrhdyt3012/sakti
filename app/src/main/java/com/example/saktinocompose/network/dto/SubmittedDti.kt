@@ -134,5 +134,5 @@ sealed class ValidationResult {
     data class Invalid(val errors: List<String>) : ValidationResult()
 
     fun isValid() = this is Valid
-    fun getErrors() = (this as? Invalid)?.errors ?: emptyList()
+    fun getErrorMessages() = (this as? Invalid)?.errors ?: emptyList()
 }

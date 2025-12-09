@@ -14,6 +14,11 @@ data class ChangeRequestListResponse(
 data class ChangeRequestApiData(
     @SerializedName("cr_id")
     val crId: String,
+
+    // ✅ TAMBAH: Ticket ID dari API
+    @SerializedName("tiket_id")
+    val tiketId: String?,
+
     @SerializedName("rollback_plan")
     val rollbackPlan: String?,
     @SerializedName("type")
@@ -34,8 +39,6 @@ data class ChangeRequestApiData(
     val createdAt: String,
     @SerializedName("updated_at")
     val updatedAt: String,
-    @SerializedName("ticket_id")
-    val ticketId: String?,
     @SerializedName("asset_id")
     val assetId: String?,
     @SerializedName("score_impact")
@@ -96,5 +99,3 @@ data class ChangeRequestDetailResponse(
     @SerializedName("data")
     val data: ChangeRequestApiData?
 )
-
-// Generic Response

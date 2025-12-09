@@ -139,6 +139,7 @@ fun DetailFormTeknisiPage(
     val isScheduled = changeRequest.status == "Scheduled"
     val isImplementing = changeRequest.status == "Implementing"
     val isCompleted = changeRequest.status == "Completed"
+    val isNeedApproval = changeRequest.status == "Need Approval"
 
     // ✅ OFFLINE DIALOG
     if (showOfflineDialog) {
@@ -483,11 +484,18 @@ fun DetailFormTeknisiPage(
                         color = Color.White.copy(alpha = 0.7f)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
+                    // ✅ PERBAIKAN: Gunakan ticketId, bukan id
                     Text(
                         text = changeRequest.ticketId,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Change ID: ${changeRequest.id}",
+                        fontSize = 11.sp,
+                        color = Color.White.copy(alpha = 0.6f)
                     )
                 }
             }
@@ -511,7 +519,6 @@ fun DetailFormTeknisiPage(
                     )
 
                     HorizontalDivider()
-                    DetailItem(label = "Change Id", value = changeRequest.idPerubahan)
                     DetailItem(label = "Type of Change", value = changeRequest.jenisPerubahan)
                     DetailItem(label = "Change Request Title", value = changeRequest.title)
                     DetailItem(label = "Description", value = changeRequest.description)
@@ -1024,6 +1031,52 @@ fun DetailFormTeknisiPage(
                     }
                 }
 
+                isNeedApproval -> {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(0xFFFFEB3B).copy(alpha = 0.1f)
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.HourglassEmpty,
+                                contentDescription = "Waiting",
+                                tint = Color(0xFFF57C00),
+                                modifier = Modifier.size(48.dp)
+                            )
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = "Waiting for Approval",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFF57C00)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "This change request is waiting for approval from management. You can only view the details.",
+                                    fontSize = 13.sp,
+                                    color = Color.Gray
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Approval will be done through the website.",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray,
+                                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // ✅ 1. SUBMITTED - Complete Details
                 isSubmitted -> {
                     Button(
@@ -1148,6 +1201,7 @@ fun DetailFormTeknisiPage(
                         }
                     }
                 }
+
 
                 // ✅ 4. IMPLEMENTING - Same as before
                 isImplementing -> {
