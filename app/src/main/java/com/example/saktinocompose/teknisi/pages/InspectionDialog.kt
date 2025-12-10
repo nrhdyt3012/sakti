@@ -1,5 +1,6 @@
 package com.example.saktinocompose.teknisi.pages
 
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.res.stringResource
 import com.example.saktinocompose.R
 import android.content.Context
@@ -31,6 +32,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.FileProvider
 import com.example.saktinocompose.data.model.ChangeRequest
+import com.example.saktinocompose.repository.InspectionRepository
+import com.example.saktinocompose.network.Result
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -39,7 +43,6 @@ import java.util.*
 enum class InspectionAction {
     APPROVE, REJECT, REVISE
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InspectionDialog(
@@ -60,6 +63,8 @@ fun InspectionDialog(
     ) -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val inspectionRepository = remember { InspectionRepository() }
 
     // Form states
     var jenisPerubahan by remember { mutableStateOf(changeRequest.jenisPerubahan) }
@@ -77,6 +82,11 @@ fun InspectionDialog(
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var showImagePickerDialog by remember { mutableStateOf(false) }
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+
+    // ✅ NEW: Loading & Error states
+    var isSubmitting by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     // Load existing photo if available
     LaunchedEffect(changeRequest.photoPath) {
@@ -576,27 +586,75 @@ fun InspectionDialog(
                             skorEksposur > 0 &&
                             photoUri != null
                         ) {
-                            val savedPhotoPath = photoUri?.let { uri ->
-                                if (uri.toString().startsWith("file://")) {
-                                    changeRequest.photoPath
-                                } else {
-                                    savePhotoToInternalStorage(context, uri)
+                            isSubmitting = true
+
+                            scope.launch {
+                                try {
+                                    // ✅ Parse estimasi ke Double
+                                    val biayaDouble = estimasiBiaya.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
+                                    val waktuDouble = estimasiWaktu.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
+
+                                    // ✅ Submit ke server
+                                    val result = inspectionRepository.submitInspection(
+                                        crId = changeRequest.id,
+                                        jenisPerubahan = jenisPerubahan,
+                                        alasan = changeRequest.description,
+                                        tujuan = changeRequest.title,
+                                        ciId = changeRequest.relasiConfigurationItem,
+                                        asetTerdampakId = changeRequest.asetTerdampak,
+                                        rencanaImplementasi = changeRequest.rencanaImplementasi,
+                                        usulanJadwal = changeRequest.usulanJadwal,
+                                        rencanaRollback = changeRequest.rollbackPlan,
+                                        estimasiBiaya = biayaDouble,
+                                        estimasiWaktu = waktuDouble,
+                                        skorDampak = skorDampak,
+                                        skorKemungkinan = skorKemungkinan,
+                                        skorExposure = skorEksposur
+                                    )
+
+                                    when (result) {
+                                        is Result.Success -> {
+                                            // ✅ Save photo locally
+                                            val savedPhotoPath = photoUri?.let { uri ->
+                                                if (uri.toString().startsWith("file://")) {
+                                                    changeRequest.photoPath
+                                                } else {
+                                                    savePhotoToInternalStorage(context, uri)
+                                                }
+                                            }
+
+                                            // ✅ Call onSave untuk update UI
+                                            onSave(
+                                                InspectionAction.APPROVE,
+                                                jenisPerubahan,
+                                                estimasiBiaya,
+                                                estimasiWaktu,
+                                                skorDampak,
+                                                skorKemungkinan,
+                                                skorEksposur,
+                                                skorRisiko,
+                                                levelRisiko,
+                                                savedPhotoPath,
+                                                ""
+                                            )
+                                        }
+                                        is Result.Error -> {
+                                            errorMessage = result.message ?: "Failed to submit inspection"
+                                            showErrorDialog = true
+                                            isSubmitting = false
+                                        }
+                                        else -> {
+                                            errorMessage = "Unknown error occurred"
+                                            showErrorDialog = true
+                                            isSubmitting = false
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    errorMessage = "Error: ${e.message}"
+                                    showErrorDialog = true
+                                    isSubmitting = false
                                 }
                             }
-
-                            onSave(
-                                InspectionAction.APPROVE,
-                                jenisPerubahan,
-                                estimasiBiaya,
-                                estimasiWaktu,
-                                skorDampak,
-                                skorKemungkinan,
-                                skorEksposur,
-                                skorRisiko,
-                                levelRisiko,
-                                savedPhotoPath,
-                                ""
-                            )
                         }
                     },
                     enabled = estimasiBiaya.isNotBlank() &&
@@ -604,75 +662,26 @@ fun InspectionDialog(
                             skorDampak > 0 &&
                             skorKemungkinan > 0 &&
                             skorEksposur > 0 &&
-                            photoUri != null,
+                            photoUri != null &&
+                            !isSubmitting,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFF4CAF50)
                     )
                 ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.approve))
-                }
-
-                // Tombol REVISI
-                OutlinedButton(
-                    onClick = {
-                        if (notes.isNotBlank()) {
-                            onSave(
-                                InspectionAction.REVISE,
-                                jenisPerubahan,
-                                estimasiBiaya,
-                                estimasiWaktu,
-                                skorDampak,
-                                skorKemungkinan,
-                                skorEksposur,
-                                skorRisiko,
-                                levelRisiko,
-                                null,
-                                notes
-                            )
-                        }
-                    },
-                    enabled = notes.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFFF9800)
-                    )
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.request_revision))
-                }
-
-                // Tombol REJECT
-                OutlinedButton(
-                    onClick = {
-                        if (notes.isNotBlank()) {
-                            onSave(
-                                InspectionAction.REJECT,
-                                jenisPerubahan,
-                                estimasiBiaya,
-                                estimasiWaktu,
-                                skorDampak,
-                                skorKemungkinan,
-                                skorEksposur,
-                                skorRisiko,
-                                levelRisiko,
-                                null,
-                                notes
-                            )
-                        }
-                    },
-                    enabled = notes.isNotBlank(),
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = Color(0xFFD32F2F)
-                    )
-                ) {
-                    Icon(Icons.Default.Cancel, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.reject))
+                    if (isSubmitting) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Submitting...")
+                    } else {
+                        Icon(Icons.Default.CheckCircle, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Submit")
+                    }
                 }
             }
         },

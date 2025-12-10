@@ -36,6 +36,10 @@ import java.util.*
 import com.example.saktinocompose.ui.components.RelatedCITable
 import com.example.saktinocompose.ui.components.AsetTerdampakDisplay
 import com.example.saktinocompose.utils.NetworkHelper
+import com.example.saktinocompose.network.dto.SubmittedReviewRequest
+import com.example.saktinocompose.network.RetrofitClient
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.rememberCoroutineScope
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,6 +85,8 @@ fun DetailFormTeknisiPage(
     }
 
     var showInspectionDialog by remember { mutableStateOf(false) }
+    // ✅ Coroutine scope untuk API calls
+    val coroutineScope = rememberCoroutineScope()
     var showSchedulingDialog by remember { mutableStateOf(false) }
     var showImplementationDialog by remember { mutableStateOf(false) }
     var showFailedDialog by remember { mutableStateOf(false) }
@@ -90,29 +96,61 @@ fun DetailFormTeknisiPage(
     var successMessage by remember { mutableStateOf("") }
     var showSubmittedDialog by remember { mutableStateOf(false) }
     var showImplementationPlanDialog by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     // ✅ TAMBAH DIALOG HANDLERS:
     if (showSubmittedDialog) {
-        SubmittedDetailDialog(
-            changeRequest = changeRequest,
-            onDismiss = { showSubmittedDialog = false },
-            onSave = { description, asetTerdampak, ciRelation, proposedSchedule ->
-                val updatedRequest = changeRequest.copy(
-                    description = description,
-                    asetTerdampak = asetTerdampak,
-                    relasiConfigurationItem = ciRelation,
-                    usulanJadwal = proposedSchedule,
-                    status = "Reviewed",
-                    updatedAt = System.currentTimeMillis().toString()
-                )
-                changeRequestViewModel.updateFullChangeRequest(updatedRequest)
-                showSubmittedDialog = false
-                successMessage = "Details saved! Status changed to 'Reviewed'"
-                showSuccessDialog = true
-            }
-        )
-    }
+        // ✅ TAMBAH DIALOG HANDLERS:
+        if (showSubmittedDialog) {
+            SubmittedDetailDialog(
+                changeRequest = changeRequest,
+                onDismiss = { showSubmittedDialog = false },
+                onSave = { crId, description, asetTerdampakId, ciId, usulanJadwal ->
+                    // ✅ UPDATED: Call API dengan endpoint baru
+                    coroutineScope.launch {
+                        try {
+                            val request = SubmittedReviewRequest(
+                                description = description,
+                                asetTerdampakId = asetTerdampakId,
+                                ciId = ciId,
+                                usulanJadwal = usulanJadwal
+                            )
 
+                            val response = RetrofitClient.changeRequestService.submitReview(
+                                crId = crId,
+                                request = request
+                            )
+
+                            if (response.isSuccessful && response.body()?.status == "success") {
+                                // ✅ Update local state
+                                val updatedRequest = changeRequest.copy(
+                                    description = description,
+                                    asetTerdampak = asetTerdampakId,
+                                    relasiConfigurationItem = ciId,
+                                    usulanJadwal = usulanJadwal,
+                                    status = "Reviewed",
+                                    updatedAt = System.currentTimeMillis().toString()
+                                )
+                                changeRequestViewModel.updateFullChangeRequest(updatedRequest)
+                                showSubmittedDialog = false
+                                successMessage = "Details saved! Status changed to 'Reviewed'"
+                                showSuccessDialog = true
+                            } else {
+                                showSubmittedDialog = false
+                                errorMessage = response.body()?.message ?: "Failed to save details"
+                                showErrorDialog = true
+                            }
+                        } catch (e: Exception) {
+                            showSubmittedDialog = false
+                            errorMessage = "Error: ${e.message}"
+                            showErrorDialog = true
+                        }
+                    }
+                }
+            )
+        }
+    }
     if (showImplementationPlanDialog) {
         ImplementationPlanDialog(
             changeRequest = changeRequest,
@@ -192,6 +230,7 @@ fun DetailFormTeknisiPage(
     }
 
     // ✅ INSPECTION DIALOG - APPROVE & REVISE ONLY
+    // ✅ INSPECTION DIALOG - APPROVE & REVISE ONLY
     if (showInspectionDialog) {
         InspectionDialog(
             changeRequest = changeRequest,
@@ -199,13 +238,14 @@ fun DetailFormTeknisiPage(
             onSave = { action, jenisPerubahan, estimasiBiaya, estimasiWaktu, skorDampak, skorKemungkinan, skorEksposur, skorRisiko, levelRisiko, photoPath, notes ->
                 when (action) {
                     InspectionAction.APPROVE -> {
+                        // ✅ PERBAIKAN: Status berubah ke "Need Approval" bukan "Reviewed"
                         val updatedRequest = changeRequest.copy(
                             jenisPerubahan = jenisPerubahan,
                             estimasiBiaya = estimasiBiaya,
                             estimasiWaktu = estimasiWaktu,
                             skorEksposur = skorEksposur,
                             photoPath = photoPath,
-                            status = "Reviewed",
+                            status = "Need Approval",  // ✅ CHANGED FROM "Reviewed"
                             updatedAt = System.currentTimeMillis().toString()
                         )
                         changeRequestViewModel.updateFullChangeRequest(updatedRequest)
@@ -221,7 +261,7 @@ fun DetailFormTeknisiPage(
                             levelRisiko = levelRisiko
                         )
                         showInspectionDialog = false
-                        successMessage = "Inspection successful! Status changed to 'Reviewed'"
+                        successMessage = "Inspection successful! Status changed to 'Need Approval'"
                         showSuccessDialog = true
                     }
 

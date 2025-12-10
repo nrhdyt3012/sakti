@@ -15,6 +15,13 @@ interface ChangeRequestApiService {
         @Query("type") type: String? = null
     ): Response<ChangeRequestListResponse>
 
+    // ✅ NEW: Submitted Review Endpoint
+    @PUT("change-requests/{cr_id}/review")
+    suspend fun submitReview(
+        @Path("cr_id") crId: String,
+        @Body request: SubmittedReviewRequest
+    ): Response<ApiResponse<Any>>
+
     @PUT("change-requests/{id}/inspection")
     suspend fun submitInspection(
         @Path("id") id: String,

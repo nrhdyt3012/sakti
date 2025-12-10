@@ -1,23 +1,24 @@
+// File: app/src/main/java/com/example/saktinocompose/network/dto/SubmittedReviewDto.kt
 package com.example.saktinocompose.network.dto
 
 import com.google.gson.annotations.SerializedName
 
 /**
  * Request untuk complete submitted details
- * PUT /change-requests/{cr_id}/submitted
+ * PUT /change-requests/{cr_id}/review
  */
-data class SubmittedDetailRequest(
+data class SubmittedReviewRequest(
     @SerializedName("description")
     val description: String,
 
-    @SerializedName("aset_terdampak")
-    val asetTerdampak: String,  // Format: "id:nama:type" atau "id:nama"
+    @SerializedName("aset_terdampak_id")
+    val asetTerdampakId: String,
 
-    @SerializedName("ci_relation")
-    val ciRelation: String,  // Format: "id1:nama1:type1,id2:nama2:type2"
+    @SerializedName("ci_id")
+    val ciId: String,
 
-    @SerializedName("proposed_schedule")
-    val proposedSchedule: String  // Format: "yyyy-MM-dd"
+    @SerializedName("usulan_jadwal")
+    val usulanJadwal: String  // Format: "yyyy-MM-dd"
 ) {
     companion object {
         /**
@@ -26,29 +27,23 @@ data class SubmittedDetailRequest(
         fun create(
             description: String,
             asetTerdampakId: String,
-            asetTerdampakNama: String,
-            ciRelationList: List<Triple<String, String, String>>,  // (id, nama, type)
-            proposedSchedule: String
-        ): SubmittedDetailRequest {
-            val asetTerdampak = "$asetTerdampakId:$asetTerdampakNama"
-            val ciRelation = ciRelationList.joinToString(",") { (id, nama, type) ->
-                "$id:$nama:$type"
-            }
-
-            return SubmittedDetailRequest(
+            ciId: String,
+            usulanJadwal: String
+        ): SubmittedReviewRequest {
+            return SubmittedReviewRequest(
                 description = description,
-                asetTerdampak = asetTerdampak,
-                ciRelation = ciRelation,
-                proposedSchedule = proposedSchedule
+                asetTerdampakId = asetTerdampakId,
+                ciId = ciId,
+                usulanJadwal = usulanJadwal
             )
         }
     }
 }
 
 /**
- * Response dari submitted endpoint
+ * Response dari submitted review endpoint
  */
-data class SubmittedDetailResponse(
+data class SubmittedReviewResponse(
     @SerializedName("status")
     val status: String,
 
@@ -56,24 +51,24 @@ data class SubmittedDetailResponse(
     val message: String,
 
     @SerializedName("data")
-    val data: SubmittedData?
+    val data: SubmittedReviewData?
 )
 
-data class SubmittedData(
+data class SubmittedReviewData(
     @SerializedName("cr_id")
     val crId: String,
 
     @SerializedName("description")
     val description: String?,
 
-    @SerializedName("aset_terdampak")
-    val asetTerdampak: String?,
+    @SerializedName("aset_terdampak_id")
+    val asetTerdampakId: String?,
 
-    @SerializedName("ci_relation")
-    val ciRelation: String?,
+    @SerializedName("ci_id")
+    val ciId: String?,
 
-    @SerializedName("proposed_schedule")
-    val proposedSchedule: String?,
+    @SerializedName("usulan_jadwal")
+    val usulanJadwal: String?,
 
     @SerializedName("status")
     val status: String?,
@@ -85,27 +80,25 @@ data class SubmittedData(
 /**
  * Helper untuk validasi
  */
-object SubmittedDetailValidator {
-    fun validate(request: SubmittedDetailRequest): ValidationResult {
+object SubmittedReviewValidator {
+    fun validate(request: SubmittedReviewRequest): ValidationResult {
         val errors = mutableListOf<String>()
 
         if (request.description.isBlank()) {
             errors.add("Description is required")
         }
 
-        if (request.asetTerdampak.isBlank()) {
-            errors.add("Affected asset is required")
-        } else if (!request.asetTerdampak.contains(":")) {
-            errors.add("Affected asset format invalid (should be 'id:name')")
+        if (request.asetTerdampakId.isBlank()) {
+            errors.add("Affected asset ID is required")
         }
 
-        if (request.ciRelation.isBlank()) {
-            errors.add("CI relation is required")
+        if (request.ciId.isBlank()) {
+            errors.add("CI ID is required")
         }
 
-        if (request.proposedSchedule.isBlank()) {
+        if (request.usulanJadwal.isBlank()) {
             errors.add("Proposed schedule is required")
-        } else if (!isValidDate(request.proposedSchedule)) {
+        } else if (!isValidDate(request.usulanJadwal)) {
             errors.add("Invalid date format (should be yyyy-MM-dd)")
         }
 

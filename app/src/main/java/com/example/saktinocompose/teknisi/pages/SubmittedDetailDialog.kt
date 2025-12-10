@@ -28,9 +28,9 @@ fun SubmittedDetailDialog(
     onDismiss: () -> Unit,
     onSave: (
         description: String,
-        asetTerdampak: String,
-        ciRelation: String,
-        proposedSchedule: String
+        asetTerdampakId: String,
+        ciId: String,
+        usulanJadwal: String
     ) -> Unit
 ) {
     val context = LocalContext.current
@@ -375,14 +375,13 @@ fun SubmittedDetailDialog(
                         proposedSchedule.isNotBlank()
                     ) {
                         val asetTerdampakFormatted = "$asetTerdampakId:$asetTerdampakNama"
-                        val ciRelationFormatted = selectedRelasiCI.joinToString(",") {
-                            "${it.id}:${it.nama}:${it.tipeRelasi}"
-                        }
+                        // ✅ FORMAT BARU
+                        val ciIds = selectedRelasiCI.joinToString(",") { it.id }
 
                         onSave(
                             description,
-                            asetTerdampakFormatted,
-                            ciRelationFormatted,
+                            asetTerdampakId,   // "APK001"
+                            ciIds,             // "APK002,APK003"
                             proposedSchedule
                         )
                     }

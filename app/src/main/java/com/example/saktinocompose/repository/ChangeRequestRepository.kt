@@ -108,6 +108,19 @@ class ChangeRequestRepository {
         }
     }
 
+    suspend fun fetchNonEmergencyChangeRequests(): Result<List<ChangeRequest>> {
+        return when (val result = fetchFromApi()) {
+            is Result.Success -> {
+                val filtered = result.data.filter {
+                    it.jenisPerubahan.uppercase() != "EMERGENCY"
+                }
+                Log.d("ChangeRequestRepo", "Filtered out Emergency. Total: ${filtered.size}")
+                Result.Success(filtered)
+            }
+            is Result.Error -> result
+            else -> result
+        }
+    }
     /**
      * ✅ UPDATED: Mapping dengan Ticket ID yang benar
      */

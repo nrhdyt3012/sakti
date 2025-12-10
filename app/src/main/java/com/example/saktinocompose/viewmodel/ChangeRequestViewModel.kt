@@ -64,11 +64,11 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
 
             Log.d("ChangeRequestVM", "🔄 Starting API fetch...")
 
-            when (val result = repository.fetchFromApi()) {
+            when (val result = repository.fetchNonEmergencyChangeRequests()) {
                 is Result.Success -> {
                     _changeRequests.value = result.data
                     _error.value = null
-                    Log.d("ChangeRequestVM", "✅ Fetched ${result.data.size} items")
+                    Log.d("ChangeRequestVM", "✅ Fetched ${result.data.size} non-emergency items")
                 }
                 is Result.Error -> {
                     val errorMsg = result.message ?: "Unknown error"

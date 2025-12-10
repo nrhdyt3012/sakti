@@ -339,6 +339,7 @@ fun BerandaPage(
                 "Submitted" to Color(0xFF9E9E9E),
                 "Reviewed" to Color(0xFF2196F3),
                 "Revision" to Color(0xFFFF9800),
+                "Need Approval" to Color(0xFFFFA726),
                 "Approved" to Color(0xFF4CAF50),
                 "Scheduled" to Color(0xFFFF9800),
                 "Implementing" to Color(0xFFFF5722),
