@@ -101,55 +101,52 @@ fun DetailFormTeknisiPage(
 
     // ✅ TAMBAH DIALOG HANDLERS:
     if (showSubmittedDialog) {
-        // ✅ TAMBAH DIALOG HANDLERS:
-        if (showSubmittedDialog) {
-            SubmittedDetailDialog(
-                changeRequest = changeRequest,
-                onDismiss = { showSubmittedDialog = false },
-                onSave = { crId, description, asetTerdampakId, ciId, usulanJadwal ->
-                    // ✅ UPDATED: Call API dengan endpoint baru
-                    coroutineScope.launch {
-                        try {
-                            val request = SubmittedReviewRequest(
+        SubmittedDetailDialog(
+            changeRequest = changeRequest,
+            onDismiss = { showSubmittedDialog = false },
+            onSave = { crId, description, asetTerdampakId, ciId, usulanJadwal ->
+                // ✅ FIXED: Call API dengan format yang benar
+                coroutineScope.launch {
+                    try {
+                        val request = SubmittedReviewRequest(
+                            description = description,
+                            asetTerdampakId = asetTerdampakId,
+                            ciId = ciId,
+                            usulanJadwal = usulanJadwal
+                        )
+
+                        val response = RetrofitClient.changeRequestService.submitReview(
+                            crId = crId,
+                            request = request
+                        )
+
+                        if (response.isSuccessful && response.body()?.status == "success") {
+                            // ✅ Update local state
+                            val updatedRequest = changeRequest.copy(
                                 description = description,
-                                asetTerdampakId = asetTerdampakId,
-                                ciId = ciId,
-                                usulanJadwal = usulanJadwal
+                                asetTerdampak = asetTerdampakId,
+                                relasiConfigurationItem = ciId,
+                                usulanJadwal = usulanJadwal,
+                                status = "Reviewed",
+                                updatedAt = System.currentTimeMillis().toString()
                             )
-
-                            val response = RetrofitClient.changeRequestService.submitReview(
-                                crId = crId,
-                                request = request
-                            )
-
-                            if (response.isSuccessful && response.body()?.status == "success") {
-                                // ✅ Update local state
-                                val updatedRequest = changeRequest.copy(
-                                    description = description,
-                                    asetTerdampak = asetTerdampakId,
-                                    relasiConfigurationItem = ciId,
-                                    usulanJadwal = usulanJadwal,
-                                    status = "Reviewed",
-                                    updatedAt = System.currentTimeMillis().toString()
-                                )
-                                changeRequestViewModel.updateFullChangeRequest(updatedRequest)
-                                showSubmittedDialog = false
-                                successMessage = "Details saved! Status changed to 'Reviewed'"
-                                showSuccessDialog = true
-                            } else {
-                                showSubmittedDialog = false
-                                errorMessage = response.body()?.message ?: "Failed to save details"
-                                showErrorDialog = true
-                            }
-                        } catch (e: Exception) {
+                            changeRequestViewModel.updateFullChangeRequest(updatedRequest)
                             showSubmittedDialog = false
-                            errorMessage = "Error: ${e.message}"
+                            successMessage = "Details saved! Status changed to 'Reviewed'"
+                            showSuccessDialog = true
+                        } else {
+                            showSubmittedDialog = false
+                            errorMessage = response.body()?.message ?: "Failed to save details"
                             showErrorDialog = true
                         }
+                    } catch (e: Exception) {
+                        showSubmittedDialog = false
+                        errorMessage = "Error: ${e.message}"
+                        showErrorDialog = true
                     }
                 }
-            )
-        }
+            }
+        )
     }
     if (showImplementationPlanDialog) {
         ImplementationPlanDialog(

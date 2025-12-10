@@ -27,6 +27,7 @@ fun SubmittedDetailDialog(
     changeRequest: ChangeRequest,
     onDismiss: () -> Unit,
     onSave: (
+        crId: String,
         description: String,
         asetTerdampakId: String,
         ciId: String,
@@ -124,7 +125,7 @@ fun SubmittedDetailDialog(
                 ) {
                     Column(modifier = Modifier.padding(12.dp)) {
                         Text(
-                            text = "Ticket: ${changeRequest.ticketId}",
+                            text = "CR ID: ${changeRequest.id}",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFF2196F3)
@@ -379,6 +380,7 @@ fun SubmittedDetailDialog(
                         val ciIds = selectedRelasiCI.joinToString(",") { it.id }
 
                         onSave(
+                            changeRequest.id,
                             description,
                             asetTerdampakId,   // "APK001"
                             ciIds,             // "APK002,APK003"
