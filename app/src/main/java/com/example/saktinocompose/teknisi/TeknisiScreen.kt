@@ -1,45 +1,30 @@
+// File: app/src/main/java/com/example/saktinocompose/teknisi/TeknisiScreen.kt
+// ✅ UPDATED VERSION with Notification Navigation
+
 package com.example.saktinocompose.teknisi
 
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.R
 import com.example.saktinocompose.data.model.ChangeRequest
 import com.example.saktinocompose.menu.NavItem
 import com.example.saktinocompose.teknisi.pages.*
 import com.example.saktinocompose.utils.NetworkHelper
+import com.example.saktinocompose.viewmodel.NotificationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,15 +37,18 @@ fun TeknisiScreen(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val notificationViewModel: NotificationViewModel = viewModel()
+    val unreadCount by notificationViewModel.unreadCount.collectAsState()
 
     val navItemList = listOf(
         NavItem("Beranda", R.drawable.home),
-        NavItem("Emergency", R.drawable.add_emergency), // 🔥 NEW MENU
+        NavItem("Emergency", R.drawable.add_emergency),
         NavItem("Category", R.drawable.database)
     )
 
     var selectedIndex by remember { mutableIntStateOf(0) }
     var showProfile by remember { mutableStateOf(false) }
+    var showNotification by remember { mutableStateOf(false) } // ✅ NEW
     var showDetailForm by remember { mutableStateOf(false) }
     var showCategoryList by remember { mutableStateOf(false) }
     var showFilteredList by remember { mutableStateOf(false) }
@@ -79,10 +67,12 @@ fun TeknisiScreen(
             ).show()
         }
     }
-    // Back Handler
+
+    // ✅ UPDATED: Back Handler with Notification
     BackHandler {
         when {
             showProfile -> showProfile = false
+            showNotification -> showNotification = false // ✅ NEW
             showFilteredList -> {
                 showFilteredList = false
                 filterType = null
@@ -129,6 +119,7 @@ fun TeknisiScreen(
         )
     }
 
+    // ✅ ROUTING LOGIC
     when {
         showProfile -> {
             ProfilePage(
@@ -138,6 +129,18 @@ fun TeknisiScreen(
                 userRole = userRole,
                 userInstansi = userInstansi,
                 onBackClick = { showProfile = false }
+            )
+        }
+        // ✅ NEW: Notification Page
+        showNotification -> {
+            NotificationPage(
+                onBackClick = { showNotification = false },
+                onNotificationClick = { crId ->
+                    // Navigate to detail form when notification clicked
+                    // Find the CR by ID and show detail
+                    showNotification = false
+                    // TODO: Fetch CR by crId and show detail
+                }
             )
         }
         showFilteredList && filterType != null -> {
@@ -207,13 +210,29 @@ fun TeknisiScreen(
                             )
                         },
                         actions = {
-                            IconButton(onClick = {
-                                // Navigate ke NotificationPage
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Notifications,
-                                    contentDescription = "Notifications"
-                                )
+                            // ✅ UPDATED: Notification Button with Badge
+                            BadgedBox(
+                                badge = {
+                                    if (unreadCount > 0) {
+                                        Badge(
+                                            containerColor = Color(0xFFD32F2F)
+                                        ) {
+                                            Text(
+                                                text = if (unreadCount > 99) "99+" else unreadCount.toString(),
+                                                color = Color.White
+                                            )
+                                        }
+                                    }
+                                }
+                            ) {
+                                IconButton(onClick = {
+                                    showNotification = true
+                                }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Notifications,
+                                        contentDescription = "Notifications"
+                                    )
+                                }
                             }
 
                             IconButton(onClick = {
@@ -306,7 +325,7 @@ fun ContentScreen(
             onDetailClick = onDetailClick,
             onFilterClick = onFilterClick
         )
-        1 -> EmergencyFormPage( // 🔥 NEW PAGE
+        1 -> EmergencyFormPage(
             userId = userId,
             userName = userName
         )

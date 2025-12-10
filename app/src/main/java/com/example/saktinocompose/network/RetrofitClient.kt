@@ -17,6 +17,8 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import com.example.saktinocompose.network.api.NotificationApiService
+
 
 object RetrofitClient {
     private const val BASE_URL = "https://sakti-backend-674826252080.asia-southeast2.run.app/"
@@ -170,6 +172,9 @@ object RetrofitClient {
 
     val siladanService: SiladanApiService by lazy {
         retrofit.create(SiladanApiService::class.java)
+    }
+    val notificationService: NotificationApiService by lazy {
+        retrofit.create(NotificationApiService::class.java)
     }
 
     /**

@@ -348,11 +348,9 @@
     <!-- Add these strings to your existing strings.xml -->
 
     <!-- Notifications -->
-    <string name="notifications">Notifications</string>
     <string name="mark_all_as_read">Mark All as Read</string>
     <string name="mark_all_as_read_confirm">This will mark all %1$d unread notifications as read.</string>
     <string name="unread_notifications">Unread Notifications</string>
-    <string name="no_notifications">No Notifications</string>
     <string name="notification_marked_as_read">Notification marked as read</string>
     <string name="all_notifications_marked_as_read">All notifications marked as read</string>
     <string name="failed_to_mark_as_read">Failed to mark as read</string>
