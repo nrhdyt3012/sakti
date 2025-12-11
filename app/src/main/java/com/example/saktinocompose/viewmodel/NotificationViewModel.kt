@@ -43,10 +43,21 @@ class NotificationViewModel(application: Application) : AndroidViewModel(applica
 
             when (val result = repository.fetchNotifications(page, limit)) {
                 is Result.Success -> {
-                    _notifications.value = result.data
-                    _unreadCount.value = result.data.count { !it.isRead }
+                    // ✅ FILTER: Hanya ambil notifikasi dengan channel "TEKNISI"
+                    val teknisiNotifications = result.data.filter { notification ->
+                        notification.channel.equals("TEKNISI", ignoreCase = true)
+                    }
+
+                    _notifications.value = teknisiNotifications
+                    _unreadCount.value = teknisiNotifications.count { !it.isRead }
                     _error.value = null
-                    Log.d("NotificationVM", "✅ Loaded ${result.data.size} notifications")
+
+                    Log.d("NotificationVM", """
+                    ✅ Loaded notifications:
+                    - Total from API: ${result.data.size}
+                    - TEKNISI channel only: ${teknisiNotifications.size}
+                    - Unread: ${_unreadCount.value}
+                """.trimIndent())
                 }
                 is Result.Error -> {
                     val errorMsg = result.message ?: "Failed to load notifications"
@@ -61,6 +72,7 @@ class NotificationViewModel(application: Application) : AndroidViewModel(applica
             _isLoading.value = false
         }
     }
+
 
     /**
      * Refresh notifications

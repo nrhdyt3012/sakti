@@ -39,12 +39,19 @@ class NotificationRepository {
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val apiNotifications = response.body()?.data ?: emptyList()
-                    val notifications = apiNotifications.map {
-                        NotificationItem.fromApiData(it)
-                    }
 
-                    Log.d("NotificationRepo", "✅ Fetched ${notifications.size} notifications")
-                    Result.Success(notifications)
+                    // ✅ FILTER: Hanya ambil channel TEKNISI
+                    val teknisiNotifications = apiNotifications
+                        .filter { it.channel.equals("TEKNISI", ignoreCase = true) }
+                        .map { NotificationItem.fromApiData(it) }
+
+                    Log.d("NotificationRepo", """
+                    ✅ Fetched notifications:
+                    - Total: ${apiNotifications.size}
+                    - TEKNISI only: ${teknisiNotifications.size}
+                """.trimIndent())
+
+                    Result.Success(teknisiNotifications)
                 } else {
                     val errorBody = response.errorBody()?.string()
                     val errorMessage = response.body()?.message ?: errorBody ?: "Failed to fetch notifications"
@@ -66,6 +73,7 @@ class NotificationRepository {
             }
         }
     }
+
 
     /**
      * Mark notification as read
