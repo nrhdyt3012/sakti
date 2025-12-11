@@ -179,6 +179,9 @@ object RetrofitClient {
     val cmdbService: CmdbApiService by lazy {
         retrofit.create(CmdbApiService::class.java)
     }
+    val emergencyService: EmergencyApiService by lazy {
+        retrofit.create(EmergencyApiService::class.java)
+    }
 
     /**
      * ✅ FIXED: Synchronized token update dengan SessionManager
