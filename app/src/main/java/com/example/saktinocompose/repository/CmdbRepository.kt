@@ -48,10 +48,21 @@ class CmdbRepository {
                 Log.d("CmdbRepository", "Response code: ${response.code()}")
 
                 if (response.isSuccessful && response.body()?.success == true) {
-                    val assets = response.body()?.data ?: emptyList()
-                    Log.d("CmdbRepository", "✅ Fetched ${assets.size} assets")
-                    Result.Success(assets)
-                } else {
+                    val allAssets = response.body()?.data ?: emptyList()
+
+                    // ✅ FILTER: Hanya ambil asset yang valid (tidak null)
+                    val validAssets = allAssets.filter { asset ->
+                        asset.isValid()
+                    }
+
+                    val invalidCount = allAssets.size - validAssets.size
+                    if (invalidCount > 0) {
+                        Log.w("CmdbRepository", "⚠️ Filtered out $invalidCount assets with null kode_bmd/nama_aset/sub_kategori")
+                    }
+
+                    Log.d("CmdbRepository", "✅ Fetched ${validAssets.size} valid assets from ${allAssets.size} total")
+                    Result.Success(validAssets)
+                }else {
                     val errorBody = response.errorBody()?.string()
                     val errorMessage = response.body()?.message ?: errorBody ?: "Failed to fetch assets"
                     Log.e("CmdbRepository", "API Error: $errorMessage")
@@ -97,9 +108,13 @@ class CmdbRepository {
                 )
 
                 if (response.isSuccessful && response.body()?.success == true) {
-                    val assets = response.body()?.data ?: emptyList()
-                    Log.d("CmdbRepository", "✅ Found ${assets.size} assets for query: $query")
-                    Result.Success(assets)
+                    val allAssets = response.body()?.data ?: emptyList()
+
+                    // ✅ FILTER: Hanya ambil asset yang valid
+                    val validAssets = allAssets.filter { it.isValid() }
+
+                    Log.d("CmdbRepository", "✅ Found ${validAssets.size} valid assets for query: $query")
+                    Result.Success(validAssets)
                 } else {
                     val errorMessage = response.body()?.message ?: "Search failed"
                     Result.Error(Exception("Search failed"), errorMessage)

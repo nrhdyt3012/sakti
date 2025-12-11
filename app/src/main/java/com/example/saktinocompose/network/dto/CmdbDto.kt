@@ -24,48 +24,48 @@ data class CmdbAssetData(
     @SerializedName("kode_bmd")
     val kodeBmd: String?,  // ✅ NULLABLE
 
-    @SerializedName("nama_asset")
-    val namaAsset: String,
+    @SerializedName("nama_aset")
+    val namaAsset: String,  // ✅ NON-NULL (required)
 
     @SerializedName("merk_type")
-    val merkType: String?,
+    val merkType: String?,  // ✅ NULLABLE
 
     @SerializedName("kategori")
-    val kategori: String?,
+    val kategori: String?,  // ✅ NULLABLE
 
     @SerializedName("sub_kategori")
-    val subKategori: String?,
+    val subKategori: String?,  // ✅ NULLABLE
 
     @SerializedName("kondisi")
-    val kondisi: String?,
+    val kondisi: String?,  // ✅ NULLABLE
 
     @SerializedName("lokasi")
-    val lokasi: String?,
+    val lokasi: String?,  // ✅ NULLABLE
 
     @SerializedName("penanggung_jawab")
-    val penanggungJawab: String?,
+    val penanggungJawab: String?,  // ✅ NULLABLE
 
     @SerializedName("tahun_perolehan")
-    val tahunPerolehan: String?,
+    val tahunPerolehan: String?,  // ✅ NULLABLE
 
     @SerializedName("nilai_perolehan")
-    val nilaiPerolehan: Double?,
+    val nilaiPerolehan: Double?,  // ✅ NULLABLE
 
     @SerializedName("status")
-    val status: String?,
+    val status: String?,  // ✅ NULLABLE
 
     @SerializedName("created_at")
-    val createdAt: String?,
+    val createdAt: String?,  // ✅ NULLABLE
 
     @SerializedName("updated_at")
-    val updatedAt: String?
+    val updatedAt: String?  // ✅ NULLABLE
 ) {
     /**
      * Convert ke AsetData untuk compatibility dengan existing code
      */
     fun toAsetData(tipeRelasi: String = ""): com.example.saktinocompose.data.model.AsetData {
         return com.example.saktinocompose.data.model.AsetData(
-            id = kodeBmd ?: "N/A",  // ✅ HANDLE NULL
+            id = kodeBmd ?: "UNKNOWN",  // ✅ Gunakan default jika null
             nama = namaAsset,
             tipeRelasi = tipeRelasi
         )
@@ -74,8 +74,19 @@ data class CmdbAssetData(
     /**
      * Check if asset is valid (has required fields)
      */
+    // ✅ CORRECT - Safe null check
+    // ✅ BENAR - Explicit null check dulu
     fun isValid(): Boolean {
-        return !kodeBmd.isNullOrBlank() && namaAsset.isNotBlank()
+        // Check kodeBmd
+        if (kodeBmd == null || kodeBmd.isBlank()) return false
+
+        // Check namaAsset
+        if (namaAsset.isBlank()) return false
+
+        // Check subKategori - MUST check null first!
+        if (subKategori == null || subKategori.isBlank()) return false
+
+        return true
     }
 }
 
@@ -94,7 +105,7 @@ object CmdbAssetHelper {
 
     fun formatAssetDetail(asset: CmdbAssetData): String {
         return buildString {
-            append("${asset.kodeBmd} - ${asset.namaAsset}")
+            append("${asset.kodeBmd ?: "N/A"} - ${asset.namaAsset}")
             asset.kategori?.let {
                 if (it.isNotBlank()) append(" | $it")
             }
@@ -106,6 +117,7 @@ object CmdbAssetHelper {
 
     /**
      * Filter assets by search query
+     * ✅ FIXED: Safe null handling
      */
     fun filterAssets(
         assets: List<CmdbAssetData>,
@@ -114,16 +126,18 @@ object CmdbAssetHelper {
         if (query.isBlank()) return assets
 
         val lowerQuery = query.lowercase()
-        return assets.filter {
-            it.kodeBmd?.lowercase()!!.contains(lowerQuery) ||
-                    it.namaAsset.lowercase().contains(lowerQuery) ||
-                    it.merkType?.lowercase()?.contains(lowerQuery) == true ||
-                    it.kategori?.lowercase()?.contains(lowerQuery) == true
+        return assets.filter { asset ->
+            asset.kodeBmd?.lowercase()?.contains(lowerQuery) == true ||
+                    asset.namaAsset.lowercase().contains(lowerQuery) ||
+                    asset.merkType?.lowercase()?.contains(lowerQuery) == true ||
+                    asset.kategori?.lowercase()?.contains(lowerQuery) == true ||
+                    asset.subKategori?.lowercase()?.contains(lowerQuery) == true
         }
     }
 
     /**
      * Group assets by category
+     * ✅ FIXED: Safe null handling
      */
     fun groupByCategory(assets: List<CmdbAssetData>): Map<String, List<CmdbAssetData>> {
         return assets.groupBy { it.kategori ?: "Tidak ada kategori" }
