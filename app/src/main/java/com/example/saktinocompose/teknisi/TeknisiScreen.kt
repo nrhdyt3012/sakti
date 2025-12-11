@@ -27,6 +27,11 @@ import com.example.saktinocompose.utils.NetworkHelper
 import com.example.saktinocompose.viewmodel.NotificationViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
+// ✅ UPDATED: TeknisiScreen.kt with CMDB Sub-Kategori routing
+// Add this to your existing TeknisiScreen.kt
+
+// Replace the routing section in TeknisiScreen.kt:
+
 @Composable
 fun TeknisiScreen(
     userId: String,
@@ -48,8 +53,13 @@ fun TeknisiScreen(
 
     var selectedIndex by remember { mutableIntStateOf(0) }
     var showProfile by remember { mutableStateOf(false) }
-    var showNotification by remember { mutableStateOf(false) } // ✅ NEW
+    var showNotification by remember { mutableStateOf(false) }
     var showDetailForm by remember { mutableStateOf(false) }
+
+    // ✅ UPDATED: Variables for CMDB sub-kategori navigation
+    var showCMDBSubKategoriList by remember { mutableStateOf(false) }
+    var selectedSubKategori by remember { mutableStateOf<String?>(null) }
+
     var showCategoryList by remember { mutableStateOf(false) }
     var showFilteredList by remember { mutableStateOf(false) }
     var selectedChangeRequest by remember { mutableStateOf<ChangeRequest?>(null) }
@@ -68,24 +78,31 @@ fun TeknisiScreen(
         }
     }
 
-    // ✅ UPDATED: Back Handler with Notification
+    // ✅ UPDATED: Back Handler with CMDB Sub-Kategori
     BackHandler {
         when {
             showProfile -> showProfile = false
-            showNotification -> showNotification = false // ✅ NEW
+            showNotification -> showNotification = false
             showFilteredList -> {
                 showFilteredList = false
                 filterType = null
             }
             showDetailForm -> {
                 showDetailForm = false
-                if (selectedCategory != null) {
+                if (selectedSubKategori != null) {
+                    showCMDBSubKategoriList = true
+                } else if (selectedCategory != null) {
                     showCategoryList = true
                 } else if (filterType != null) {
                     showFilteredList = true
                 } else {
                     selectedChangeRequest = null
                 }
+            }
+            // ✅ NEW: Handle CMDB sub-kategori back
+            showCMDBSubKategoriList -> {
+                showCMDBSubKategoriList = false
+                selectedSubKategori = null
             }
             showCategoryList -> {
                 showCategoryList = false
@@ -96,7 +113,7 @@ fun TeknisiScreen(
         }
     }
 
-    // Exit Dialog
+    // Exit Dialog (keep existing)
     if (showExitDialog) {
         AlertDialog(
             onDismissRequest = { showExitDialog = false },
@@ -119,7 +136,7 @@ fun TeknisiScreen(
         )
     }
 
-    // ✅ ROUTING LOGIC
+    // ✅ UPDATED ROUTING LOGIC
     when {
         showProfile -> {
             ProfilePage(
@@ -131,13 +148,10 @@ fun TeknisiScreen(
                 onBackClick = { showProfile = false }
             )
         }
-        // ✅ NEW: Notification Page
         showNotification -> {
             NotificationPage(
                 onBackClick = { showNotification = false },
                 onNotificationClick = { crId ->
-                    // Navigate to detail form when notification clicked
-                    // Find the CR by ID and show detail
                     showNotification = false
                     // TODO: Fetch CR by crId and show detail
                 }
@@ -165,13 +179,32 @@ fun TeknisiScreen(
                 teknisiName = userName,
                 onBackClick = {
                     showDetailForm = false
-                    if (selectedCategory != null) {
+                    if (selectedSubKategori != null) {
+                        showCMDBSubKategoriList = true
+                    } else if (selectedCategory != null) {
                         showCategoryList = true
                     } else if (filterType != null) {
                         showFilteredList = true
                     } else {
                         selectedChangeRequest = null
                     }
+                }
+            )
+        }
+        // ✅ NEW: CMDB Sub-Kategori List Page
+        showCMDBSubKategoriList && selectedSubKategori != null -> {
+            CMDBSubKategoriCRListPage(
+                subKategori = selectedSubKategori!!,
+                teknisiId = userId,
+                teknisiName = userName,
+                onBackClick = {
+                    showCMDBSubKategoriList = false
+                    selectedSubKategori = null
+                },
+                onDetailClick = { request ->
+                    selectedChangeRequest = request
+                    showDetailForm = true
+                    showCMDBSubKategoriList = false
                 }
             )
         }
@@ -210,7 +243,6 @@ fun TeknisiScreen(
                             )
                         },
                         actions = {
-                            // ✅ UPDATED: Notification Button with Badge
                             BadgedBox(
                                 badge = {
                                     if (unreadCount > 0) {
@@ -294,9 +326,10 @@ fun TeknisiScreen(
                         selectedChangeRequest = request
                         showDetailForm = true
                     },
-                    onCategoryClick = { category ->
-                        selectedCategory = category
-                        showCategoryList = true
+                    // ✅ UPDATED: For CMDB sub-kategori
+                    onCategoryClick = { subKategori ->
+                        selectedSubKategori = subKategori
+                        showCMDBSubKategoriList = true
                     },
                     onFilterClick = { type, requests ->
                         filterType = type

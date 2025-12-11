@@ -1,9 +1,11 @@
+// File: app/src/main/java/com/example/saktinocompose/teknisi/pages/CMDBPage.kt
+// ✅ UPDATED: Using real CMDB data from API with sub_kategori
+
 package com.example.saktinocompose.teknisi.pages
 
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -16,42 +18,30 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.saktinocompose.viewmodel.ChangeRequestViewModel
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
-import com.example.saktinocompose.R
 import com.example.saktinocompose.utils.NetworkHelper
-
-data class CMDBCategory(
-    val name: String,
-    val icon: ImageVector,
-    val color: Color
-)
-
-// File: app/src/main/java/com/example/saktinocompose/teknisi/pages/CMDBPage.kt
-// Replace entire CMDBPage composable
+import com.example.saktinocompose.viewmodel.CmdbViewModel
 
 @Composable
 fun CMDBPage(
     onCategoryClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
-    viewModel: ChangeRequestViewModel = viewModel()
+    viewModel: CmdbViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val allChangeRequests by viewModel.getAllChangeRequests().collectAsState(initial = emptyList())
+    val assets by viewModel.assets.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
     // ✅ CHECK INTERNET CONNECTION
     var isOnline by remember { mutableStateOf(NetworkHelper.isInternetAvailable(context)) }
 
-    // ✅ Monitor koneksi
+    // ✅ Monitor connection
     LaunchedEffect(Unit) {
         while (true) {
             isOnline = NetworkHelper.isInternetAvailable(context)
@@ -59,16 +49,13 @@ fun CMDBPage(
         }
     }
 
-    val categories = listOf(
-        CMDBCategory(stringResource(R.string.hardware_assets), Icons.Default.Computer, Color(0xFF2196F3)),
-        CMDBCategory(stringResource(R.string.application_service), Icons.Default.Apps, Color(0xFF4CAF50)),
-        CMDBCategory("OS/Build", Icons.Default.Build, Color(0xFFFF9800)),
-        CMDBCategory(stringResource(R.string.network), Icons.Default.Router, Color(0xFF9C27B0)),
-        CMDBCategory("Database/Instance", Icons.Default.Storage, Color(0xFFE91E63)),
-        CMDBCategory(stringResource(R.string.certificate), Icons.Default.Security, Color(0xFF00BCD4)),
-        CMDBCategory("VM/Container", Icons.Default.CloudQueue, Color(0xFF673AB7)),
-        CMDBCategory("Endpoint", Icons.Default.DeviceHub, Color(0xFF795548))
-    )
+    // ✅ Group assets by sub_kategori
+    val subKategoriGroups = remember(assets) {
+        assets
+            .filter { it.subKategori != null && it.subKategori.isNotBlank() }
+            .groupBy { it.subKategori!! }
+            .toSortedMap()
+    }
 
     Column(
         modifier = modifier
@@ -87,7 +74,7 @@ fun CMDBPage(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "CI Category",
+                    text = "CMDB Assets by Sub-Category",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
@@ -97,10 +84,13 @@ fun CMDBPage(
                         .fillMaxWidth()
                 )
                 Text(
-                    text = stringResource(R.string.manage_ci_by_category),
+                    text = "Manage change requests by asset sub-category",
                     fontSize = 14.sp,
                     color = Color.Gray,
-                    modifier = Modifier.padding(top = 8.dp)
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .fillMaxWidth()
                 )
             }
         }
@@ -217,7 +207,7 @@ fun CMDBPage(
                         color = Color(0xFF2196F3)
                     )
                     Text(
-                        "Loading CMDB data...",
+                        "Loading CMDB assets...",
                         fontSize = 14.sp,
                         color = Color(0xFF2196F3)
                     )
@@ -225,24 +215,59 @@ fun CMDBPage(
             }
         }
 
-        // ✅ CATEGORIES WITH CLICK HANDLING
-        categories.forEach { category ->
-            val count = allChangeRequests.count { cr ->
-                val asetNama = if (cr.asetTerdampak.contains(":")) {
-                    cr.asetTerdampak.split(":").getOrNull(1)?.trim() ?: cr.asetTerdampak
-                } else {
-                    cr.asetTerdampak
+        // ✅ EMPTY STATE
+        if (subKategoriGroups.isEmpty() && !isLoading) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Inventory,
+                        contentDescription = "No Data",
+                        modifier = Modifier.size(64.dp),
+                        tint = Color.Gray
+                    )
+                    Text(
+                        "No CMDB assets available",
+                        fontSize = 16.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+                    if (isOnline) {
+                        Button(
+                            onClick = { viewModel.refresh() },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color(0xFF384E66)
+                            )
+                        ) {
+                            Icon(Icons.Default.Refresh, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Refresh")
+                        }
+                    }
                 }
-                asetNama == category.name
             }
+        }
 
-            CMDBCategoryCard(
-                category = category,
-                count = count,
+        // ✅ SUB-CATEGORIES LIST
+        subKategoriGroups.forEach { (subKategori, assetsInCategory) ->
+            SubKategoriCard(
+                subKategori = subKategori,
+                assetCount = assetsInCategory.size,
                 isOnline = isOnline,
                 onClick = {
-                    if (isOnline || allChangeRequests.isNotEmpty()) {
-                        onCategoryClick(category.name)
+                    if (isOnline || assetsInCategory.isNotEmpty()) {
+                        onCategoryClick(subKategori)
                     } else {
                         Toast.makeText(
                             context,
@@ -259,20 +284,46 @@ fun CMDBPage(
     }
 }
 
-// ✅ UPDATED CATEGORY CARD WITH ONLINE STATUS
 @Composable
-fun CMDBCategoryCard(
-    category: CMDBCategory,
-    count: Int,
+fun SubKategoriCard(
+    subKategori: String,
+    assetCount: Int,
     isOnline: Boolean,
     onClick: () -> Unit
 ) {
+    // ✅ Get icon based on sub-kategori name
+    val icon = when {
+        subKategori.contains("Hardware", ignoreCase = true) -> Icons.Default.Computer
+        subKategori.contains("Application", ignoreCase = true) ||
+                subKategori.contains("Software", ignoreCase = true) -> Icons.Default.Apps
+        subKategori.contains("Network", ignoreCase = true) -> Icons.Default.Router
+        subKategori.contains("Database", ignoreCase = true) -> Icons.Default.Storage
+        subKategori.contains("Server", ignoreCase = true) -> Icons.Default.Dns
+        subKategori.contains("Security", ignoreCase = true) -> Icons.Default.Security
+        else -> Icons.Default.Inventory
+    }
+
+    // ✅ Get color based on sub-kategori
+    val color = when {
+        subKategori.contains("Hardware", ignoreCase = true) -> Color(0xFF2196F3)
+        subKategori.contains("Application", ignoreCase = true) ||
+                subKategori.contains("Software", ignoreCase = true) -> Color(0xFF4CAF50)
+        subKategori.contains("Network", ignoreCase = true) -> Color(0xFF9C27B0)
+        subKategori.contains("Database", ignoreCase = true) -> Color(0xFFE91E63)
+        subKategori.contains("Server", ignoreCase = true) -> Color(0xFFFF9800)
+        subKategori.contains("Security", ignoreCase = true) -> Color(0xFF00BCD4)
+        else -> Color(0xFF607D8B)
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
-            containerColor = if (isOnline || count > 0) Color.White else Color.White.copy(alpha = 0.5f)
+            containerColor = if (isOnline || assetCount > 0)
+                Color.White
+            else
+                Color.White.copy(alpha = 0.5f)
         ),
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -289,10 +340,13 @@ fun CMDBCategoryCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.weight(1f)
             ) {
+                // Icon
                 Card(
                     modifier = Modifier.size(48.dp),
                     colors = CardDefaults.cardColors(
-                        containerColor = category.color.copy(alpha = if (isOnline || count > 0) 0.1f else 0.05f)
+                        containerColor = color.copy(
+                            alpha = if (isOnline || assetCount > 0) 0.1f else 0.05f
+                        )
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
@@ -301,9 +355,11 @@ fun CMDBCategoryCard(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = category.icon,
-                            contentDescription = category.name,
-                            tint = category.color.copy(alpha = if (isOnline || count > 0) 1f else 0.5f),
+                            imageVector = icon,
+                            contentDescription = subKategori,
+                            tint = color.copy(
+                                alpha = if (isOnline || assetCount > 0) 1f else 0.5f
+                            ),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -311,10 +367,14 @@ fun CMDBCategoryCard(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = category.name,
+                        text = subKategori,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = if (isOnline || count > 0) Color.Black else Color.Gray
+                        color = if (isOnline || assetCount > 0)
+                            Color.Black
+                        else
+                            Color.Gray,
+                        maxLines = 2
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(
@@ -322,11 +382,11 @@ fun CMDBCategoryCard(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = stringResource(R.string.items_count, count),
+                            text = "$assetCount assets",
                             fontSize = 12.sp,
                             color = Color.Gray
                         )
-                        if (!isOnline && count == 0) {
+                        if (!isOnline && assetCount == 0) {
                             Icon(
                                 Icons.Default.CloudOff,
                                 contentDescription = "Offline",
@@ -338,10 +398,14 @@ fun CMDBCategoryCard(
                 }
             }
 
+            // Arrow icon
             Icon(
                 imageVector = Icons.Default.ChevronRight,
                 contentDescription = "Navigate",
-                tint = if (isOnline || count > 0) Color.Gray else Color.LightGray
+                tint = if (isOnline || assetCount > 0)
+                    Color.Gray
+                else
+                    Color.LightGray
             )
         }
     }
