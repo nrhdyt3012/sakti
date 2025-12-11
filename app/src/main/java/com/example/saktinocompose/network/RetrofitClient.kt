@@ -176,6 +176,9 @@ object RetrofitClient {
     val notificationService: NotificationApiService by lazy {
         retrofit.create(NotificationApiService::class.java)
     }
+    val cmdbService: CmdbApiService by lazy {
+        retrofit.create(CmdbApiService::class.java)
+    }
 
     /**
      * ✅ FIXED: Synchronized token update dengan SessionManager

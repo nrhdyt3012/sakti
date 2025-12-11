@@ -65,12 +65,12 @@ fun SubmittedDetailDialog(
 
     // Aset Search Dialog
     if (showAsetSearchDialog) {
-        AsetSearchDialog(
-            selectedAsetNama = asetTerdampakNama,
+        CmdbAsetSearchDialog(
+            selectedKodeBmd = asetTerdampakId,
             onDismiss = { showAsetSearchDialog = false },
-            onSelect = { id, nama ->
-                asetTerdampakId = id
-                asetTerdampakNama = nama
+            onSelect = { kodeBmd, namaAsset ->
+                asetTerdampakId = kodeBmd  // Dari CMDB
+                asetTerdampakNama = namaAsset  // Dari CMDB
                 showAsetSearchDialog = false
             }
         )
@@ -78,7 +78,7 @@ fun SubmittedDetailDialog(
 
     // Relasi CI Dialog
     if (showRelasiDialog) {
-        RelasiCIDialog(
+        CmdbRelasiCIDialog(
             selectedRelasi = selectedRelasiCI,
             onDismiss = { showRelasiDialog = false },
             onSave = { relasiList ->
