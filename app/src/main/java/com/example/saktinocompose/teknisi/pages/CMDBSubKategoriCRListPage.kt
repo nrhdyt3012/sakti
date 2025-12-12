@@ -133,11 +133,6 @@ fun CMDBSubKategoriCRListPage(
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "${assetIdsInSubKategori.size} assets in category",
-                            fontSize = 11.sp,
-                            color = Color.White.copy(alpha = 0.6f)
-                        )
                     }
                     Icon(
                         imageVector = Icons.Default.Assessment,

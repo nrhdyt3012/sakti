@@ -15,9 +15,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// File: app/src/main/java/com/example/saktinocompose/enduser/pages/FormDetailPage.kt
-// ATAU buat file baru di ui/components/
-
 @Composable
 fun DetailItem(label: String, value: String) {
     Column(

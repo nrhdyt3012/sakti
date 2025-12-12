@@ -260,8 +260,12 @@ fun CMDBPage(
         }
 
         // ✅ SUB-CATEGORIES LIST
-        subKategoriGroups.forEach { (subKategori, assetsInCategory) ->
+        subKategoriGroups.entries.forEachIndexed { index, entry ->
+            val subKategori = entry.key
+            val assetsInCategory = entry.value
+
             SubKategoriCard(
+                number = index + 1,
                 subKategori = subKategori,
                 assetCount = assetsInCategory.size,
                 isOnline = isOnline,
@@ -277,32 +281,22 @@ fun CMDBPage(
                     }
                 }
             )
+
             Spacer(modifier = Modifier.height(12.dp))
         }
+
 
         Spacer(modifier = Modifier.height(80.dp))
     }
 }
-
 @Composable
 fun SubKategoriCard(
+    number: Int,
     subKategori: String,
     assetCount: Int,
     isOnline: Boolean,
     onClick: () -> Unit
 ) {
-    // ✅ Get icon based on sub-kategori name
-    val icon = when {
-        subKategori.contains("Hardware", ignoreCase = true) -> Icons.Default.Computer
-        subKategori.contains("Application", ignoreCase = true) ||
-                subKategori.contains("Software", ignoreCase = true) -> Icons.Default.Apps
-        subKategori.contains("Network", ignoreCase = true) -> Icons.Default.Router
-        subKategori.contains("Database", ignoreCase = true) -> Icons.Default.Storage
-        subKategori.contains("Server", ignoreCase = true) -> Icons.Default.Dns
-        subKategori.contains("Security", ignoreCase = true) -> Icons.Default.Security
-        else -> Icons.Default.Inventory
-    }
-
     // ✅ Get color based on sub-kategori
     val color = when {
         subKategori.contains("Hardware", ignoreCase = true) -> Color(0xFF2196F3)
@@ -340,7 +334,7 @@ fun SubKategoriCard(
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                // Icon
+                // Number Badge
                 Card(
                     modifier = Modifier.size(48.dp),
                     colors = CardDefaults.cardColors(
@@ -354,13 +348,13 @@ fun SubKategoriCard(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = subKategori,
-                            tint = color.copy(
+                        Text(
+                            text = number.toString(),
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = color.copy(
                                 alpha = if (isOnline || assetCount > 0) 1f else 0.5f
-                            ),
-                            modifier = Modifier.size(24.dp)
+                            )
                         )
                     }
                 }
@@ -376,22 +370,22 @@ fun SubKategoriCard(
                             Color.Gray,
                         maxLines = 2
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "$assetCount assets",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
-                        if (!isOnline && assetCount == 0) {
+                    if (!isOnline && assetCount == 0) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Icon(
                                 Icons.Default.CloudOff,
                                 contentDescription = "Offline",
                                 modifier = Modifier.size(14.dp),
                                 tint = Color.Gray
+                            )
+                            Text(
+                                text = "Offline",
+                                fontSize = 11.sp,
+                                color = Color.Gray
                             )
                         }
                     }
