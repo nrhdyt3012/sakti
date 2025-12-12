@@ -7,6 +7,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -34,6 +35,7 @@ import androidx.core.content.FileProvider
 import com.example.saktinocompose.data.model.ChangeRequest
 import com.example.saktinocompose.repository.InspectionRepository
 import com.example.saktinocompose.network.Result
+import com.example.saktinocompose.repository.InspectionPhotoRepository
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -65,6 +67,7 @@ fun InspectionDialog(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val inspectionRepository = remember { InspectionRepository() }
+    val photoRepository = remember { InspectionPhotoRepository() }
 
     // Form states
     var jenisPerubahan by remember { mutableStateOf(changeRequest.jenisPerubahan) }
@@ -83,10 +86,15 @@ fun InspectionDialog(
     var showImagePickerDialog by remember { mutableStateOf(false) }
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
 
+    var uploadedPhotoUrl by remember { mutableStateOf<String?>(null) }
+    var isUploadingPhoto by remember { mutableStateOf(false) }
+    var uploadError by remember { mutableStateOf<String?>(null) }
+
     // ✅ NEW: Loading & Error states
     var isSubmitting by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+
 
     // Load existing photo if available
     LaunchedEffect(changeRequest.photoPath) {
@@ -105,6 +113,40 @@ fun InspectionDialog(
 
     val jenisOptions = listOf("Standar", "Minor", "Major", "Emergency")
 
+    fun uploadPhoto(uri: Uri) {
+        isUploadingPhoto = true
+        uploadError = null
+
+        scope.launch {
+            try {
+                when (val result = photoRepository.uploadInspectionPhoto(
+                    crId = changeRequest.id,
+                    photoUri = uri,
+                    context = context
+                )) {
+                    is Result.Success -> {
+                        uploadedPhotoUrl = result.data
+                        isUploadingPhoto = false
+                        Log.d("InspectionDialog", "✅ Photo uploaded: ${result.data}")
+                    }
+                    is Result.Error -> {
+                        uploadError = result.message ?: "Failed to upload photo"
+                        isUploadingPhoto = false
+                        Log.e("InspectionDialog", "❌ Upload failed: ${result.message}")
+                    }
+                    else -> {
+                        uploadError = "Unknown error"
+                        isUploadingPhoto = false
+                    }
+                }
+            } catch (e: Exception) {
+                uploadError = "Error: ${e.message}"
+                isUploadingPhoto = false
+                Log.e("InspectionDialog", "❌ Exception", e)
+            }
+        }
+    }
+
     // Gallery Launcher
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -112,9 +154,10 @@ fun InspectionDialog(
         uri?.let {
             photoUri = it
             photoBitmap = loadBitmapFromUri(context, it)
+            // ✅ Upload immediately after selection
+            uploadPhoto(it)
         }
     }
-
     // Camera Launcher
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
@@ -123,6 +166,8 @@ fun InspectionDialog(
             tempPhotoUri?.let {
                 photoUri = it
                 photoBitmap = loadBitmapFromUri(context, it)
+                // ✅ Upload immediately after capture
+                uploadPhoto(it)
             }
         }
     }
@@ -510,10 +555,69 @@ fun InspectionDialog(
                                 contentScale = ContentScale.Crop
                             )
 
+                            // ✅ NEW: Upload status overlay
+                            if (isUploadingPhoto) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Black.copy(alpha = 0.5f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        CircularProgressIndicator(
+                                            color = Color.White,
+                                            strokeWidth = 3.dp
+                                        )
+                                        Text(
+                                            "Uploading photo...",
+                                            color = Color.White,
+                                            fontSize = 12.sp
+                                        )
+                                    }
+                                }
+                            }
+
+                            // ✅ NEW: Upload success indicator
+                            if (uploadedPhotoUrl != null && !isUploadingPhoto) {
+                                Card(
+                                    modifier = Modifier
+                                        .align(Alignment.TopStart)
+                                        .padding(8.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFF4CAF50)
+                                    ),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = "Uploaded",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            "Uploaded",
+                                            color = Color.White,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+
                             IconButton(
                                 onClick = {
                                     photoUri = null
                                     photoBitmap = null
+                                    uploadedPhotoUrl = null
+                                    uploadError = null
                                 },
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
@@ -529,11 +633,61 @@ fun InspectionDialog(
                         }
                     }
 
+                    // ✅ NEW: Upload error message
+                    if (uploadError != null) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFFD32F2F).copy(alpha = 0.1f)
+                            ),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.Error,
+                                    contentDescription = null,
+                                    tint = Color(0xFFD32F2F),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        "Upload Failed",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFD32F2F)
+                                    )
+                                    Text(
+                                        uploadError!!,
+                                        fontSize = 11.sp,
+                                        color = Color.Gray
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        photoUri?.let { uploadPhoto(it) }
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Default.Refresh,
+                                        contentDescription = "Retry",
+                                        tint = Color(0xFFD32F2F)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     Spacer(modifier = Modifier.height(8.dp))
 
                     OutlinedButton(
                         onClick = { showImagePickerDialog = true },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        enabled = !isUploadingPhoto
                     ) {
                         Icon(Icons.Default.Edit, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
@@ -571,117 +725,110 @@ fun InspectionDialog(
             }
         },
         confirmButton = {
-            // 3 Tombol Aksi
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                // Tombol SETUJU (Approve)
-                Button(
-                    onClick = {
-                        if (estimasiBiaya.isNotBlank() &&
-                            estimasiWaktu.isNotBlank() &&
-                            skorDampak > 0 &&
-                            skorKemungkinan > 0 &&
-                            skorEksposur > 0 &&
-                            photoUri != null
-                        ) {
-                            isSubmitting = true
+            Button(
+                onClick = {
+                    if (estimasiBiaya.isNotBlank() &&
+                        estimasiWaktu.isNotBlank() &&
+                        skorDampak > 0 &&
+                        skorKemungkinan > 0 &&
+                        skorEksposur > 0 &&
+                        uploadedPhotoUrl != null  // ✅ CHANGED: Check uploaded URL instead of URI
+                    ) {
+                        isSubmitting = true
 
-                            scope.launch {
-                                try {
-                                    // ✅ Parse estimasi ke Double
-                                    val biayaDouble = estimasiBiaya.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
-                                    val waktuDouble = estimasiWaktu.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
+                        scope.launch {
+                            try {
+                                val biayaDouble = estimasiBiaya.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
+                                val waktuDouble = estimasiWaktu.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
 
-                                    // ✅ Submit ke server
-                                    val result = inspectionRepository.submitInspection(
-                                        crId = changeRequest.id,
-                                        jenisPerubahan = jenisPerubahan,
-                                        alasan = changeRequest.description,
-                                        tujuan = changeRequest.title,
-                                        ciId = changeRequest.relasiConfigurationItem,
-                                        asetTerdampakId = changeRequest.asetTerdampak,
-                                        rencanaImplementasi = changeRequest.rencanaImplementasi,
-                                        usulanJadwal = changeRequest.usulanJadwal,
-                                        rencanaRollback = changeRequest.rollbackPlan,
-                                        estimasiBiaya = biayaDouble,
-                                        estimasiWaktu = waktuDouble,
-                                        skorDampak = skorDampak,
-                                        skorKemungkinan = skorKemungkinan,
-                                        skorExposure = skorEksposur
-                                    )
+                                // Submit inspection
+                                val result = inspectionRepository.submitInspection(
+                                    crId = changeRequest.id,
+                                    jenisPerubahan = jenisPerubahan,
+                                    alasan = changeRequest.description,
+                                    tujuan = changeRequest.title,
+                                    ciId = changeRequest.relasiConfigurationItem,
+                                    asetTerdampakId = changeRequest.asetTerdampak,
+                                    rencanaImplementasi = changeRequest.rencanaImplementasi,
+                                    usulanJadwal = changeRequest.usulanJadwal,
+                                    rencanaRollback = changeRequest.rollbackPlan,
+                                    estimasiBiaya = biayaDouble,
+                                    estimasiWaktu = waktuDouble,
+                                    skorDampak = skorDampak,
+                                    skorKemungkinan = skorKemungkinan,
+                                    skorExposure = skorEksposur
+                                )
 
-                                    when (result) {
-                                        is Result.Success -> {
-                                            // ✅ Save photo locally
-                                            val savedPhotoPath = photoUri?.let { uri ->
-                                                if (uri.toString().startsWith("file://")) {
-                                                    changeRequest.photoPath
-                                                } else {
-                                                    savePhotoToInternalStorage(context, uri)
-                                                }
+                                when (result) {
+                                    is Result.Success -> {
+                                        // ✅ Save local photo AND server URL
+                                        val savedPhotoPath = photoUri?.let { uri ->
+                                            if (uri.toString().startsWith("file://")) {
+                                                changeRequest.photoPath
+                                            } else {
+                                                savePhotoToInternalStorage(context, uri)
                                             }
+                                        }
 
-                                            // ✅ Call onSave untuk update UI
-                                            onSave(
-                                                InspectionAction.APPROVE,
-                                                jenisPerubahan,
-                                                estimasiBiaya,
-                                                estimasiWaktu,
-                                                skorDampak,
-                                                skorKemungkinan,
-                                                skorEksposur,
-                                                skorRisiko,
-                                                levelRisiko,
-                                                savedPhotoPath,
-                                                ""
-                                            )
-                                        }
-                                        is Result.Error -> {
-                                            errorMessage = result.message ?: "Failed to submit inspection"
-                                            showErrorDialog = true
-                                            isSubmitting = false
-                                        }
-                                        else -> {
-                                            errorMessage = "Unknown error occurred"
-                                            showErrorDialog = true
-                                            isSubmitting = false
-                                        }
+                                        // ✅ Pass server URL to onSave
+                                        onSave(
+                                            InspectionAction.APPROVE,
+                                            jenisPerubahan,
+                                            estimasiBiaya,
+                                            estimasiWaktu,
+                                            skorDampak,
+                                            skorKemungkinan,
+                                            skorEksposur,
+                                            skorRisiko,
+                                            levelRisiko,
+                                            uploadedPhotoUrl,  // ✅ Use server URL
+                                            ""
+                                        )
                                     }
-                                } catch (e: Exception) {
-                                    errorMessage = "Error: ${e.message}"
-                                    showErrorDialog = true
-                                    isSubmitting = false
+                                    is Result.Error -> {
+                                        errorMessage = result.message ?: "Failed to submit inspection"
+                                        showErrorDialog = true
+                                        isSubmitting = false
+                                    }
+                                    else -> {
+                                        errorMessage = "Unknown error occurred"
+                                        showErrorDialog = true
+                                        isSubmitting = false
+                                    }
                                 }
+                            } catch (e: Exception) {
+                                errorMessage = "Error: ${e.message}"
+                                showErrorDialog = true
+                                isSubmitting = false
                             }
                         }
-                    },
-                    enabled = estimasiBiaya.isNotBlank() &&
-                            estimasiWaktu.isNotBlank() &&
-                            skorDampak > 0 &&
-                            skorKemungkinan > 0 &&
-                            skorEksposur > 0 &&
-                            photoUri != null &&
-                            !isSubmitting,
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF4CAF50)
-                    )
-                ) {
-                    if (isSubmitting) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Submitting...")
-                    } else {
-                        Icon(Icons.Default.CheckCircle, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Submit")
                     }
+                },
+                enabled = estimasiBiaya.isNotBlank() &&
+                        estimasiWaktu.isNotBlank() &&
+                        skorDampak > 0 &&
+                        skorKemungkinan > 0 &&
+                        skorEksposur > 0 &&
+                        uploadedPhotoUrl != null &&  // ✅ CHANGED
+                        !isSubmitting &&
+                        !isUploadingPhoto,  // ✅ NEW: Disable while uploading
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF4CAF50)
+                )
+            ) {
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Submitting...")
+                } else {
+                    Icon(Icons.Default.CheckCircle, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Submit")
                 }
             }
         },
