@@ -903,39 +903,98 @@ fun InspectionDialog(
                         scope.launch {
                             try {
                                 // ✅ FIXED: Parse impacted assets dengan benar
-                                val impactedAssets =
-                                    parseImpactedAssets(changeRequest.asetTerdampak)
+                                val impactedAssets = parseImpactedAssets(changeRequest.asetTerdampak).let { parsed ->
+                                    if (parsed.isEmpty()) {
+                                        // Fallback 1: Coba dari assetId
+                                        if (changeRequest.assetId.isNotBlank()) {
+                                            Log.w("InspectionDialog", "⚠️ Fallback to assetId: ${changeRequest.assetId}")
+                                            listOf(changeRequest.assetId)
+                                        }
+                                        // Fallback 2: Coba dari idAset
+                                        else if (changeRequest.idAset.isNotBlank()) {
+                                            Log.w("InspectionDialog", "⚠️ Fallback to idAset: ${changeRequest.idAset}")
+                                            listOf(changeRequest.idAset)
+                                        } else {
+                                            emptyList()
+                                        }
+                                    } else {
+                                        parsed
+                                    }
+                                }
 
-                                // ✅ FIXED: Parse CI ID dengan benar
-                                val ciId = parseCIId(changeRequest.relasiConfigurationItem)
+                                val ciId = parseCIId(changeRequest.relasiConfigurationItem).let { parsed ->
+                                    if (parsed.isBlank()) {
+                                        // Fallback: Gunakan asset yang sama
+                                        impactedAssets.firstOrNull() ?: ""
+                                    } else {
+                                        parsed
+                                    }
+                                }
 
-                                // ✅ FIXED: Format usulan jadwal dengan benar
-                                val usulanJadwal = formatUsulanJadwal(changeRequest.usulanJadwal)
+                                val usulanJadwal = formatUsulanJadwal(changeRequest.usulanJadwal).let { parsed ->
+                                    if (parsed.isBlank()) {
+                                        // Fallback: Gunakan tanggal hari ini + 7 hari
+                                        val calendar = java.util.Calendar.getInstance()
+                                        calendar.add(java.util.Calendar.DAY_OF_MONTH, 7)
+                                        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                                            .format(calendar.time)
+                                    } else {
+                                        parsed
+                                    }
+                                }
 
-                                // ✅ VALIDASI: Pastikan semua data ada
+                                // ✅ LOG hasil parsing
+                                // ✅ DETAILED LOGGING untuk debugging
+                                Log.d("InspectionDialog", """
+                            ========== INSPECTION DATA ==========
+                            Raw asetTerdampak: '${changeRequest.asetTerdampak}'
+                            Raw relasiCI: '${changeRequest.relasiConfigurationItem}'
+                            Raw usulanJadwal: '${changeRequest.usulanJadwal}'
+                            Asset ID: '${changeRequest.assetId}'
+                            =====================================
+                        """.trimIndent())
+
+                                // ✅ VALIDASI dengan pesan error yang lebih informatif
                                 when {
                                     impactedAssets.isEmpty() -> {
-                                        errorMessage =
-                                            "Impacted assets tidak valid. Data: '${changeRequest.asetTerdampak}'"
+                                        errorMessage = """
+                                            Impacted assets tidak valid!
+                                            
+                                            Data mentah:
+                                            - asetTerdampak: '${changeRequest.asetTerdampak}'
+                                            - assetId: '${changeRequest.assetId}'
+                                            - idAset: '${changeRequest.idAset}'
+                                            
+                                            Pastikan data CR memiliki informasi asset yang valid.
+                                        """.trimIndent()
                                         showErrorDialog = true
                                         isSubmitting = false
                                         return@launch
                                     }
 
                                     ciId.isBlank() -> {
-                                        errorMessage =
-                                            "CI ID tidak valid. Data: '${changeRequest.relasiConfigurationItem}'"
-                                        showErrorDialog = true
-                                        isSubmitting = false
-                                        return@launch
+                                        errorMessage = """
+                                            CI ID tidak valid!
+                                            
+                                            Data mentah:
+                                            - relasiCI: '${changeRequest.relasiConfigurationItem}'
+                                            
+                                            Sistem akan menggunakan asset ID sebagai CI ID.
+                                        """.trimIndent()
+                                        // Don't return, just log warning
+                                        Log.w("InspectionDialog", "⚠️ CI ID kosong, menggunakan fallback")
                                     }
 
                                     usulanJadwal.isBlank() -> {
-                                        errorMessage =
-                                            "Usulan jadwal tidak valid. Data: '${changeRequest.usulanJadwal}'"
-                                        showErrorDialog = true
-                                        isSubmitting = false
-                                        return@launch
+                                        errorMessage = """
+                                            Usulan jadwal tidak valid!
+                                            
+                                            Data mentah: '${changeRequest.usulanJadwal}'
+                                            
+                                            Sistem akan menggunakan +7 hari dari sekarang.
+                                        """.trimIndent()
+                                        // Don't return, just log warning
+                                        Log.w("InspectionDialog", "⚠️ Usulan jadwal kosong, menggunakan fallback")
                                     }
                                 }
 
