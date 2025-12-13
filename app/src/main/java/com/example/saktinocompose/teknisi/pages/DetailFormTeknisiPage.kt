@@ -40,6 +40,7 @@ import com.example.saktinocompose.network.dto.SubmittedReviewRequest
 import com.example.saktinocompose.network.RetrofitClient
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,15 +102,14 @@ fun DetailFormTeknisiPage(
     // ✅ TAMBAH DIALOG HANDLERS:
     if (showSubmittedDialog) {
         SubmittedDetailDialog(
-            changeRequest = changeRequest,
+            changeRequest = latestChangeRequest,  // ✅ Use latest data
             onDismiss = { showSubmittedDialog = false },
-            onSave = { crId, description, impactedAssets, ciId, usulanJadwal ->  // ✅ CHANGED parameter
-                // ✅ FIXED: Call API dengan format yang benar
+            onSave = { crId, description, impactedAssets, ciId, usulanJadwal ->
                 coroutineScope.launch {
                     try {
                         val request = SubmittedReviewRequest(
                             description = description,
-                            impactedAssets = impactedAssets,  // ✅ CHANGED to List<String>
+                            impactedAssets = impactedAssets,
                             ciId = ciId,
                             usulanJadwal = usulanJadwal
                         )
@@ -120,18 +120,13 @@ fun DetailFormTeknisiPage(
                         )
 
                         if (response.isSuccessful && response.body()?.status == "success") {
-                            // ✅ Update local state
-                            val updatedRequest = changeRequest.copy(
-                                description = description,
-                                asetTerdampak = impactedAssets.joinToString(","),  // ✅ Store as comma-separated
-                                relasiConfigurationItem = ciId,
-                                usulanJadwal = usulanJadwal,
-                                status = "Reviewed",
-                                updatedAt = System.currentTimeMillis().toString()
-                            )
-                            changeRequestViewModel.updateFullChangeRequest(updatedRequest)
                             showSubmittedDialog = false
-                            successMessage = "Details saved! Status changed to 'Reviewed'"
+
+                            // ✅ FIXED: Refresh data dari API untuk mendapatkan data terbaru
+                            delay(500) // Tunggu API ter-update
+                            changeRequestViewModel.refreshSingleChangeRequest(crId)
+
+                            successMessage = "Details saved! Status changed to 'Reviewed'. Data refreshed!"
                             showSuccessDialog = true
                         } else {
                             showSubmittedDialog = false

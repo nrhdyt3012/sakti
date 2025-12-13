@@ -155,10 +155,10 @@ class ChangeRequestRepository {
             title = apiData.title ?: "No Title",
             description = apiData.description ?: "",
             assetId = apiData.assetId ?: "",
-            asetTerdampak = apiData.assetId ?: "",
-            relasiConfigurationItem = "",
-            rencanaImplementasi = apiData.mitigationPlan ?: "",
-            usulanJadwal = apiData.targetCompletion ?: "",
+            asetTerdampak = apiData.impactedAssetId ?: apiData.assetId ?: "",  // ✅ FIXED: Use impacted_asset_id
+            relasiConfigurationItem = apiData.ciId ?: "",  // ✅ FIXED: Use ci_id
+            rencanaImplementasi = apiData.rencanaImplementasi ?: apiData.mitigationPlan ?: "",  // ✅ FIXED: Use rencana_implementasi
+            usulanJadwal = apiData.usulanJadwal ?: apiData.targetCompletion ?: "",  // ✅ FIXED: Use usulan_jadwal
             rollbackPlan = apiData.rollbackPlan ?: "",
             assignedTeknisiName = apiData.picImplementation,
             scheduledDate = apiData.scheduleImplementation,
@@ -173,7 +173,7 @@ class ChangeRequestRepository {
             postResidualScore = apiData.postResidualScore,
             postRiskLevel = apiData.postRiskLevel,
             implementationResult = apiData.implementationResult,
-            status = mappedStatus,  // ✅ Use mapped status
+            status = mappedStatus,
             approvalStatus = apiData.approvalStatus,
             createdAt = apiData.createdAt,
             updatedAt = apiData.updatedAt,

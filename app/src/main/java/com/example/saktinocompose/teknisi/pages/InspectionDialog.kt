@@ -43,6 +43,8 @@ import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
+import com.example.saktinocompose.utils.PhotoHelper
+
 
 enum class InspectionAction {
     APPROVE, REJECT, REVISE
@@ -243,35 +245,36 @@ fun InspectionDialog(
     }
 
     // Gallery Launcher
+    // Gallery Launcher
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             photoUri = it
-            photoBitmap = loadBitmapFromUri(context, it)
+            photoBitmap = PhotoHelper.loadBitmapFromUri(context, it)  // ✅ Gunakan PhotoHelper
             uploadPhoto(it)
         }
     }
 
-    // Camera Launcher
+// Camera Launcher
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
         if (success) {
             tempPhotoUri?.let {
                 photoUri = it
-                photoBitmap = loadBitmapFromUri(context, it)
+                photoBitmap = PhotoHelper.loadBitmapFromUri(context, it)  // ✅ Gunakan PhotoHelper
                 uploadPhoto(it)
             }
         }
     }
 
-    // Permission Launcher
+// Permission Launcher
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            val photoFile = createImageFile(context)
+            val photoFile = PhotoHelper.createImageFile(context, "INSPECTION")  // ✅ Gunakan PhotoHelper
             tempPhotoUri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -977,8 +980,11 @@ fun InspectionDialog(
                                             if (uri.toString().startsWith("file://")) {
                                                 changeRequest.photoPath
                                             } else {
-                                                savePhotoToInternalStorage(context, uri)
-                                            }
+                                                PhotoHelper.savePhotoToInternalStorage(  // ✅ Gunakan PhotoHelper
+                                                    context,
+                                                    uri,
+                                                    "INSPECTION" )                                           }
+
                                         }
 
                                         onSave(

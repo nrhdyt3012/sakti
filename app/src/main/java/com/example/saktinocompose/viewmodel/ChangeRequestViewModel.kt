@@ -144,6 +144,7 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         viewModelScope.launch {
             _isLoading.value = true
 
+            // ✅ FIXED: Update lokal dulu untuk responsif UI
             val currentList = _changeRequests.value.toMutableList()
             val index = currentList.indexOfFirst { it.id == updatedRequest.id }
 
@@ -152,13 +153,18 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
                 _changeRequests.value = currentList
             }
 
+            // ✅ FIXED: Setelah update lokal, refresh dari API untuk data terbaru
             when (val result = repository.updateChangeRequest(updatedRequest)) {
+                is Result.Success -> {
+                    // ✅ Refresh data dari API untuk sinkronisasi
+                    delay(500) // Tunggu sebentar agar API ter-update
+                    refreshData() // Ambil data terbaru dari API
+                    _error.value = null
+                }
                 is Result.Error -> {
                     _error.value = result.message
                 }
-                else -> {
-                    _error.value = null
-                }
+                else -> {}
             }
 
             _isLoading.value = false

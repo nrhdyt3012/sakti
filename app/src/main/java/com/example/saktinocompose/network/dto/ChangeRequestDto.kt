@@ -15,78 +15,144 @@ data class ChangeRequestApiData(
     @SerializedName("cr_id")
     val crId: String,
 
-    // ✅ TAMBAH: Ticket ID dari API
     @SerializedName("tiket_id")
     val tiketId: String?,
 
     @SerializedName("rollback_plan")
     val rollbackPlan: String?,
+
     @SerializedName("type")
     val type: String,
+
     @SerializedName("title")
     val title: String,
+
     @SerializedName("description")
     val description: String?,
+
     @SerializedName("impact_desc")
     val impactDesc: String?,
+
     @SerializedName("status")
     val status: String,
+
     @SerializedName("dinas")
     val dinas: String?,
+
     @SerializedName("risk_score")
     val riskScore: Int?,
+
     @SerializedName("created_at")
     val createdAt: String,
+
     @SerializedName("updated_at")
     val updatedAt: String,
+
     @SerializedName("asset_id")
     val assetId: String?,
+
     @SerializedName("score_impact")
     val scoreImpact: Int?,
+
     @SerializedName("score_likelihood")
     val scoreLikelihood: Int?,
+
     @SerializedName("score_risk")
     val scoreRisk: Int?,
+
     @SerializedName("risk_level")
     val riskLevel: String?,
+
     @SerializedName("control_existing")
     val controlExisting: String?,
+
     @SerializedName("control_effectiveness")
     val controlEffectiveness: String?,
+
     @SerializedName("mitigation_plan")
     val mitigationPlan: String?,
+
     @SerializedName("pic_implementation")
     val picImplementation: String?,
+
     @SerializedName("target_completion")
     val targetCompletion: String?,
+
     @SerializedName("admin_schedule")
     val adminSchedule: String?,
+
     @SerializedName("schedule_implementation")
     val scheduleImplementation: String?,
+
     @SerializedName("post_likelihood")
     val postLikelihood: Int?,
+
     @SerializedName("post_impact")
     val postImpact: Int?,
+
     @SerializedName("post_residual_score")
     val postResidualScore: Int?,
+
     @SerializedName("post_risk_level")
     val postRiskLevel: String?,
+
     @SerializedName("implementation_result")
     val implementationResult: String?,
+
     @SerializedName("approval_status")
     val approvalStatus: String?,
+
     @SerializedName("change_type")
     val changeType: String?,
+
     @SerializedName("schedule_start")
     val scheduleStart: String?,
+
     @SerializedName("schedule_end")
     val scheduleEnd: String?,
+
     @SerializedName("implement_start_at")
     val implementStartAt: String?,
+
     @SerializedName("implement_end_at")
     val implementEndAt: String?,
+
     @SerializedName("cmdb_updated_at")
-    val cmdbUpdatedAt: String?
+    val cmdbUpdatedAt: String?,
+
+    // ✅ NEW: Field dari API yang hilang
+    @SerializedName("ci_id")
+    val ciId: String?,
+
+    @SerializedName("impacted_asset_id")
+    val impactedAssetId: String?,
+
+    @SerializedName("rencana_implementasi")
+    val rencanaImplementasi: String?,
+
+    @SerializedName("usulan_jadwal")
+    val usulanJadwal: String?,
+
+    @SerializedName("rencana_rollback")
+    val rencanaRollback: String?,
+
+    @SerializedName("estimasi_biaya")
+    val estimasiBiaya: String?,
+
+    @SerializedName("estimasi_waktu")
+    val estimasiWaktu: String?,
+
+    @SerializedName("skor_dampak")
+    val skorDampak: Int?,
+
+    @SerializedName("skor_kemungkinan")
+    val skorKemungkinan: Int?,
+
+    @SerializedName("skor_exposure")
+    val skorExposure: Int?,
+
+    @SerializedName("inspection_photo_url")
+    val inspectionPhotoUrl: String?
 )
 
 data class ChangeRequestDetailResponse(
