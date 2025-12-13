@@ -738,8 +738,23 @@ fun InspectionDialog(
 
                         scope.launch {
                             try {
-                                val biayaDouble = estimasiBiaya.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
-                                val waktuDouble = estimasiWaktu.replace(Regex("[^0-9.]"), "").toDoubleOrNull() ?: 0.0
+                                // ✅ Parse impacted assets dari changeRequest
+                                val impactedAssets = if (changeRequest.asetTerdampak.contains(",")) {
+                                    // Multiple assets format: "id1,id2,id3"
+                                    changeRequest.asetTerdampak.split(",").map { it.trim() }
+                                } else {
+                                    // Single asset
+                                    listOf(changeRequest.asetTerdampak)
+                                }
+
+                                Log.d("InspectionDialog", """
+                                    📤 Submitting inspection:
+                                    - CR ID: ${changeRequest.id}
+                                    - Jenis: $jenisPerubahan
+                                    - Impacted Assets: $impactedAssets
+                                    - CI ID: ${changeRequest.relasiConfigurationItem}
+                                    - Usulan Jadwal: ${changeRequest.usulanJadwal}
+                                """.trimIndent())
 
                                 // Submit inspection
                                 val result = inspectionRepository.submitInspection(
@@ -748,12 +763,10 @@ fun InspectionDialog(
                                     alasan = changeRequest.description,
                                     tujuan = changeRequest.title,
                                     ciId = changeRequest.relasiConfigurationItem,
-                                    asetTerdampakId = changeRequest.asetTerdampak,
+                                    impactedAssets = impactedAssets,  // ✅ CHANGED: Pass List<String>
                                     rencanaImplementasi = changeRequest.rencanaImplementasi,
                                     usulanJadwal = changeRequest.usulanJadwal,
                                     rencanaRollback = changeRequest.rollbackPlan,
-                                    estimasiBiaya = biayaDouble,
-                                    estimasiWaktu = waktuDouble,
                                     skorDampak = skorDampak,
                                     skorKemungkinan = skorKemungkinan,
                                     skorExposure = skorEksposur
@@ -800,6 +813,7 @@ fun InspectionDialog(
                                 errorMessage = "Error: ${e.message}"
                                 showErrorDialog = true
                                 isSubmitting = false
+                                Log.e("InspectionDialog", "❌ Exception", e)
                             }
                         }
                     }

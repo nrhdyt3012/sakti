@@ -3,6 +3,7 @@ package com.example.saktinocompose.repository
 import android.util.Log
 import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.network.RetrofitClient
+import com.example.saktinocompose.network.dto.ImpactedAssetItem
 import com.example.saktinocompose.network.dto.InspectionRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -19,12 +20,10 @@ class InspectionRepository {
         alasan: String,
         tujuan: String,
         ciId: String,
-        asetTerdampakId: String,
+        impactedAssets: List<String>,  // ✅ CHANGED: List of asset IDs
         rencanaImplementasi: String,
         usulanJadwal: String,
         rencanaRollback: String,
-        estimasiBiaya: Double,
-        estimasiWaktu: Double,
         skorDampak: Int,
         skorKemungkinan: Int,
         skorExposure: Int
@@ -39,32 +38,36 @@ class InspectionRepository {
                     )
                 }
 
+                // ✅ Convert List<String> to List<ImpactedAssetItem>
+                val impactedAssetItems = impactedAssets.map {
+                    ImpactedAssetItem(assetId = it)
+                }
+
                 val request = InspectionRequest(
                     jenisPerubahan = jenisPerubahan,
                     alasan = alasan,
                     tujuan = tujuan,
                     ciId = ciId,
-                    asetTerdampakId = asetTerdampakId,
+                    impactedAssets = impactedAssetItems,  // ✅ CHANGED
                     rencanaImplementasi = rencanaImplementasi,
                     usulanJadwal = usulanJadwal,
                     rencanaRollback = rencanaRollback,
-                    estimasiBiaya = estimasiBiaya,
-                    estimasiWaktu = estimasiWaktu,
                     skorDampak = skorDampak,
                     skorKemungkinan = skorKemungkinan,
                     skorExposure = skorExposure
                 )
 
-                Log.d("InspectionRepo", """
+                Log.d(
+                    "InspectionRepo", """
                     📤 Submitting Inspection:
                     - CR ID: $crId
                     - Jenis: $jenisPerubahan
-                    - Biaya: $estimasiBiaya
-                    - Waktu: $estimasiWaktu
+                    - Impacted Assets: ${impactedAssets.size} items
                     - Dampak: $skorDampak
                     - Kemungkinan: $skorKemungkinan
                     - Exposure: $skorExposure
-                """.trimIndent())
+                """.trimIndent()
+                )
 
                 val response = RetrofitClient.changeRequestService.submitInspection(
                     id = crId,
