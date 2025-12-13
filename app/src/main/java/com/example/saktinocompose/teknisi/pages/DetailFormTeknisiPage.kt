@@ -292,19 +292,25 @@ fun DetailFormTeknisiPage(
             changeRequest = changeRequest,
             onDismiss = { showSchedulingDialog = false },
             onSave = { scheduledDate ->
+                // Parse date
                 val dateTimeString = "$scheduledDate"
                 val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 val scheduledTimestamp = sdf.parse(dateTimeString)?.time ?: System.currentTimeMillis()
 
+                // ✅ FIXED: Status berubah ke "Implementing" (bukan "Scheduled")
+                // Karena setelah confirm schedule, implementasi dimulai
                 val updatedRequest = changeRequest.copy(
                     scheduledDate = scheduledDate,
                     scheduledTimestamp = scheduledTimestamp,
-                    status = "Scheduled",
+                    status = "Implementing",  // ✅ Changed from "Scheduled"
                     updatedAt = System.currentTimeMillis().toString()
                 )
+
                 changeRequestViewModel.updateFullChangeRequest(updatedRequest)
                 showSchedulingDialog = false
-                successMessage = "Implementation successfully scheduled!"
+
+                // ✅ Updated success message
+                successMessage = "Implementation started successfully!"
                 showSuccessDialog = true
             }
         )
@@ -1142,7 +1148,6 @@ fun DetailFormTeknisiPage(
                     }
                 }
 
-                // ✅ NEW: Status "Approved" - langsung ke Scheduling
                 isApproved -> {
                     Button(
                         onClick = {
@@ -1170,19 +1175,12 @@ fun DetailFormTeknisiPage(
                     }
                 }
 
-                // ✅ UPDATED: Status "Scheduled" - Start Implementation
+                // ✅ FIXED: Status "Scheduled" - Open Scheduling Dialog to confirm implementation
                 isScheduled -> {
                     Button(
                         onClick = {
                             if (!isOnline) showOfflineDialog = true
-                            else {
-                                changeRequestViewModel.updateChangeRequestStatus(
-                                    changeRequest = changeRequest,
-                                    newStatus = "Implementing"
-                                )
-                                successMessage = "Status changed to 'Implementing'"
-                                showSuccessDialog = true
-                            }
+                            else showSchedulingDialog = true
                         },
                         modifier = Modifier.fillMaxWidth().height(56.dp),
                         colors = ButtonDefaults.buttonColors(
@@ -1301,6 +1299,7 @@ fun DetailFormTeknisiPage(
         }
     }
 }
+
 
 // ✅ FAILED IMPLEMENTATION DIALOG
 @OptIn(ExperimentalMaterial3Api::class)
