@@ -103,13 +103,13 @@ fun DetailFormTeknisiPage(
         SubmittedDetailDialog(
             changeRequest = changeRequest,
             onDismiss = { showSubmittedDialog = false },
-            onSave = { crId, description, asetTerdampakId, ciId, usulanJadwal ->
+            onSave = { crId, description, impactedAssets, ciId, usulanJadwal ->  // ✅ CHANGED parameter
                 // ✅ FIXED: Call API dengan format yang benar
                 coroutineScope.launch {
                     try {
                         val request = SubmittedReviewRequest(
                             description = description,
-                            asetTerdampakId = asetTerdampakId,
+                            impactedAssets = impactedAssets,  // ✅ CHANGED to List<String>
                             ciId = ciId,
                             usulanJadwal = usulanJadwal
                         )
@@ -123,7 +123,7 @@ fun DetailFormTeknisiPage(
                             // ✅ Update local state
                             val updatedRequest = changeRequest.copy(
                                 description = description,
-                                asetTerdampak = asetTerdampakId,
+                                asetTerdampak = impactedAssets.joinToString(","),  // ✅ Store as comma-separated
                                 relasiConfigurationItem = ciId,
                                 usulanJadwal = usulanJadwal,
                                 status = "Reviewed",

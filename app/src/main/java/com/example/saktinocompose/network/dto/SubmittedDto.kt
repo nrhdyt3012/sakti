@@ -1,4 +1,4 @@
-// File: app/src/main/java/com/example/saktinocompose/network/dto/SubmittedReviewDto.kt
+// File: app/src/main/java/com/example/saktinocompose/network/dto/SubmittedDto.kt
 package com.example.saktinocompose.network.dto
 
 import com.google.gson.annotations.SerializedName
@@ -11,8 +11,8 @@ data class SubmittedReviewRequest(
     @SerializedName("description")
     val description: String,
 
-    @SerializedName("aset_terdampak_id")
-    val asetTerdampakId: String,
+    @SerializedName("impacted_assets")  // ✅ CHANGED from aset_terdampak_id
+    val impactedAssets: List<String>,   // ✅ CHANGED to List<String>
 
     @SerializedName("ci_id")
     val ciId: String,
@@ -26,13 +26,13 @@ data class SubmittedReviewRequest(
          */
         fun create(
             description: String,
-            asetTerdampakId: String,
+            impactedAssets: List<String>,  // ✅ CHANGED
             ciId: String,
             usulanJadwal: String
         ): SubmittedReviewRequest {
             return SubmittedReviewRequest(
                 description = description,
-                asetTerdampakId = asetTerdampakId,
+                impactedAssets = impactedAssets,  // ✅ CHANGED
                 ciId = ciId,
                 usulanJadwal = usulanJadwal
             )
@@ -61,8 +61,8 @@ data class SubmittedReviewData(
     @SerializedName("description")
     val description: String?,
 
-    @SerializedName("aset_terdampak_id")
-    val asetTerdampakId: String?,
+    @SerializedName("impacted_assets")  // ✅ CHANGED
+    val impactedAssets: List<String>?,   // ✅ CHANGED
 
     @SerializedName("ci_id")
     val ciId: String?,
@@ -88,8 +88,8 @@ object SubmittedReviewValidator {
             errors.add("Description is required")
         }
 
-        if (request.asetTerdampakId.isBlank()) {
-            errors.add("Affected asset ID is required")
+        if (request.impactedAssets.isEmpty()) {  // ✅ CHANGED
+            errors.add("At least one impacted asset is required")
         }
 
         if (request.ciId.isBlank()) {

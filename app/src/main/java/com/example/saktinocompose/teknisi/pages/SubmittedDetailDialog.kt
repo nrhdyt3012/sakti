@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/example/saktinocompose/teknisi/pages/SubmittedDetailDialog.kt
 package com.example.saktinocompose.teknisi.pages
 
 import android.app.DatePickerDialog
@@ -29,17 +30,16 @@ fun SubmittedDetailDialog(
     onSave: (
         crId: String,
         description: String,
-        asetTerdampakId: String,
+        impactedAssets: List<String>,  // ✅ CHANGED to List<String>
         ciId: String,
         usulanJadwal: String
     ) -> Unit
 ) {
     val context = LocalContext.current
 
-    // Form States
+    // Form States - ✅ CHANGED to support multiple assets
     var description by remember { mutableStateOf(changeRequest.description) }
-    var asetTerdampakId by remember { mutableStateOf("") }
-    var asetTerdampakNama by remember { mutableStateOf("") }
+    var selectedImpactedAssets by remember { mutableStateOf<List<AsetData>>(emptyList()) }
     var selectedRelasiCI by remember { mutableStateOf<List<AsetData>>(emptyList()) }
     var proposedSchedule by remember { mutableStateOf(changeRequest.usulanJadwal) }
 
@@ -63,14 +63,13 @@ fun SubmittedDetailDialog(
         datePicker.minDate = System.currentTimeMillis()
     }
 
-    // Aset Search Dialog
+    // ✅ NEW: Multi-select Asset Dialog
     if (showAsetSearchDialog) {
-        CmdbAsetSearchDialog(
-            selectedKodeBmd = asetTerdampakId,
+        CmdbRelasiCIDialog(
+            selectedRelasi = selectedImpactedAssets,
             onDismiss = { showAsetSearchDialog = false },
-            onSelect = { kodeBmd, namaAsset ->
-                asetTerdampakId = kodeBmd  // Dari CMDB
-                asetTerdampakNama = namaAsset  // Dari CMDB
+            onSave = { assetList ->
+                selectedImpactedAssets = assetList
                 showAsetSearchDialog = false
             }
         )
@@ -157,14 +156,14 @@ fun SubmittedDetailDialog(
                     )
                 )
 
-                // 2. Affected Asset
+                // 2. Impacted Assets (Multiple Selection) - ✅ CHANGED
                 Text(
-                    text = "2. Affected Asset *",
+                    text = "2. Impacted Assets * (Can select multiple)",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.SemiBold
                 )
 
-                if (asetTerdampakNama.isNotBlank()) {
+                if (selectedImpactedAssets.isNotEmpty()) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -172,47 +171,59 @@ fun SubmittedDetailDialog(
                         ),
                         shape = RoundedCornerShape(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Row(
-                                modifier = Modifier.weight(1f),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Card(
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFF384E66)
-                                    ),
-                                    shape = RoundedCornerShape(4.dp)
-                                ) {
-                                    Text(
-                                        text = asetTerdampakId,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                    )
-                                }
-                                Column {
-                                    Text(
-                                        text = "Selected:",
-                                        fontSize = 11.sp,
-                                        color = Color.Gray
-                                    )
-                                    Text(
-                                        text = asetTerdampakNama,
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.SemiBold
-                                    )
+                                Text(
+                                    "${selectedImpactedAssets.size} assets selected",
+                                    fontSize = 12.sp,
+                                    color = Color.Gray,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                IconButton(onClick = { showAsetSearchDialog = true }) {
+                                    Icon(Icons.Default.Edit, "Edit", tint = Color(0xFF384E66))
                                 }
                             }
-                            IconButton(onClick = { showAsetSearchDialog = true }) {
-                                Icon(Icons.Default.Edit, "Change", tint = Color(0xFF384E66))
+
+                            selectedImpactedAssets.forEach { aset ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color(0xFF384E66)
+                                            ),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                aset.id,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                        Text(
+                                            aset.nama,
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -229,7 +240,10 @@ fun SubmittedDetailDialog(
                     Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (asetTerdampakNama.isBlank()) "Search Affected Asset" else "Change Affected Asset",
+                        text = if (selectedImpactedAssets.isEmpty())
+                            "Select Impacted Assets"
+                        else
+                            "Edit Impacted Assets (${selectedImpactedAssets.size})",
                         fontSize = 14.sp
                     )
                 }
@@ -371,25 +385,25 @@ fun SubmittedDetailDialog(
             Button(
                 onClick = {
                     if (description.isNotBlank() &&
-                        asetTerdampakNama.isNotBlank() &&
+                        selectedImpactedAssets.isNotEmpty() &&  // ✅ CHANGED
                         selectedRelasiCI.isNotEmpty() &&
                         proposedSchedule.isNotBlank()
                     ) {
-                        val asetTerdampakFormatted = "$asetTerdampakId:$asetTerdampakNama"
-                        // ✅ FORMAT BARU
+                        // ✅ CHANGED: Convert to List<String> of kode_bmd
+                        val impactedAssetsIds = selectedImpactedAssets.map { it.id }
                         val ciIds = selectedRelasiCI.joinToString(",") { it.id }
 
                         onSave(
                             changeRequest.id,
                             description,
-                            asetTerdampakId,   // "APK001"
-                            ciIds,             // "APK002,APK003"
+                            impactedAssetsIds,  // ✅ CHANGED to List<String>
+                            ciIds,
                             proposedSchedule
                         )
                     }
                 },
                 enabled = description.isNotBlank() &&
-                        asetTerdampakNama.isNotBlank() &&
+                        selectedImpactedAssets.isNotEmpty() &&  // ✅ CHANGED
                         selectedRelasiCI.isNotEmpty() &&
                         proposedSchedule.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(
