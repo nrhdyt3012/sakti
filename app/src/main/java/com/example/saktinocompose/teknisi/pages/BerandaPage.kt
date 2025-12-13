@@ -1,9 +1,10 @@
 // File: teknisi/pages/BerandaPage.kt
-// Complete implementation dengan Pull-to-Refresh
+// ✅ FIXED VERSION - Accurate data counting
 
 package com.example.saktinocompose.teknisi.pages
 
 import android.widget.Toast
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -12,10 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
@@ -58,7 +56,7 @@ fun BerandaPage(
             if (!NetworkHelper.isInternetAvailable(context)) {
                 Toast.makeText(
                     context,
-                    "No internet connection. Please connect to internet.",
+                    "No internet connection",
                     Toast.LENGTH_SHORT
                 ).show()
             } else {
@@ -67,23 +65,20 @@ fun BerandaPage(
         }
     )
 
-    // ✅ FIXED: Manual trigger dengan delay untuk ensure token ready
     LaunchedEffect(Unit) {
         if (allChangeRequestsRaw.isEmpty() && !isLoading) {
             if (NetworkHelper.isInternetAvailable(context)) {
-                // ✅ CRITICAL: Wait for token to be ready
                 delay(300)
                 viewModel.refreshData()
             }
         }
 
         while(true) {
-            delay(30000) // 30 seconds
+            delay(30000)
             if (NetworkHelper.isInternetAvailable(context)) {
                 viewModel.refreshData()
             }
         }
-
     }
 
     LaunchedEffect(error) {
@@ -97,9 +92,80 @@ fun BerandaPage(
                     "Connection timeout. Please try again."
                 else -> errorMsg
             }
-
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
         }
+    }
+
+    // ✅ FIXED: Process data dengan logging
+    val allChangeRequests = remember(allChangeRequestsRaw) {
+        val sorted = allChangeRequestsRaw.sortedByJenisPriority()
+
+        Log.d("BerandaPage", """
+            📊 Data Summary:
+            - Total requests: ${sorted.size}
+            - Status breakdown:
+              ${sorted.groupBy { it.status }.map { "  * ${it.key}: ${it.value.size}" }.joinToString("\n")}
+        """.trimIndent())
+
+        sorted
+    }
+
+    val thisMonth = remember {
+        val calendar = Calendar.getInstance()
+        SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(calendar.time)
+    }
+
+    val thisWeek = remember {
+        val calendar = Calendar.getInstance()
+        calendar.firstDayOfWeek = Calendar.MONDAY
+        calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
+        calendar.time
+    }
+
+    // ✅ FIXED: Monthly calculation dengan logging
+    val monthlyRequests = remember(allChangeRequests, thisMonth) {
+        val filtered = allChangeRequests.filter { cr ->
+            try {
+                val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                val date = isoFormat.parse(cr.createdAt)
+                val dateMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(date ?: Date())
+                val isMatch = dateMonth == thisMonth
+
+                if (isMatch) {
+                    Log.d("BerandaPage", "✅ ${cr.ticketId} matched this month ($thisMonth)")
+                }
+
+                isMatch
+            } catch (e: Exception) {
+                Log.e("BerandaPage", "Error parsing date for ${cr.ticketId}: ${e.message}")
+                false
+            }
+        }
+
+        Log.d("BerandaPage", """
+            📅 Monthly Filtering:
+            - Target month: $thisMonth
+            - Matched: ${filtered.size} requests
+            - IDs: ${filtered.map { it.ticketId }}
+        """.trimIndent())
+
+        filtered
+    }
+
+    // ✅ FIXED: Weekly calculation
+    val weeklyRequests = remember(allChangeRequests, thisWeek) {
+        val filtered = allChangeRequests.filter { cr ->
+            try {
+                val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+                val date = isoFormat.parse(cr.createdAt)
+                date != null && (date.after(thisWeek) || date == thisWeek)
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        Log.d("BerandaPage", "📅 This Week: ${filtered.size} requests")
+        filtered
     }
 
     Box(
@@ -114,18 +180,14 @@ fun BerandaPage(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // ✅ TAMBAHKAN PADDING TOP DI SINI
-            Spacer(modifier = Modifier.height(80.dp)) // Ubah dari 50.dp ke 80.dp atau sesuai kebutuhan
+            Spacer(modifier = Modifier.height(80.dp))
 
-            // ✅ ERROR CARD DENGAN PADDING TOP LEBIH BESAR
+            // Error Card
             if (error != null) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(
-                            top = 16.dp,  // ✅ Tambah padding top
-                            bottom = 16.dp
-                        ),
+                        .padding(top = 16.dp, bottom = 16.dp),
                     colors = CardDefaults.cardColors(
                         containerColor = Color(0xFFD32F2F).copy(alpha = 0.1f)
                     ),
@@ -168,8 +230,8 @@ fun BerandaPage(
                 }
             }
 
-            // ✅ Empty State
-            if (allChangeRequestsRaw.isEmpty() && !isLoading) {
+            // Empty State
+            if (allChangeRequests.isEmpty() && !isLoading) {
                 NoDataCard(
                     onRefresh = {
                         if (NetworkHelper.isInternetAvailable(context)) {
@@ -184,44 +246,6 @@ fun BerandaPage(
                     }
                 )
                 return@Column
-            }
-
-            // Process data
-            val allChangeRequests = remember(allChangeRequestsRaw) {
-                allChangeRequestsRaw.sortedByJenisPriority()
-            }
-
-            val thisMonth = remember {
-                val calendar = Calendar.getInstance()
-                SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(calendar.time)
-            }
-
-            val thisWeek = remember {
-                val calendar = Calendar.getInstance()
-                calendar.firstDayOfWeek = Calendar.MONDAY
-                calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY)
-                calendar.time
-            }
-
-            val monthlyRequests = allChangeRequests.filter { cr ->
-                try {
-                    val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                    val date = isoFormat.parse(cr.createdAt)
-                    val dateMonth = SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(date ?: Date())
-                    dateMonth == thisMonth
-                } catch (e: Exception) {
-                    false
-                }
-            }
-
-            val weeklyRequests = allChangeRequests.filter { cr ->
-                try {
-                    val isoFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
-                    val date = isoFormat.parse(cr.createdAt)
-                    date != null && (date.after(thisWeek) || date == thisWeek)
-                } catch (e: Exception) {
-                    false
-                }
             }
 
             // Greeting Card
@@ -342,7 +366,18 @@ fun BerandaPage(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            val statusCounts = allChangeRequests.groupingBy { it.status }.eachCount()
+            // ✅ FIXED: Count dengan logging
+            val statusCounts = remember(allChangeRequests) {
+                val counts = allChangeRequests.groupingBy { it.status }.eachCount()
+
+                Log.d("BerandaPage", """
+                    📊 Status Counts:
+                    ${counts.entries.joinToString("\n") { "  * ${it.key}: ${it.value}" }}
+                """.trimIndent())
+
+                counts
+            }
+
             val allStatuses = listOf(
                 "Submitted" to Color(0xFF9E9E9E),
                 "Reviewed" to Color(0xFF2196F3),
@@ -368,13 +403,11 @@ fun BerandaPage(
                             if (count > 0) {
                                 onFilterClick(TeknisiFilterType.STATUS(status), statusRequests)
                             } else {
-                                Toast
-                                    .makeText(
-                                        context,
-                                        "No requests with status $status",
-                                        Toast.LENGTH_SHORT
-                                    )
-                                    .show()
+                                Toast.makeText(
+                                    context,
+                                    "No requests with status $status",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
                         },
                     colors = CardDefaults.cardColors(containerColor = Color.White),
@@ -428,10 +461,7 @@ fun BerandaPage(
     }
 }
 
-// ========================================
-// ✅ HELPER FUNCTIONS (existing code tetap sama)
-// ========================================
-
+// Helper functions (keep existing)
 fun getJenisPerubahanColor(jenis: String): Color {
     return when (jenis) {
         "Emergency" -> Color(0xFFD32F2F)

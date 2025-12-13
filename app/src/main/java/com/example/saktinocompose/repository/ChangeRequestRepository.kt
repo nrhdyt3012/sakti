@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/example/saktinocompose/repository/ChangeRequestRepository.kt
 package com.example.saktinocompose.repository
 
 import android.util.Log
@@ -24,9 +25,7 @@ class ChangeRequestRepository {
                     🔄 Fetching change requests:
                     - Token: ${token?.take(20)}...
                     ${if (page != null || limit != null || status != null || type != null) {
-                    """
-                        - Filters: page=$page, limit=$limit, status=$status, type=$type
-                        """.trimIndent()
+                    "- Filters: page=$page, limit=$limit, status=$status, type=$type"
                 } else {
                     "- Fetching ALL data (no filters)"
                 }}
@@ -51,9 +50,22 @@ class ChangeRequestRepository {
 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val apiRequests = response.body()?.data ?: emptyList()
-                    Log.d("ChangeRequestRepo", "Fetched ${apiRequests.size} requests")
+                    Log.d("ChangeRequestRepo", "✅ Fetched ${apiRequests.size} requests from API")
 
                     val changeRequests = apiRequests.map { apiDataToChangeRequest(it) }
+
+                    // ✅ DEBUG: Log status mapping
+                    changeRequests.forEach { cr ->
+                        Log.d("ChangeRequestRepo", """
+                            📊 Mapped CR:
+                            - ID: ${cr.ticketId}
+                            - API Status: ${apiRequests.find { it.crId == cr.id }?.status}
+                            - API Approval: ${apiRequests.find { it.crId == cr.id }?.approvalStatus}
+                            - Mapped Status: ${cr.status}
+                            - Type: ${cr.jenisPerubahan}
+                        """.trimIndent())
+                    }
+
                     Result.Success(changeRequests)
                 } else {
                     val errorBody = response.errorBody()?.string()
@@ -77,64 +89,67 @@ class ChangeRequestRepository {
         }
     }
 
-    suspend fun fetchAll(): Result<List<ChangeRequest>> {
-        return fetchFromApi()
-    }
-
-    suspend fun fetchByStatus(status: String): Result<List<ChangeRequest>> {
-        return fetchFromApi(status = status)
-    }
-
-    suspend fun fetchByType(type: String): Result<List<ChangeRequest>> {
-        return fetchFromApi(type = type)
-    }
-
-    suspend fun updateChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val token = RetrofitClient.authToken
-                if (token == null) {
-                    return@withContext Result.Error(
-                        Exception("No token"),
-                        "Authentication required"
-                    )
-                }
-
-                // TODO: Implement API call untuk update
-                Result.Success(changeRequest)
-            } catch (e: Exception) {
-                Result.Error(e, "Update failed: ${e.message}")
-            }
-        }
-    }
-
     suspend fun fetchNonEmergencyChangeRequests(): Result<List<ChangeRequest>> {
         return when (val result = fetchFromApi()) {
             is Result.Success -> {
-                val filtered = result.data.filter {
+                val allRequests = result.data
+
+                // ✅ DEBUG: Log filtering process
+                Log.d("ChangeRequestRepo", """
+                    📊 Filtering Emergency:
+                    - Total from API: ${allRequests.size}
+                    - Emergency count: ${allRequests.count { it.jenisPerubahan.uppercase() == "EMERGENCY" }}
+                """.trimIndent())
+
+                val filtered = allRequests.filter {
                     it.jenisPerubahan.uppercase() != "EMERGENCY"
                 }
-                Log.d("ChangeRequestRepo", "Filtered out Emergency. Total: ${filtered.size}")
+
+                Log.d("ChangeRequestRepo", "✅ After filtering: ${filtered.size} non-emergency requests")
+
                 Result.Success(filtered)
             }
             is Result.Error -> result
             else -> result
         }
     }
+
     /**
-     * ✅ UPDATED: Mapping dengan Ticket ID yang benar
+     * ✅ FIXED: Status mapping dengan logging detail
+     */
+    private fun mapApiStatusToLocalStatus(apiStatus: String, approvalStatus: String?): String {
+        // ✅ PERBAIKAN: Gunakan apiStatus sebagai sumber utama
+        return when (apiStatus.uppercase()) {
+            "SUBMITTED", "PENDING" -> "Submitted"
+            "REVIEWED", "IN_REVIEW" -> "Reviewed"
+            "REVISION", "NEED_REVISION" -> "Revision"
+            "NEED_APPROVAL" -> "Need Approval"  // ✅ Dari API status
+            "APPROVED" -> "Approved"
+            "SCHEDULED" -> "Scheduled"
+            "IMPLEMENTING", "IN_PROGRESS" -> "Implementing"
+            "COMPLETED", "DONE" -> "Completed"
+            "FAILED", "REJECTED" -> "Failed"
+            "CLOSED" -> "Closed"
+            "EMERGENCY" -> "Emergency"
+            else -> {
+                // ✅ Fallback: Jika apiStatus tidak dikenali, cek approvalStatus
+                if (approvalStatus?.uppercase() == "NEED APPROVAL" || approvalStatus?.uppercase() == "NEED_APPROVAL") {
+                    "Need Approval"
+                } else {
+                    apiStatus  // Return original jika tidak ada mapping
+                }
+            }
+        }
+    }
+
+    /**
+     * ✅ UPDATED: Mapping dengan validation
      */
     private fun apiDataToChangeRequest(apiData: ChangeRequestApiData): ChangeRequest {
-        Log.d("ChangeRequestRepo", """
-            Mapping CR:
-            - CR ID: ${apiData.crId}
-            - Ticket ID: ${apiData.tiketId}
-            - Status: ${apiData.status}
-        """.trimIndent())
+        val mappedStatus = mapApiStatusToLocalStatus(apiData.status, apiData.approvalStatus)
 
         return ChangeRequest(
             id = apiData.crId,
-            // ✅ PERBAIKAN: Gunakan tiketId dari API, bukan crId
             ticketId = apiData.tiketId ?: apiData.crId,
             type = apiData.type ?: apiData.changeType ?: "Standard",
             title = apiData.title ?: "No Title",
@@ -158,8 +173,7 @@ class ChangeRequestRepository {
             postResidualScore = apiData.postResidualScore,
             postRiskLevel = apiData.postRiskLevel,
             implementationResult = apiData.implementationResult,
-            // ✅ PERBAIKAN: Map status dengan benar termasuk "NEED APPROVAL"
-            status = mapApiStatusToLocalStatus(apiData.status, apiData.approvalStatus),
+            status = mappedStatus,  // ✅ Use mapped status
             approvalStatus = apiData.approvalStatus,
             createdAt = apiData.createdAt,
             updatedAt = apiData.updatedAt,
@@ -188,27 +202,28 @@ class ChangeRequestRepository {
         return calculatedExposure.coerceIn(1, 4)
     }
 
-    /**
-     * ✅ UPDATED: Tambah mapping untuk "NEED APPROVAL"
-     */
-    private fun mapApiStatusToLocalStatus(apiStatus: String, approvalStatus: String?): String {
-        // ✅ PERBAIKAN: Check approval_status dulu
-        if (approvalStatus == "NEED APPROVAL") {
-            return "Need Approval"
-        }
+    suspend fun fetchAll(): Result<List<ChangeRequest>> = fetchFromApi()
 
-        return when (apiStatus.uppercase()) {
-            "SUBMITTED", "PENDING" -> "Submitted"
-            "REVIEWED", "IN_REVIEW" -> "Reviewed"
-            "REVISION", "NEED_REVISION" -> "Revision"
-            "APPROVED" -> "Approved"
-            "SCHEDULED" -> "Scheduled"
-            "IMPLEMENTING", "IN_PROGRESS" -> "Implementing"
-            "COMPLETED", "DONE" -> "Completed"
-            "FAILED", "REJECTED" -> "Failed"
-            "CLOSED" -> "Closed"
-            "EMERGENCY" -> "Emergency"  // ✅ TAMBAH: Handle emergency status
-            else -> apiStatus
+    suspend fun fetchByStatus(status: String): Result<List<ChangeRequest>> =
+        fetchFromApi(status = status)
+
+    suspend fun fetchByType(type: String): Result<List<ChangeRequest>> =
+        fetchFromApi(type = type)
+
+    suspend fun updateChangeRequest(changeRequest: ChangeRequest): Result<ChangeRequest> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = RetrofitClient.authToken
+                if (token == null) {
+                    return@withContext Result.Error(
+                        Exception("No token"),
+                        "Authentication required"
+                    )
+                }
+                Result.Success(changeRequest)
+            } catch (e: Exception) {
+                Result.Error(e, "Update failed: ${e.message}")
+            }
         }
     }
 }
