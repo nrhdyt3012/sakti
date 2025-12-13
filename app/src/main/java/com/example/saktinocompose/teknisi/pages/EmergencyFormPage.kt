@@ -89,6 +89,35 @@ fun EmergencyFormPage(
     var errorMessage by remember { mutableStateOf("") }
     var isSubmitting by remember { mutableStateOf(false) }
 
+    fun uploadPhoto2(uri: Uri) {
+        isUploadingPhoto = true
+        uploadError = null
+
+        scope.launch {
+            try {
+                when (val result = photoRepository.uploadEmergencyPhoto(
+                    photoUri = uri,
+                    context = context
+                )) {
+                    is Result.Success -> {
+                        uploadedPhotoUrl = result.data.url
+                        isUploadingPhoto = false
+                    }
+                    is Result.Error -> {
+                        uploadError = result.message ?: "Failed to upload photo"
+                        isUploadingPhoto = false
+                    }
+                    else -> {
+                        uploadError = "Unknown error"
+                        isUploadingPhoto = false
+                    }
+                }
+            } catch (e: Exception) {
+                uploadError = "Error: ${e.message}"
+                isUploadingPhoto = false
+            }
+        }
+    }
     // Gallery Launcher
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -96,6 +125,7 @@ fun EmergencyFormPage(
         uri?.let {
             photoUri = it
             photoBitmap = loadBitmapFromUri(context, it)
+            uploadPhoto(it)  // ✅ Upload immediately
         }
     }
 
@@ -107,6 +137,7 @@ fun EmergencyFormPage(
             tempPhotoUri?.let {
                 photoUri = it
                 photoBitmap = loadBitmapFromUri(context, it)
+                uploadPhoto(it)  // ✅ Upload immediately
             }
         }
     }
@@ -478,24 +509,86 @@ fun EmergencyFormPage(
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
                                 )
+
+                                // Upload indicator overlay
+                                if (isUploadingPhoto) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Black.copy(alpha = 0.5f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally,
+                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            CircularProgressIndicator(color = Color.White, strokeWidth = 3.dp)
+                                            Text("Uploading...", color = Color.White, fontSize = 12.sp)
+                                        }
+                                    }
+                                }
+
+                                // Success indicator
+                                if (uploadedPhotoUrl != null && !isUploadingPhoto) {
+                                    Card(
+                                        modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF4CAF50)),
+                                        shape = RoundedCornerShape(6.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(Icons.Default.CheckCircle, "Uploaded", tint = Color.White, modifier = Modifier.size(16.dp))
+                                            Text("Uploaded", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
+                                }
+
                                 IconButton(
                                     onClick = {
                                         photoUri = null
                                         photoBitmap = null
+                                        uploadedPhotoUrl = null
+                                        uploadError = null
                                     },
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(8.dp)
+                                    modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)
                                         .background(Color.Red.copy(alpha = 0.7f), CircleShape)
                                 ) {
                                     Icon(Icons.Default.Close, "Delete", tint = Color.White)
                                 }
                             }
                         }
+
+                        // Upload error
+                        if (uploadError != null) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2F).copy(alpha = 0.1f)),
+                                shape = RoundedCornerShape(6.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(Icons.Default.Error, null, tint = Color(0xFFD32F2F), modifier = Modifier.size(20.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("Upload Failed", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD32F2F))
+                                        Text(uploadError!!, fontSize = 11.sp, color = Color.Gray)
+                                    }
+                                    IconButton(onClick = { photoUri?.let { uploadPhoto(it) } }) {
+                                        Icon(Icons.Default.Refresh, "Retry", tint = Color(0xFFD32F2F))
+                                    }
+                                }
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedButton(
                             onClick = { showImagePickerDialog = true },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isUploadingPhoto
                         ) {
                             Icon(Icons.Default.Edit, null)
                             Spacer(modifier = Modifier.width(8.dp))
@@ -508,7 +601,7 @@ fun EmergencyFormPage(
                         ) {
                             Icon(Icons.Default.AddAPhoto, null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Add Photo")
+                            Text("Add evidence photo")
                         }
                     }
                 }
@@ -516,7 +609,7 @@ fun EmergencyFormPage(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Submit Button
+            // ✅ UPDATED: Submit with photo URL validation
             Button(
                 onClick = {
                     when {
@@ -539,16 +632,14 @@ fun EmergencyFormPage(
                         !isOnline -> {
                             showOfflineDialog = true
                         }
+                        isUploadingPhoto -> {
+                            errorMessage = "Please wait for photo upload to complete"
+                            showErrorDialog = true
+                        }
                         else -> {
                             isSubmitting = true
                             scope.launch {
                                 try {
-                                    // Save photo if exists
-                                    val savedPhotoPath = photoUri?.let { uri ->
-                                        savePhotoToInternalStorage(context, uri)
-                                    }
-
-                                    // Submit to API
                                     val result = emergencyRepository.createEmergency(
                                         id = emergencyId,
                                         title = title,
@@ -585,19 +676,19 @@ fun EmergencyFormPage(
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isOnline && !isSubmitting) Color(0xFFFF5722) else Color.Gray
+                    containerColor = if (isOnline && !isSubmitting && !isUploadingPhoto) Color(0xFFFF5722) else Color.Gray
                 ),
                 shape = RoundedCornerShape(8.dp),
-                enabled = isOnline && !isSubmitting
+                enabled = isOnline && !isSubmitting && !isUploadingPhoto
             ) {
                 if (isSubmitting) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp
-                    )
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Submitting...", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                } else if (isUploadingPhoto) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Uploading Photo...", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 } else {
                     if (!isOnline) {
                         Icon(Icons.Default.CloudOff, "Offline", modifier = Modifier.size(24.dp))

@@ -77,3 +77,26 @@ data class EmergencyData(
     @SerializedName("photo_url")
     val photoUrl: String?
 )
+
+/**
+ * Response from emergency photo upload
+ * POST /emergency/photo
+ */
+data class EmergencyPhotoResponse(
+    @SerializedName("success")
+    val success: Boolean,
+
+    @SerializedName("message")
+    val message: String,
+
+    @SerializedName("data")
+    val data: EmergencyPhotoUploadData?
+)
+
+data class EmergencyPhotoUploadData(
+    @SerializedName("path")
+    val path: String,
+
+    @SerializedName("url")
+    val url: String
+)

@@ -1,3 +1,4 @@
+// File: app/src/main/java/com/example/saktinocompose/teknisi/pages/SchedulingDialog.kt
 package com.example.saktinocompose.teknisi.pages
 
 import android.app.DatePickerDialog
@@ -13,14 +14,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.saktinocompose.R
 import com.example.saktinocompose.data.model.ChangeRequest
+import com.example.saktinocompose.network.Result
+import com.example.saktinocompose.network.dto.ScheduleRequest
+import com.example.saktinocompose.repository.ScheduleRepository
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.ui.res.stringResource
-import com.example.saktinocompose.R
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SchedulingDialog(
@@ -29,8 +35,14 @@ fun SchedulingDialog(
     onSave: (scheduledDate: String) -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val scheduleRepository = remember { ScheduleRepository() }
+
+    // States
     var scheduledDate by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
+    var isSubmitting by remember { mutableStateOf(false) }
+    var showErrorDialog by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
 
     val calendar = Calendar.getInstance()
 
@@ -49,8 +61,37 @@ fun SchedulingDialog(
         datePicker.minDate = System.currentTimeMillis()
     }
 
+    // Error Dialog
+    if (showErrorDialog) {
+        AlertDialog(
+            onDismissRequest = { showErrorDialog = false },
+            icon = {
+                Icon(
+                    Icons.Default.Error,
+                    contentDescription = "Error",
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(48.dp)
+                )
+            },
+            title = {
+                Text("Error", fontWeight = FontWeight.Bold, color = Color(0xFFD32F2F))
+            },
+            text = {
+                Text(errorMessage)
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showErrorDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                ) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (!isSubmitting) onDismiss() },
         title = {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -84,9 +125,7 @@ fun SchedulingDialog(
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp)
-                    ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
                         Text(
                             text = "Ticket: ${changeRequest.ticketId}",
                             fontSize = 12.sp,
@@ -110,9 +149,7 @@ fun SchedulingDialog(
                     ),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp)
-                    ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
                         Text(
                             text = stringResource(R.string.proposed_schedule_user),
                             fontSize = 12.sp,
@@ -155,24 +192,6 @@ fun SchedulingDialog(
                     )
                 )
 
-                // Catatan
-                Text(
-                    text = stringResource(R.string.notes) + " (Optional)",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
-                OutlinedTextField(
-                    value = notes,
-                    onValueChange = { notes = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    minLines = 3,
-                    placeholder = { Text("Add a note for scheduling...") },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    )
-                )
-
                 // Info peringatan
                 if (scheduledDate.isNotEmpty()) {
                     Card(
@@ -194,7 +213,7 @@ fun SchedulingDialog(
                             )
                             Column {
                                 Text(
-                                    text = "Implementasi Terjadwal",
+                                    text = "Scheduled Implementation",
                                     fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF2196F3)
@@ -214,19 +233,65 @@ fun SchedulingDialog(
             Button(
                 onClick = {
                     if (scheduledDate.isNotBlank()) {
-                        onSave(scheduledDate)
+                        isSubmitting = true
+
+                        scope.launch {
+                            try {
+                                // Convert ke ISO 8601 format
+                                val isoDate = ScheduleRequest.fromDateString(scheduledDate)
+                                    .tanggalImplementasi
+
+                                // Submit ke API
+                                when (val result = scheduleRepository.scheduleImplementation(
+                                    crId = changeRequest.id,
+                                    tanggalImplementasi = isoDate
+                                )) {
+                                    is Result.Success -> {
+                                        isSubmitting = false
+                                        onSave(scheduledDate)
+                                    }
+                                    is Result.Error -> {
+                                        isSubmitting = false
+                                        errorMessage = result.message ?: "Failed to schedule"
+                                        showErrorDialog = true
+                                    }
+                                    else -> {
+                                        isSubmitting = false
+                                        errorMessage = "Unknown error"
+                                        showErrorDialog = true
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                isSubmitting = false
+                                errorMessage = "Error: ${e.message}"
+                                showErrorDialog = true
+                            }
+                        }
                     }
                 },
-                enabled = scheduledDate.isNotBlank(),
+                enabled = scheduledDate.isNotBlank() && !isSubmitting,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(0xFFFF9800)
                 )
             ) {
-                Text(stringResource(R.string.schedule))
+                if (isSubmitting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Submitting...")
+                } else {
+                    Text(stringResource(R.string.schedule))
+                }
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            TextButton(
+                onClick = onDismiss,
+                enabled = !isSubmitting
+            ) {
                 Text("Cancel")
             }
         }
