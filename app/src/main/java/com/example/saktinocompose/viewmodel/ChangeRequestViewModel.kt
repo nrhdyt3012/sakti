@@ -28,8 +28,10 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
     val error = _error.asStateFlow()
 
     init {
-        // ✅ REMOVED: Jangan auto-fetch di init
-        // Biarkan UI yang trigger
+        viewModelScope.launch {
+            delay(500) // Wait for token
+            refreshData()
+        }
     }
 
     /**

@@ -76,6 +76,14 @@ fun BerandaPage(
                 viewModel.refreshData()
             }
         }
+
+        while(true) {
+            delay(30000) // 30 seconds
+            if (NetworkHelper.isInternetAvailable(context)) {
+                viewModel.refreshData()
+            }
+        }
+
     }
 
     LaunchedEffect(error) {
