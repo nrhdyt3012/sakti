@@ -154,18 +154,18 @@ class ChangeRequestRepository {
             type = apiData.type ?: apiData.changeType ?: "Standard",
             title = apiData.title ?: "No Title",
             description = apiData.description ?: "",
-            assetId = apiData.assetId ?: "",
-            asetTerdampak = apiData.impactedAssetId ?: apiData.assetId ?: "",  // ✅ FIXED: Use impacted_asset_id
+            assetId = apiData.assetId ?: apiData.impactedAssetId ?: "",  // ✅ FIXED: Fallback
+            asetTerdampak = apiData.impactedAssetId ?: apiData.assetId ?: "",  // ✅ FIXED: Use impacted_asset_id first
             relasiConfigurationItem = apiData.ciId ?: "",  // ✅ FIXED: Use ci_id
-            rencanaImplementasi = apiData.rencanaImplementasi ?: apiData.mitigationPlan ?: "",  // ✅ FIXED: Use rencana_implementasi
-            usulanJadwal = apiData.usulanJadwal ?: apiData.targetCompletion ?: "",  // ✅ FIXED: Use usulan_jadwal
-            rollbackPlan = apiData.rollbackPlan ?: "",
+            rencanaImplementasi = apiData.rencanaImplementasi ?: apiData.mitigationPlan ?: "",  // ✅ FIXED: Use rencana_implementasi first
+            usulanJadwal = formatUsulanJadwal(apiData.usulanJadwal ?: apiData.targetCompletion ?: ""),  // ✅ FIXED: Format properly
+            rollbackPlan = apiData.rollbackPlan ?: apiData.rencanaRollback ?: "",  // ✅ FIXED: Add fallback
             assignedTeknisiName = apiData.picImplementation,
             scheduledDate = apiData.scheduleImplementation,
             scheduleStart = apiData.scheduleStart,
             scheduleEnd = apiData.scheduleEnd,
-            scoreImpact = apiData.scoreImpact ?: 0,
-            scoreLikelihood = apiData.scoreLikelihood ?: 0,
+            scoreImpact = apiData.scoreImpact ?: apiData.skorDampak ?: 0,  // ✅ FIXED: Add fallback
+            scoreLikelihood = apiData.scoreLikelihood ?: apiData.skorKemungkinan ?: 0,  // ✅ FIXED: Add fallback
             scoreRisk = apiData.scoreRisk ?: 0,
             riskLevel = apiData.riskLevel ?: "Low",
             postImpact = apiData.postImpact,
@@ -183,12 +183,39 @@ class ChangeRequestRepository {
             controlEffectiveness = apiData.controlEffectiveness,
             mitigationPlan = apiData.mitigationPlan,
             jenisPerubahan = apiData.changeType ?: apiData.type ?: "Standard",
-            skorEksposur = calculateExposure(
+            skorEksposur = apiData.skorExposure ?: calculateExposure(
                 apiData.scoreImpact,
                 apiData.scoreLikelihood,
                 apiData.scoreRisk
-            )
+            ),  // ✅ FIXED: Use skor_exposure from API
+            photoPath = apiData.inspectionPhotoUrl,  // ✅ FIXED: Map inspection photo
+            estimasiBiaya = apiData.estimasiBiaya,  // ✅ FIXED: Map estimasi biaya
+            estimasiWaktu = apiData.estimasiWaktu  // ✅ FIXED: Map estimasi waktu
         )
+    }
+
+    /**
+     * ✅ NEW: Format usulan jadwal dari ISO 8601 ke yyyy-MM-dd
+     */
+    private fun formatUsulanJadwal(jadwal: String): String {
+        if (jadwal.isBlank()) return ""
+
+        return try {
+            when {
+                jadwal.contains("T") -> {
+                    // ISO 8601 format -> extract date only
+                    jadwal.split("T").firstOrNull() ?: jadwal
+                }
+                jadwal.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) -> {
+                    // Already correct format
+                    jadwal
+                }
+                else -> jadwal
+            }
+        } catch (e: Exception) {
+            Log.e("ChangeRequestRepo", "Error formatting jadwal: ${e.message}")
+            jadwal
+        }
     }
 
     private fun calculateExposure(impact: Int?, likelihood: Int?, totalRisk: Int?): Int {

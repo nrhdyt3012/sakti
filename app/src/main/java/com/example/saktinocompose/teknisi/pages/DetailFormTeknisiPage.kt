@@ -98,6 +98,10 @@ fun DetailFormTeknisiPage(
     var showSubmittedDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+    val allChangeRequests by changeRequestViewModel.getAllChangeRequests().collectAsState()
+    val latestChangeRequest = remember(changeRequest.id, allChangeRequests) {
+        allChangeRequests.find { it.id == changeRequest.id } ?: changeRequest
+    }
 
     // ✅ TAMBAH DIALOG HANDLERS:
     if (showSubmittedDialog) {
@@ -545,8 +549,6 @@ fun DetailFormTeknisiPage(
                     DetailItem(label = "Change Request Title", value = changeRequest.title)
                     DetailItem(label = "Description", value = changeRequest.description)
                     HorizontalDivider()
-
-                    DetailItem(label = "Asset ID", value = changeRequest.idAset)
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

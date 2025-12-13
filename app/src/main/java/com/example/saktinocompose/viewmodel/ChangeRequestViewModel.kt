@@ -181,4 +181,38 @@ class ChangeRequestViewModel(application: Application) : AndroidViewModel(applic
         )
         updateFullChangeRequest(updated)
     }
+    fun refreshSingleChangeRequest(crId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+
+            Log.d("ChangeRequestVM", "🔄 Refreshing single CR: $crId")
+
+            // Fetch all data to get updated CR
+            when (val result = repository.fetchNonEmergencyChangeRequests()) {
+                is Result.Success -> {
+                    val updatedCR = result.data.find { it.id == crId }
+
+                    if (updatedCR != null) {
+                        // Update the specific CR in the list
+                        val currentList = _changeRequests.value.toMutableList()
+                        val index = currentList.indexOfFirst { it.id == crId }
+
+                        if (index != -1) {
+                            currentList[index] = updatedCR
+                            _changeRequests.value = currentList
+                            Log.d("ChangeRequestVM", "✅ CR $crId refreshed successfully")
+                        }
+                    }
+                    _error.value = null
+                }
+                is Result.Error -> {
+                    _error.value = result.message
+                    Log.e("ChangeRequestVM", "❌ Failed to refresh CR: ${result.message}")
+                }
+                else -> {}
+            }
+
+            _isLoading.value = false
+        }
+    }
 }
