@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.saktinocompose.network.Result
+import com.example.saktinocompose.repository.EmergencyPhotoRepository
 import com.example.saktinocompose.repository.EmergencyRepository
 import com.example.saktinocompose.utils.NetworkHelper
 import kotlinx.coroutines.launch
@@ -75,10 +76,16 @@ fun EmergencyFormPage(
     var selectedStatus by remember { mutableStateOf("COMPLETED") }
     var note by remember { mutableStateOf("") }
 
+
     // Photo States
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
+
+    // ✅ TAMBAH: Photo upload states
+    var uploadedPhotoUrl by remember { mutableStateOf<String?>(null) }
+    var isUploadingPhoto by remember { mutableStateOf(false) }
+    var uploadError by remember { mutableStateOf<String?>(null) }
 
     // Dialog States
     var showStatusDropdown by remember { mutableStateOf(false) }
@@ -89,7 +96,9 @@ fun EmergencyFormPage(
     var errorMessage by remember { mutableStateOf("") }
     var isSubmitting by remember { mutableStateOf(false) }
 
-    fun uploadPhoto2(uri: Uri) {
+    val photoRepository = remember { EmergencyPhotoRepository() }
+
+    fun uploadPhoto(uri: Uri) {
         isUploadingPhoto = true
         uploadError = null
 
@@ -118,6 +127,7 @@ fun EmergencyFormPage(
             }
         }
     }
+
     // Gallery Launcher
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -125,7 +135,7 @@ fun EmergencyFormPage(
         uri?.let {
             photoUri = it
             photoBitmap = loadBitmapFromUri(context, it)
-            uploadPhoto(it)  // ✅ Upload immediately
+            uploadPhoto(it)  // ✅ Langsung upload
         }
     }
 
@@ -137,7 +147,7 @@ fun EmergencyFormPage(
             tempPhotoUri?.let {
                 photoUri = it
                 photoBitmap = loadBitmapFromUri(context, it)
-                uploadPhoto(it)  // ✅ Upload immediately
+                uploadPhoto(it)  // ✅ Langsung upload
             }
         }
     }
