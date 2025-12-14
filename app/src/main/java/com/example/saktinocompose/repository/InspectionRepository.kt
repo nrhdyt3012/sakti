@@ -20,7 +20,7 @@ class InspectionRepository {
         alasan: String,
         tujuan: String,
         ciId: String,
-        impactedAssets: List<String>,  // ✅ CHANGED: List of asset IDs
+        impactedAssets: List<String>,  // ✅ List of UUID strings
         rencanaImplementasi: String,
         usulanJadwal: String,
         rencanaRollback: String,
@@ -39,8 +39,8 @@ class InspectionRepository {
                 }
 
                 // ✅ Convert List<String> to List<ImpactedAssetItem>
-                val impactedAssetItems = impactedAssets.map {
-                    ImpactedAssetItem(assetId = it)
+                val impactedAssetItems = impactedAssets.map { assetId ->
+                    ImpactedAssetItem(assetId = assetId)
                 }
 
                 val request = InspectionRequest(
@@ -48,7 +48,7 @@ class InspectionRepository {
                     alasan = alasan,
                     tujuan = tujuan,
                     ciId = ciId,
-                    impactedAssets = impactedAssetItems,  // ✅ CHANGED
+                    impactedAssets = impactedAssetItems,  // ✅ List<ImpactedAssetItem>
                     rencanaImplementasi = rencanaImplementasi,
                     usulanJadwal = usulanJadwal,
                     rencanaRollback = rencanaRollback,
@@ -57,17 +57,17 @@ class InspectionRepository {
                     skorExposure = skorExposure
                 )
 
-                Log.d(
-                    "InspectionRepo", """
-                    📤 Submitting Inspection:
-                    - CR ID: $crId
-                    - Jenis: $jenisPerubahan
-                    - Impacted Assets: ${impactedAssets.size} items
-                    - Dampak: $skorDampak
-                    - Kemungkinan: $skorKemungkinan
-                    - Exposure: $skorExposure
-                """.trimIndent()
-                )
+                // ✅ LOG REQUEST BODY
+                Log.d("InspectionRepo", """
+                📤 INSPECTION REQUEST:
+                ==========================================
+                Endpoint: PUT /change-requests/${crId}/inspection
+                Body: ${com.google.gson.Gson().toJson(request)}
+                ==========================================
+                impacted_assets format:
+                ${impactedAssetItems.joinToString("\n") { "  - {asset_id: ${it.assetId}}" }}
+                ==========================================
+            """.trimIndent())
 
                 val response = RetrofitClient.changeRequestService.submitInspection(
                     id = crId,
@@ -82,7 +82,12 @@ class InspectionRepository {
                 } else {
                     val errorBody = response.errorBody()?.string()
                     val errorMsg = errorBody ?: "Failed to submit inspection"
-                    Log.e("InspectionRepo", "❌ API Error: $errorMsg")
+
+                    Log.e("InspectionRepo", """
+                    ❌ API Error:
+                    Code: ${response.code()}
+                    Message: $errorMsg
+                """.trimIndent())
 
                     if (response.code() == 401) {
                         RetrofitClient.clearAuthToken()

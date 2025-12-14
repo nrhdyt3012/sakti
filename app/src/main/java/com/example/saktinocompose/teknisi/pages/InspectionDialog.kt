@@ -116,98 +116,6 @@ fun InspectionDialog(
 
     val jenisOptions = listOf("Standar", "Minor", "Major", "Emergency")
 
-    // ✅ FIXED: Helper function untuk parse impacted assets dengan benar
-    fun parseImpactedAssets(asetTerdampak: String): List<String> {
-        if (asetTerdampak.isBlank()) return emptyList()
-
-        return try {
-            // Format bisa:
-            // 1. "kode_bmd" - single asset
-            // 2. "kode_bmd1,kode_bmd2,kode_bmd3" - multiple assets
-            // 3. "kode_bmd:nama:tipe" - dengan detail (ambil kode_bmd saja)
-            // 4. "kode_bmd1:nama1:tipe1,kode_bmd2:nama2:tipe2" - multiple dengan detail
-
-            asetTerdampak.split(",").mapNotNull { item ->
-                val trimmed = item.trim()
-                if (trimmed.contains(":")) {
-                    // Format "kode_bmd:nama:tipe" -> ambil kode_bmd saja
-                    trimmed.split(":").firstOrNull()?.trim()
-                } else {
-                    // Format "kode_bmd" langsung
-                    trimmed.takeIf { it.isNotBlank() }
-                }
-            }.distinct() // Remove duplicates
-        } catch (e: Exception) {
-            Log.e("InspectionDialog", "❌ Error parsing impacted assets: ${e.message}")
-            emptyList()
-        }
-    }
-
-    // ✅ FIXED: Helper function untuk parse CI ID dengan benar
-    fun parseCIId(relasiCI: String): String {
-        if (relasiCI.isBlank()) return ""
-
-        return try {
-            // Format bisa:
-            // 1. "kode_bmd" - single CI
-            // 2. "kode_bmd1,kode_bmd2" - multiple CIs (ambil yang pertama)
-            // 3. "kode_bmd:nama:tipe" - dengan detail (ambil kode_bmd)
-            // 4. "kode_bmd1:nama1:tipe1,kode_bmd2:nama2:tipe2" - multiple dengan detail
-
-            val firstCI = relasiCI.split(",").firstOrNull()?.trim() ?: ""
-
-            if (firstCI.contains(":")) {
-                // Format "kode_bmd:nama:tipe" -> ambil kode_bmd saja
-                firstCI.split(":").firstOrNull()?.trim() ?: ""
-            } else {
-                // Format "kode_bmd" langsung
-                firstCI
-            }
-        } catch (e: Exception) {
-            Log.e("InspectionDialog", "❌ Error parsing CI ID: ${e.message}")
-            ""
-        }
-    }
-
-    // ✅ FIXED: Helper function untuk format usulan jadwal
-    fun formatUsulanJadwal(jadwal: String): String {
-        if (jadwal.isBlank()) return ""
-
-        return try {
-            // Input bisa dalam format:
-            // 1. "2025-12-20" -> sudah benar
-            // 2. "20/12/2025" -> perlu convert
-            // 3. "2025-12-20T07:26:24.580Z" -> perlu extract date saja
-
-            when {
-                jadwal.contains("T") -> {
-                    // ISO 8601 format -> ambil date saja
-                    jadwal.split("T").firstOrNull() ?: jadwal
-                }
-
-                jadwal.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) -> {
-                    // Already in correct format
-                    jadwal
-                }
-
-                jadwal.contains("/") -> {
-                    // Format dd/MM/yyyy -> convert to yyyy-MM-dd
-                    val parts = jadwal.split("/")
-                    if (parts.size == 3) {
-                        "${parts[2]}-${parts[1]}-${parts[0]}"
-                    } else {
-                        jadwal
-                    }
-                }
-
-                else -> jadwal
-            }
-        } catch (e: Exception) {
-            Log.e("InspectionDialog", "❌ Error formatting usulan jadwal: ${e.message}")
-            jadwal
-        }
-    }
-
     fun uploadPhoto(uri: Uri) {
         isUploadingPhoto = true
         uploadError = null
@@ -899,133 +807,85 @@ fun InspectionDialog(
                         uploadedPhotoUrl != null
                     ) {
                         isSubmitting = true
-
                         scope.launch {
                             try {
-                                // ✅ FIXED: Parse impacted assets dengan benar
-                                val impactedAssets = parseImpactedAssets(changeRequest.asetTerdampak).let { parsed ->
-                                    if (parsed.isEmpty()) {
-                                        // Fallback 1: Coba dari assetId
-                                        if (changeRequest.assetId.isNotBlank()) {
-                                            Log.w("InspectionDialog", "⚠️ Fallback to assetId: ${changeRequest.assetId}")
-                                            listOf(changeRequest.assetId)
-                                        }
-                                        // Fallback 2: Coba dari idAset
-                                        else if (changeRequest.idAset.isNotBlank()) {
-                                            Log.w("InspectionDialog", "⚠️ Fallback to idAset: ${changeRequest.idAset}")
-                                            listOf(changeRequest.idAset)
-                                        } else {
-                                            emptyList()
-                                        }
-                                    } else {
-                                        parsed
-                                    }
-                                }
-
-                                val ciId = parseCIId(changeRequest.relasiConfigurationItem).let { parsed ->
-                                    if (parsed.isBlank()) {
-                                        // Fallback: Gunakan asset yang sama
-                                        impactedAssets.firstOrNull() ?: ""
-                                    } else {
-                                        parsed
-                                    }
-                                }
-
-                                val usulanJadwal = formatUsulanJadwal(changeRequest.usulanJadwal).let { parsed ->
-                                    if (parsed.isBlank()) {
-                                        // Fallback: Gunakan tanggal hari ini + 7 hari
-                                        val calendar = java.util.Calendar.getInstance()
-                                        calendar.add(java.util.Calendar.DAY_OF_MONTH, 7)
-                                        java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-                                            .format(calendar.time)
-                                    } else {
-                                        parsed
-                                    }
-                                }
-
-                                // ✅ LOG hasil parsing
-                                // ✅ DETAILED LOGGING untuk debugging
-                                Log.d("InspectionDialog", """
-                            ========== INSPECTION DATA ==========
-                            Raw asetTerdampak: '${changeRequest.asetTerdampak}'
-                            Raw relasiCI: '${changeRequest.relasiConfigurationItem}'
-                            Raw usulanJadwal: '${changeRequest.usulanJadwal}'
-                            Asset ID: '${changeRequest.assetId}'
-                            =====================================
-                        """.trimIndent())
-
-                                // ✅ VALIDASI dengan pesan error yang lebih informatif
-                                when {
-                                    impactedAssets.isEmpty() -> {
-                                        errorMessage = """
-                                            Impacted assets tidak valid!
-                                            
-                                            Data mentah:
-                                            - asetTerdampak: '${changeRequest.asetTerdampak}'
-                                            - assetId: '${changeRequest.assetId}'
-                                            - idAset: '${changeRequest.idAset}'
-                                            
-                                            Pastikan data CR memiliki informasi asset yang valid.
-                                        """.trimIndent()
-                                        showErrorDialog = true
-                                        isSubmitting = false
-                                        return@launch
-                                    }
-
-                                    ciId.isBlank() -> {
-                                        errorMessage = """
-                                            CI ID tidak valid!
-                                            
-                                            Data mentah:
-                                            - relasiCI: '${changeRequest.relasiConfigurationItem}'
-                                            
-                                            Sistem akan menggunakan asset ID sebagai CI ID.
-                                        """.trimIndent()
-                                        // Don't return, just log warning
-                                        Log.w("InspectionDialog", "⚠️ CI ID kosong, menggunakan fallback")
-                                    }
-
-                                    usulanJadwal.isBlank() -> {
-                                        errorMessage = """
-                                            Usulan jadwal tidak valid!
-                                            
-                                            Data mentah: '${changeRequest.usulanJadwal}'
-                                            
-                                            Sistem akan menggunakan +7 hari dari sekarang.
-                                        """.trimIndent()
-                                        // Don't return, just log warning
-                                        Log.w("InspectionDialog", "⚠️ Usulan jadwal kosong, menggunakan fallback")
-                                    }
-                                }
-
-                                Log.d(
-                                    "InspectionDialog", """
-                            📤 Submitting inspection:
-                            - CR ID: ${changeRequest.id}
-                            - Jenis: $jenisPerubahan
-                            - Impacted Assets (parsed): $impactedAssets
-                            - Impacted Assets (raw): ${changeRequest.asetTerdampak}
-                            - CI ID (parsed): $ciId
-                            - CI ID (raw): ${changeRequest.relasiConfigurationItem}
-                            - Usulan Jadwal (parsed): $usulanJadwal
-                            - Usulan Jadwal (raw): ${changeRequest.usulanJadwal}
-                            - Description: ${changeRequest.description}
-                            - Title: ${changeRequest.title}
-                            - Rencana Impl: ${changeRequest.rencanaImplementasi}
-                            - Rollback: ${changeRequest.rollbackPlan}
-                        """.trimIndent()
+                                // ✅ Parse dengan validasi UUID
+                                val impactedAssetIds = parseImpactedAssetsForInspection(
+                                    changeRequest.asetTerdampak
                                 )
 
-                                // Submit inspection
+                                // ✅ Validasi lebih strict
+                                if (impactedAssetIds.isEmpty()) {
+                                    errorMessage = """
+                                ❌ No valid impacted assets found!
+                                
+                                Possible causes:
+                                1. asetTerdampak is empty: '${changeRequest.asetTerdampak}'
+                                2. No valid UUID format found
+                                3. CR needs 'Submitted Details' completion
+                                
+                                Please check the CR data.
+                            """.trimIndent()
+                                    showErrorDialog = true
+                                    isSubmitting = false
+                                    return@launch
+                                }
+
+                                // ✅ Parse CI ID dengan validasi
+                                val ciId = parseCIIdForInspection(
+                                    changeRequest.relasiConfigurationItem,
+                                    impactedAssetIds
+                                )
+
+                                if (ciId.isBlank() || !isValidUUID(ciId)) {
+                                    errorMessage = """
+                                ❌ Invalid CI ID!
+                                
+                                Details:
+                                - relasiCI: '${changeRequest.relasiConfigurationItem}'
+                                - Parsed CI ID: '$ciId'
+                                - Is valid UUID: ${isValidUUID(ciId)}
+                                
+                                Please complete 'Submitted Details' with valid CI.
+                            """.trimIndent()
+                                    showErrorDialog = true
+                                    isSubmitting = false
+                                    return@launch
+                                }
+
+                                // ✅ Format usulan jadwal
+                                val usulanJadwal = formatUsulanJadwal(changeRequest.usulanJadwal)
+
+                                // ✅ LOG lengkap sebelum submit
+                                Log.d("InspectionDialog", """
+                            ╔═══════════════════════════════════════════════
+                            ║ 📤 INSPECTION SUBMISSION
+                            ╠═══════════════════════════════════════════════
+                            ║ CR ID: ${changeRequest.id}
+                            ║ Jenis: $jenisPerubahan
+                            ╠═══════════════════════════════════════════════
+                            ║ IMPACTED ASSETS (${impactedAssetIds.size}):
+                            ${impactedAssetIds.mapIndexed { i, id ->
+                                    "║   ${i+1}. $id [${if(isValidUUID(id)) "✓" else "✗"}]"
+                                }.joinToString("\n")}
+                            ╠═══════════════════════════════════════════════
+                            ║ CI ID: $ciId [${if(isValidUUID(ciId)) "✓" else "✗"}]
+                            ║ Usulan Jadwal: $usulanJadwal
+                            ╠═══════════════════════════════════════════════
+                            ║ RISK: D=$skorDampak K=$skorKemungkinan E=$skorEksposur
+                            ╚═══════════════════════════════════════════════
+                        """.trimIndent())
+
+                                // ✅ Submit inspection
                                 val result = inspectionRepository.submitInspection(
                                     crId = changeRequest.id,
                                     jenisPerubahan = jenisPerubahan,
                                     alasan = changeRequest.description,
                                     tujuan = changeRequest.title,
-                                    ciId = ciId,  // ✅ FIXED
-                                    impactedAssets = impactedAssets,  // ✅ FIXED
+                                    ciId = ciId,
+                                    impactedAssets = impactedAssetIds,
                                     rencanaImplementasi = changeRequest.rencanaImplementasi,
-                                    usulanJadwal = usulanJadwal,  // ✅ FIXED
+                                    usulanJadwal = usulanJadwal,
                                     rencanaRollback = changeRequest.rollbackPlan,
                                     skorDampak = skorDampak,
                                     skorKemungkinan = skorKemungkinan,
@@ -1034,18 +894,7 @@ fun InspectionDialog(
 
                                 when (result) {
                                     is Result.Success -> {
-                                        // Save local photo path
-                                        val savedPhotoPath = photoUri?.let { uri ->
-                                            if (uri.toString().startsWith("file://")) {
-                                                changeRequest.photoPath
-                                            } else {
-                                                PhotoHelper.savePhotoToInternalStorage(  // ✅ Gunakan PhotoHelper
-                                                    context,
-                                                    uri,
-                                                    "INSPECTION" )                                           }
-
-                                        }
-
+                                        Log.d("InspectionDialog", "✅ SUCCESS!")
                                         onSave(
                                             InspectionAction.APPROVE,
                                             jenisPerubahan,
@@ -1060,30 +909,37 @@ fun InspectionDialog(
                                             ""
                                         )
                                     }
-
                                     is Result.Error -> {
-                                        errorMessage =
-                                            result.message ?: "Failed to submit inspection"
+                                        errorMessage = """
+                                    ❌ Submission Failed
+                                    
+                                    Error: ${result.message}
+                                    
+                                    Validation:
+                                    - Assets: ${impactedAssetIds.size} items
+                                    - CI ID: $ciId ${if(isValidUUID(ciId)) "✓" else "✗"}
+                                    - Jadwal: $usulanJadwal
+                                """.trimIndent()
                                         showErrorDialog = true
                                         isSubmitting = false
                                     }
-
                                     else -> {
-                                        errorMessage = "Unknown error occurred"
+                                        errorMessage = "Unknown error"
                                         showErrorDialog = true
                                         isSubmitting = false
                                     }
                                 }
                             } catch (e: Exception) {
-                                errorMessage = "Error: ${e.message}"
+                                Log.e("InspectionDialog", "❌ EXCEPTION", e)
+                                errorMessage = "Exception: ${e.message}"
                                 showErrorDialog = true
                                 isSubmitting = false
-                                Log.e("InspectionDialog", "❌ Exception", e)
                             }
                         }
                     }
                 },
-                enabled = estimasiBiaya.isNotBlank() &&
+
+                    enabled = estimasiBiaya.isNotBlank() &&
                         estimasiWaktu.isNotBlank() &&
                         skorDampak > 0 &&
                         skorKemungkinan > 0 &&
@@ -1112,80 +968,143 @@ fun InspectionDialog(
     )
 }
 
-private fun parseImpactedAssets(asetTerdampak: String): List<String> {
-    if (asetTerdampak.isBlank()) return emptyList()
 
-    return try {
-        asetTerdampak.split(",").mapNotNull { item ->
-            val trimmed = item.trim()
-            if (trimmed.contains(":")) {
-                // Format "kode_bmd:nama:tipe" -> ambil kode_bmd
-                trimmed.split(":").firstOrNull()?.trim()
-            } else {
-                // Format "kode_bmd" langsung
-                trimmed.takeIf { it.isNotBlank() }
-            }
-        }.distinct()
-    } catch (e: Exception) {
-        Log.e("InspectionDialog", "Error parsing impacted assets: ${e.message}")
-        emptyList()
-    }
-}
-
-/**
- * ✅ Parse CI ID dari berbagai format
- */
-private fun parseCIId(relasiCI: String): String {
-    if (relasiCI.isBlank()) return ""
-
-    return try {
-        val firstCI = relasiCI.split(",").firstOrNull()?.trim() ?: ""
-
-        if (firstCI.contains(":")) {
-            // Format "kode_bmd:nama:tipe" -> ambil kode_bmd
-            firstCI.split(":").firstOrNull()?.trim() ?: ""
-        } else {
-            // Format "kode_bmd" langsung
-            firstCI
+                // ✅ FIXED: Helper function untuk parse impacted assets dengan benar
+                private fun isValidUUID(str: String): Boolean {
+            return str.matches(
+                Regex("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+            )
         }
-    } catch (e: Exception) {
-        Log.e("InspectionDialog", "Error parsing CI ID: ${e.message}")
-        ""
-    }
-}
 
-/**
- * ✅ Format usulan jadwal ke format yyyy-MM-dd
- */
-private fun formatUsulanJadwal(jadwal: String): String {
-    if (jadwal.isBlank()) return ""
+                /**
+                 * ✅ Parse impacted assets dengan validasi UUID
+                 */
+                private fun parseImpactedAssetsForInspection(asetTerdampak: String): List<String> {
+            if (asetTerdampak.isBlank()) {
+                Log.e("InspectionDialog", "❌ asetTerdampak is BLANK!")
+                return emptyList()
+            }
 
-    return try {
-        when {
-            jadwal.contains("T") -> {
-                // ISO 8601 -> extract date only
-                jadwal.split("T").firstOrNull() ?: jadwal
+            return try {
+                val assets = asetTerdampak.split(",").mapNotNull { item ->
+                    val trimmed = item.trim()
+                    if (trimmed.isBlank()) return@mapNotNull null
+
+                    // Ekstrak UUID dari berbagai format
+                    val candidate = if (trimmed.contains(":")) {
+                        // Format: "uuid:nama:tipe" atau "nama:uuid"
+                        trimmed.split(":").find { isValidUUID(it.trim()) }?.trim()
+                    } else {
+                        // Format: "uuid" langsung
+                        trimmed
+                    }
+
+                    // ✅ Validasi UUID sebelum return
+                    candidate?.takeIf { isValidUUID(it) }
+                }.distinct() // Hapus duplikat
+
+                Log.d("InspectionDialog", """
+            ✅ Parsed Impacted Assets:
+            - Input: '$asetTerdampak'
+            - Valid UUIDs: $assets
+            - Count: ${assets.size}
+        """.trimIndent())
+
+                assets
+            } catch (e: Exception) {
+                Log.e("InspectionDialog", "❌ Error parsing impacted assets", e)
+                emptyList()
             }
-            jadwal.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) -> {
-                // Already correct format
-                jadwal
-            }
-            jadwal.contains("/") -> {
-                // dd/MM/yyyy -> convert to yyyy-MM-dd
-                val parts = jadwal.split("/")
-                if (parts.size == 3) {
-                    "${parts[2]}-${parts[1]}-${parts[0]}"
-                } else {
-                    jadwal
+        }
+
+                /**
+                 * ✅ Parse CI ID dengan validasi dan fallback yang lebih baik
+                 */
+                private fun parseCIIdForInspection(
+            relasiCI: String,
+            fallbackAssets: List<String>
+        ): String {
+            // Coba parse dari relasiCI dulu
+            if (relasiCI.isNotBlank()) {
+                try {
+                    val firstCI = relasiCI.split(",").firstOrNull()?.trim() ?: ""
+
+                    val candidate = if (firstCI.contains(":")) {
+                        // Format: "uuid:nama:tipe"
+                        firstCI.split(":").find { isValidUUID(it.trim()) }?.trim()
+                    } else {
+                        firstCI
+                    }
+
+                    // ✅ Validasi UUID
+                    if (candidate != null && isValidUUID(candidate)) {
+                        Log.d("InspectionDialog", "✅ CI ID from relasiCI: $candidate")
+                        return candidate
+                    }
+                } catch (e: Exception) {
+                    Log.e("InspectionDialog", "⚠️ Error parsing CI ID from relasiCI", e)
                 }
             }
-            else -> jadwal
+
+            // ⚠️ Fallback: gunakan asset pertama HANYA jika tidak ada CI
+            val fallback = fallbackAssets.firstOrNull() ?: ""
+            Log.w("InspectionDialog", """
+        ⚠️ Using fallback CI ID: $fallback
+        - Original relasiCI: '$relasiCI'
+        - This might not be correct if CI ≠ Asset
+    """.trimIndent())
+
+            return fallback
         }
-    } catch (e: Exception) {
-        Log.e("InspectionDialog", "Error formatting usulan jadwal: ${e.message}")
-        jadwal
-    }
-}
+
+                /**
+                 * ✅ Format usulan jadwal ke yyyy-MM-dd dengan validasi
+                 */
+                private fun formatUsulanJadwal(jadwal: String): String {
+            if (jadwal.isBlank()) {
+                // Default: 7 hari dari sekarang
+                val calendar = java.util.Calendar.getInstance()
+                calendar.add(java.util.Calendar.DAY_OF_MONTH, 7)
+                return java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                    .format(calendar.time)
+            }
+
+            return try {
+                when {
+                    // ISO 8601: "2025-12-20T07:26:24.580Z"
+                    jadwal.contains("T") -> {
+                        jadwal.split("T").firstOrNull() ?: jadwal
+                    }
+
+                    // Sudah benar: "2025-12-20"
+                    jadwal.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) -> {
+                        jadwal
+                    }
+
+                    // Format Indonesia: "20/12/2025"
+                    jadwal.contains("/") -> {
+                        val parts = jadwal.split("/")
+                        if (parts.size == 3) {
+                            "${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}"
+                        } else {
+                            jadwal
+                        }
+                    }
+
+                    else -> jadwal
+                }
+            } catch (e: Exception) {
+                Log.e("InspectionDialog", "⚠️ Error formatting usulan jadwal: ${e.message}")
+                // Fallback ke default
+                val calendar = java.util.Calendar.getInstance()
+                calendar.add(java.util.Calendar.DAY_OF_MONTH, 7)
+                java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                    .format(calendar.time)
+            }
+        }
+
+
+
 
 
 
