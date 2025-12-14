@@ -1,4 +1,6 @@
 // File: app/src/main/java/com/example/saktinocompose/network/dto/CmdbDto.kt
+// ✅ FIXED: Using 'id' as primary identifier for API calls
+
 package com.example.saktinocompose.network.dto
 
 import com.google.gson.annotations.SerializedName
@@ -18,82 +20,113 @@ data class CmdbAssetsResponse(
 )
 
 /**
- * Data aset dari CMDB
+ * ✅ FIXED: Data aset dari CMDB dengan ID sebagai primary key
  */
 data class CmdbAssetData(
+    // ✅ PRIMARY KEY - Digunakan untuk API calls (impacted_assets, ci_id)
+    @SerializedName("id")
+    val id: String,  // UUID dari database
+
+    // ✅ DISPLAY DATA - Untuk UI
     @SerializedName("kode_bmd")
-    val kodeBmd: String?,  // ✅ NULLABLE
+    val kodeBmd: String?,
 
     @SerializedName("nama_aset")
-    val namaAsset: String,  // ✅ NON-NULL (required)
+    val namaAsset: String,
 
-    @SerializedName("merk_type")
-    val merkType: String?,  // ✅ NULLABLE
+    @SerializedName("merk")
+    val merk: String?,
+
+    @SerializedName("model")
+    val model: String?,
 
     @SerializedName("kategori")
-    val kategori: String?,  // ✅ NULLABLE
+    val kategori: String?,
 
     @SerializedName("sub_kategori")
-    val subKategori: String?,  // ✅ NULLABLE
+    val subKategori: String?,
 
     @SerializedName("kondisi")
-    val kondisi: String?,  // ✅ NULLABLE
+    val kondisi: String?,
 
     @SerializedName("lokasi")
-    val lokasi: String?,  // ✅ NULLABLE
+    val lokasi: String?,
 
     @SerializedName("penanggung_jawab")
-    val penanggungJawab: String?,  // ✅ NULLABLE
+    val penanggungJawab: String?,
 
-    @SerializedName("tahun_perolehan")
-    val tahunPerolehan: String?,  // ✅ NULLABLE
+    @SerializedName("tanggal_perolehan")
+    val tanggalPerolehan: String?,
 
     @SerializedName("nilai_perolehan")
-    val nilaiPerolehan: Double?,  // ✅ NULLABLE
+    val nilaiPerolehan: Double?,
 
     @SerializedName("status")
-    val status: String?,  // ✅ NULLABLE
+    val status: String?,
 
     @SerializedName("created_at")
-    val createdAt: String?,  // ✅ NULLABLE
+    val createdAt: String?,
 
     @SerializedName("updated_at")
-    val updatedAt: String?  // ✅ NULLABLE
+    val updatedAt: String?
 ) {
     /**
-     * Convert ke AsetData untuk compatibility dengan existing code
+     * ✅ FIXED: Convert ke AsetData menggunakan ID sebagai primary key
      */
     fun toAsetData(tipeRelasi: String = ""): com.example.saktinocompose.data.model.AsetData {
         return com.example.saktinocompose.data.model.AsetData(
-            id = kodeBmd ?: "UNKNOWN",  // ✅ Gunakan default jika null
+            id = id,  // ✅ CHANGED: Use UUID id, not kode_bmd
             nama = namaAsset,
-            tipeRelasi = tipeRelasi
+            tipeRelasi = tipeRelasi,
+            kodeBmd = kodeBmd,  // ✅ NEW: Simpan kode_bmd untuk display
+            merk = merk,
+            model = model
         )
     }
 
     /**
-     * Check if asset is valid (has required fields)
+     * ✅ Check if asset is valid (has required fields)
      */
-    // ✅ CORRECT - Safe null check
-    // ✅ BENAR - Explicit null check dulu
     fun isValid(): Boolean {
-        // Check kodeBmd
-        if (kodeBmd == null || kodeBmd.isBlank()) return false
+        // Check id (primary key)
+        if (id.isBlank()) return false
 
-        // Check namaAsset
+        // Check nama_aset (required for display)
         if (namaAsset.isBlank()) return false
-
-        // Check subKategori - MUST check null first!
-        if (subKategori == null || subKategori.isBlank()) return false
 
         return true
     }
+
+    /**
+     * ✅ Get display name with kode BMD
+     */
+    fun getDisplayName(): String {
+        return if (!kodeBmd.isNullOrBlank()) {
+            "$kodeBmd - $namaAsset"
+        } else {
+            namaAsset
+        }
+    }
+
+    /**
+     * ✅ Get merk/type info
+     */
+    val merkType: String?
+        get() = when {
+            !merk.isNullOrBlank() && !model.isNullOrBlank() -> "$merk $model"
+            !merk.isNullOrBlank() -> merk
+            !model.isNullOrBlank() -> model
+            else -> null
+        }
 }
 
 /**
  * Helper untuk format display
  */
 object CmdbAssetHelper {
+    /**
+     * Format asset untuk display di UI
+     */
     fun formatAssetDisplay(asset: CmdbAssetData): String {
         return buildString {
             append(asset.namaAsset)
@@ -103,12 +136,23 @@ object CmdbAssetHelper {
         }
     }
 
+    /**
+     * Format asset detail lengkap
+     */
     fun formatAssetDetail(asset: CmdbAssetData): String {
         return buildString {
-            append("${asset.kodeBmd ?: "N/A"} - ${asset.namaAsset}")
+            // Tampilkan kode BMD jika ada
+            if (!asset.kodeBmd.isNullOrBlank()) {
+                append(asset.kodeBmd)
+                append(" - ")
+            }
+
+            append(asset.namaAsset)
+
             asset.kategori?.let {
                 if (it.isNotBlank()) append(" | $it")
             }
+
             asset.lokasi?.let {
                 if (it.isNotBlank()) append(" | Lokasi: $it")
             }
@@ -116,8 +160,7 @@ object CmdbAssetHelper {
     }
 
     /**
-     * Filter assets by search query
-     * ✅ FIXED: Safe null handling
+     * ✅ FIXED: Filter assets by search query
      */
     fun filterAssets(
         assets: List<CmdbAssetData>,
@@ -127,7 +170,8 @@ object CmdbAssetHelper {
 
         val lowerQuery = query.lowercase()
         return assets.filter { asset ->
-            asset.kodeBmd?.lowercase()?.contains(lowerQuery) == true ||
+            asset.id.lowercase().contains(lowerQuery) ||
+                    asset.kodeBmd?.lowercase()?.contains(lowerQuery) == true ||
                     asset.namaAsset.lowercase().contains(lowerQuery) ||
                     asset.merkType?.lowercase()?.contains(lowerQuery) == true ||
                     asset.kategori?.lowercase()?.contains(lowerQuery) == true ||
@@ -136,10 +180,16 @@ object CmdbAssetHelper {
     }
 
     /**
-     * Group assets by category
-     * ✅ FIXED: Safe null handling
+     * ✅ Group assets by category
      */
     fun groupByCategory(assets: List<CmdbAssetData>): Map<String, List<CmdbAssetData>> {
         return assets.groupBy { it.kategori ?: "Tidak ada kategori" }
+    }
+
+    /**
+     * ✅ Group assets by sub-category
+     */
+    fun groupBySubCategory(assets: List<CmdbAssetData>): Map<String, List<CmdbAssetData>> {
+        return assets.groupBy { it.subKategori ?: "Tidak ada sub-kategori" }
     }
 }

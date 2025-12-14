@@ -1,4 +1,6 @@
 // File: app/src/main/java/com/example/saktinocompose/teknisi/pages/CmdbAsetSearchDialog.kt
+// ✅ FIXED: Using ID for selection, display Kode BMD for user
+
 package com.example.saktinocompose.teknisi.pages
 
 import androidx.compose.foundation.clickable
@@ -24,9 +26,9 @@ import com.example.saktinocompose.viewmodel.CmdbViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CmdbAsetSearchDialog(
-    selectedKodeBmd: String,
+    selectedKodeBmd: String,  // For display compatibility
     onDismiss: () -> Unit,
-    onSelect: (kodeBmd: String, namaAsset: String) -> Unit,
+    onSelect: (id: String, namaAsset: String, kodeBmd: String?) -> Unit,  // ✅ CHANGED: Return ID + display info
     viewModel: CmdbViewModel = viewModel()
 ) {
     val assets by viewModel.filteredAssets.collectAsState()
@@ -79,7 +81,7 @@ fun CmdbAsetSearchDialog(
                     value = searchQuery,
                     onValueChange = { viewModel.searchAssets(it) },
                     modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Cari kode BMD, nama asset, atau kategori...") },
+                    placeholder = { Text("Cari ID, kode BMD, nama asset, atau kategori...") },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
                     },
@@ -199,9 +201,10 @@ fun CmdbAsetSearchDialog(
                         items(assets) { asset ->
                             CmdbAssetCard(
                                 asset = asset,
-                                isSelected = asset.kodeBmd == selectedKodeBmd,
+                                isSelected = asset.kodeBmd == selectedKodeBmd,  // For backward compatibility
                                 onClick = {
-                                    asset.kodeBmd?.let { onSelect(it, asset.namaAsset) }
+                                    // ✅ CHANGED: Pass ID + display info
+                                    onSelect(asset.id, asset.namaAsset, asset.kodeBmd)
                                 }
                             )
                         }
@@ -218,11 +221,6 @@ fun CmdbAssetCard(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    // ✅ VALIDASI: Skip asset dengan kode_bmd null
-    if (asset.kodeBmd.isNullOrBlank()) {
-        return // Jangan render asset tanpa kode BMD
-    }
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -242,20 +240,22 @@ fun CmdbAssetCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Kode BMD Badge
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFF384E66)
-                ),
-                shape = RoundedCornerShape(6.dp)
-            ) {
-                Text(
-                    text = asset.kodeBmd ?: "N/A",
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                )
+            // Kode BMD Badge (if available)
+            if (!asset.kodeBmd.isNullOrBlank()) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color(0xFF384E66)
+                    ),
+                    shape = RoundedCornerShape(6.dp)
+                ) {
+                    Text(
+                        text = asset.kodeBmd,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
             }
 
             // Asset Info
@@ -263,6 +263,7 @@ fun CmdbAssetCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                // Nama Asset
                 Text(
                     text = asset.namaAsset,
                     fontSize = 14.sp,
@@ -271,6 +272,17 @@ fun CmdbAssetCard(
                     maxLines = 2
                 )
 
+                // Merk/Model (if available)
+                asset.merkType?.let { merkModel ->
+                    Text(
+                        text = merkModel,
+                        fontSize = 12.sp,
+                        color = Color.Gray,
+                        maxLines = 1
+                    )
+                }
+
+                // Kategori & Sub-kategori
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
@@ -292,18 +304,17 @@ fun CmdbAssetCard(
                         }
                     }
 
-                    asset.merkType?.let { merk ->
-                        if (merk.isNotBlank()) {
-                            Text(
-                                text = merk,
-                                fontSize = 11.sp,
-                                color = Color.Gray,
-                                maxLines = 1
-                            )
-                        }
+                    asset.subKategori?.let { subKat ->
+                        Text(
+                            text = subKat,
+                            fontSize = 11.sp,
+                            color = Color.Gray,
+                            maxLines = 1
+                        )
                     }
                 }
 
+                // Lokasi (if available)
                 asset.lokasi?.let { lokasi ->
                     if (lokasi.isNotBlank()) {
                         Row(
@@ -324,6 +335,16 @@ fun CmdbAssetCard(
                             )
                         }
                     }
+                }
+
+                // ✅ DEBUG: Show ID (optional, bisa dihapus di production)
+                if (false) {  // Set true untuk debug
+                    Text(
+                        text = "ID: ${asset.id}",
+                        fontSize = 9.sp,
+                        color = Color.LightGray,
+                        maxLines = 1
+                    )
                 }
             }
 

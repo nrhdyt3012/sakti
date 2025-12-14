@@ -267,9 +267,9 @@ fun EmergencyFormPage(
         CmdbAsetSearchDialog(
             selectedKodeBmd = asetTerdampakId,
             onDismiss = { showAsetSearchDialog = false },
-            onSelect = { kodeBmd, namaAsset ->
-                asetTerdampakId = kodeBmd
-                asetTerdampakNama = namaAsset
+            onSelect = {id, kodeBmd, namaAsset ->
+                asetTerdampakId = id
+                asetTerdampakNama = kodeBmd
                 showAsetSearchDialog = false
             }
         )
