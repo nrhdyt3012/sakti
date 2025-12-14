@@ -1,5 +1,6 @@
 package com.example.saktinocompose.network.dto
 
+import android.util.Log
 import com.google.gson.annotations.SerializedName
 
 data class ChangeRequestListResponse(
@@ -165,3 +166,105 @@ data class ChangeRequestDetailResponse(
     @SerializedName("data")
     val data: ChangeRequestApiData?
 )
+
+fun ChangeRequestApiData.logDetails(tag: String = "ChangeRequestDto") {
+    Log.d(tag, """
+        ╔════════════════════════════════════════════
+        ║ CR Data Details
+        ╠════════════════════════════════════════════
+        ║ CR ID: $crId
+        ║ Ticket ID: $tiketId
+        ║ Status: $status
+        ║ Approval Status: $approvalStatus
+        ╠════════════════════════════════════════════
+        ║ Asset Information:
+        ║   - asset_id: $assetId
+        ║   - impacted_asset_id: $impactedAssetId
+        ║   - ci_id: $ciId
+        ╠════════════════════════════════════════════
+        ║ Implementation:
+        ║   - rencana_implementasi: ${rencanaImplementasi?.take(50)}...
+        ║   - usulan_jadwal: $usulanJadwal
+        ║   - rollback_plan: ${rollbackPlan?.take(50)}...
+        ╠════════════════════════════════════════════
+        ║ Risk Scores:
+        ║   - Impact: $skorDampak
+        ║   - Likelihood: $skorKemungkinan  
+        ║   - Exposure: $skorExposure
+        ║   - Risk Score: $riskScore
+        ║   - Risk Level: $riskLevel
+        ╠════════════════════════════════════════════
+        ║ Timestamps:
+        ║   - Created: $createdAt
+        ║   - Updated: $updatedAt
+        ╚════════════════════════════════════════════
+    """.trimIndent())
+}
+
+/**
+ * ✅ Helper untuk check apakah data valid
+ */
+fun ChangeRequestApiData.isValid(): Boolean {
+    return !crId.isNullOrBlank() &&
+            !title.isNullOrBlank() &&
+            !status.isNullOrBlank()
+}
+
+/**
+ * ✅ Helper untuk get impacted assets as list
+ */
+fun ChangeRequestApiData.getImpactedAssetsList(): List<String> {
+    if (impactedAssetId.isNullOrBlank()) return emptyList()
+
+    return try {
+        val trimmed = impactedAssetId.trim()
+
+        when {
+            // JSON array format
+            trimmed.startsWith("[") && trimmed.endsWith("]") -> {
+                trimmed
+                    .removeSurrounding("[", "]")
+                    .replace("\"", "")
+                    .replace("\\", "")
+                    .split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+            }
+
+            // PostgreSQL array format
+            trimmed.startsWith("{") && trimmed.endsWith("}") -> {
+                trimmed
+                    .removeSurrounding("{", "}")
+                    .split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+            }
+
+            // Comma-separated string
+            trimmed.contains(",") -> {
+                trimmed.split(",")
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+            }
+
+            // Single asset
+            else -> listOf(trimmed)
+        }
+    } catch (e: Exception) {
+        Log.e("ChangeRequestDto", "Error parsing impacted_asset_id: $impactedAssetId", e)
+        emptyList()
+    }
+}
+
+/**
+ * ✅ Helper untuk format display impacted assets
+ */
+fun ChangeRequestApiData.formatImpactedAssetsDisplay(): String {
+    val list = getImpactedAssetsList()
+    return when {
+        list.isEmpty() -> "No impacted assets"
+        list.size == 1 -> list.first()
+        list.size <= 3 -> list.joinToString(", ")
+        else -> "${list.take(3).joinToString(", ")} +${list.size - 3} more"
+    }
+}

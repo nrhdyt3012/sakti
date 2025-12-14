@@ -54,15 +54,14 @@ class ChangeRequestRepository {
 
                     val changeRequests = apiRequests.map { apiDataToChangeRequest(it) }
 
-                    // ✅ DEBUG: Log status mapping
                     changeRequests.forEach { cr ->
                         Log.d("ChangeRequestRepo", """
                             📊 Mapped CR:
                             - ID: ${cr.ticketId}
                             - API Status: ${apiRequests.find { it.crId == cr.id }?.status}
-                            - API Approval: ${apiRequests.find { it.crId == cr.id }?.approvalStatus}
                             - Mapped Status: ${cr.status}
-                            - Type: ${cr.jenisPerubahan}
+                            - Aset Terdampak: ${cr.asetTerdampak}
+                            - CI ID: ${cr.relasiConfigurationItem}
                         """.trimIndent())
                     }
 
@@ -94,7 +93,6 @@ class ChangeRequestRepository {
             is Result.Success -> {
                 val allRequests = result.data
 
-                // ✅ DEBUG: Log filtering process
                 Log.d("ChangeRequestRepo", """
                     📊 Filtering Emergency:
                     - Total from API: ${allRequests.size}
@@ -114,16 +112,12 @@ class ChangeRequestRepository {
         }
     }
 
-    /**
-     * ✅ FIXED: Status mapping dengan logging detail
-     */
     private fun mapApiStatusToLocalStatus(apiStatus: String, approvalStatus: String?): String {
-        // ✅ PERBAIKAN: Gunakan apiStatus sebagai sumber utama
         return when (apiStatus.uppercase()) {
             "SUBMITTED", "PENDING" -> "Submitted"
             "REVIEWED", "IN_REVIEW" -> "Reviewed"
             "REVISION", "NEED_REVISION" -> "Revision"
-            "NEED_APPROVAL" -> "Need Approval"  // ✅ Dari API status
+            "NEED_APPROVAL" -> "Need Approval"
             "APPROVED" -> "Approved"
             "SCHEDULED" -> "Scheduled"
             "IMPLEMENTING", "IN_PROGRESS" -> "Implementing"
@@ -132,21 +126,111 @@ class ChangeRequestRepository {
             "CLOSED" -> "Closed"
             "EMERGENCY" -> "Emergency"
             else -> {
-                // ✅ Fallback: Jika apiStatus tidak dikenali, cek approvalStatus
                 if (approvalStatus?.uppercase() == "NEED APPROVAL" || approvalStatus?.uppercase() == "NEED_APPROVAL") {
                     "Need Approval"
                 } else {
-                    apiStatus  // Return original jika tidak ada mapping
+                    apiStatus
                 }
             }
         }
     }
 
     /**
-     * ✅ UPDATED: Mapping dengan validation
+     * ✅ FIXED: Parse impacted_asset_id dengan benar
+     * Format dari API bisa:
+     * 1. Single string: "BMD-TI-001"
+     * 2. JSON array string: "[\"BMD-TI-001\",\"BMD-NON-002\"]"
+     * 3. Comma-separated: "BMD-TI-001,BMD-NON-002"
+     * 4. PostgreSQL array: "{BMD-TI-001,BMD-NON-002}"
+     */
+    private fun parseImpactedAssetId(impactedAssetId: String?): String {
+        if (impactedAssetId.isNullOrBlank()) return ""
+
+        return try {
+            val trimmed = impactedAssetId.trim()
+
+            when {
+                // Format 1: JSON array "[\"BMD-TI-001\",\"BMD-NON-002\"]"
+                trimmed.startsWith("[") && trimmed.endsWith("]") -> {
+                    val cleaned = trimmed
+                        .removeSurrounding("[", "]")
+                        .replace("\"", "")
+                        .replace("\\", "")
+                        .split(",")
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
+                        .joinToString(",")
+
+                    Log.d("ChangeRequestRepo", "✅ Parsed JSON array: $trimmed -> $cleaned")
+                    cleaned
+                }
+
+                // Format 2: PostgreSQL array "{BMD-TI-001,BMD-NON-002}"
+                trimmed.startsWith("{") && trimmed.endsWith("}") -> {
+                    val cleaned = trimmed
+                        .removeSurrounding("{", "}")
+                        .split(",")
+                        .map { it.trim() }
+                        .filter { it.isNotBlank() }
+                        .joinToString(",")
+
+                    Log.d("ChangeRequestRepo", "✅ Parsed PG array: $trimmed -> $cleaned")
+                    cleaned
+                }
+
+                // Format 3: Already comma-separated or single
+                else -> {
+                    Log.d("ChangeRequestRepo", "✅ Using as-is: $trimmed")
+                    trimmed
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("ChangeRequestRepo", "❌ Error parsing impacted_asset_id: $impactedAssetId", e)
+            impactedAssetId
+        }
+    }
+
+    /**
+     * ✅ FIXED: Mapping dengan parsing yang benar untuk impacted_assets dan ci_id
      */
     private fun apiDataToChangeRequest(apiData: ChangeRequestApiData): ChangeRequest {
         val mappedStatus = mapApiStatusToLocalStatus(apiData.status, apiData.approvalStatus)
+
+        // ✅ LOG raw data untuk debugging
+        apiData.logDetails("ChangeRequestRepo")
+
+        // ✅ FIXED: Parse impacted_asset_id dengan benar menggunakan helper
+        val impactedAssetsList = apiData.getImpactedAssetsList()
+        val parsedImpactedAsset = impactedAssetsList.joinToString(",")
+
+        // ✅ FIXED: Gunakan ci_id dari API, fallback ke first impacted asset
+        val ciId = when {
+            !apiData.ciId.isNullOrBlank() -> apiData.ciId
+            impactedAssetsList.isNotEmpty() -> impactedAssetsList.first()
+            !apiData.assetId.isNullOrBlank() -> apiData.assetId
+            else -> ""
+        }
+
+        // ✅ ENHANCED LOG untuk debugging
+        Log.d("ChangeRequestRepo", """
+            📋 Mapping CR ${apiData.crId}:
+            ┌─────────────────────────────────────
+            │ RAW DATA:
+            │  - impacted_asset_id: ${apiData.impactedAssetId}
+            │  - ci_id: ${apiData.ciId}
+            │  - asset_id: ${apiData.assetId}
+            ├─────────────────────────────────────
+            │ PARSED DATA:
+            │  - Impacted List: $impactedAssetsList
+            │  - Parsed String: $parsedImpactedAsset
+            │  - Final CI ID: $ciId
+            ├─────────────────────────────────────
+            │ STATUS:
+            │  - API Status: ${apiData.status}
+            │  - Mapped Status: $mappedStatus
+            │  - Approval Status: ${apiData.approvalStatus}
+            └─────────────────────────────────────
+        """.trimIndent())
 
         return ChangeRequest(
             id = apiData.crId,
@@ -154,18 +238,18 @@ class ChangeRequestRepository {
             type = apiData.type ?: apiData.changeType ?: "Standard",
             title = apiData.title ?: "No Title",
             description = apiData.description ?: "",
-            assetId = apiData.assetId ?: apiData.impactedAssetId ?: "",  // ✅ FIXED: Fallback
-            asetTerdampak = apiData.impactedAssetId ?: apiData.assetId ?: "",  // ✅ FIXED: Use impacted_asset_id first
-            relasiConfigurationItem = apiData.ciId ?: "",  // ✅ FIXED: Use ci_id
-            rencanaImplementasi = apiData.rencanaImplementasi ?: apiData.mitigationPlan ?: "",  // ✅ FIXED: Use rencana_implementasi first
-            usulanJadwal = formatUsulanJadwal(apiData.usulanJadwal ?: apiData.targetCompletion ?: ""),  // ✅ FIXED: Format properly
-            rollbackPlan = apiData.rollbackPlan ?: apiData.rencanaRollback ?: "",  // ✅ FIXED: Add fallback
+            assetId = apiData.assetId ?: impactedAssetsList.firstOrNull() ?: "",
+            asetTerdampak = parsedImpactedAsset.ifBlank { apiData.assetId ?: "" },  // ✅ FIXED
+            relasiConfigurationItem = ciId,  // ✅ FIXED
+            rencanaImplementasi = apiData.rencanaImplementasi ?: apiData.mitigationPlan ?: "",
+            usulanJadwal = formatUsulanJadwal(apiData.usulanJadwal ?: apiData.targetCompletion ?: ""),
+            rollbackPlan = apiData.rollbackPlan ?: apiData.rencanaRollback ?: "",
             assignedTeknisiName = apiData.picImplementation,
             scheduledDate = apiData.scheduleImplementation,
             scheduleStart = apiData.scheduleStart,
             scheduleEnd = apiData.scheduleEnd,
-            scoreImpact = apiData.scoreImpact ?: apiData.skorDampak ?: 0,  // ✅ FIXED: Add fallback
-            scoreLikelihood = apiData.scoreLikelihood ?: apiData.skorKemungkinan ?: 0,  // ✅ FIXED: Add fallback
+            scoreImpact = apiData.scoreImpact ?: apiData.skorDampak ?: 0,
+            scoreLikelihood = apiData.scoreLikelihood ?: apiData.skorKemungkinan ?: 0,
             scoreRisk = apiData.scoreRisk ?: 0,
             riskLevel = apiData.riskLevel ?: "Low",
             postImpact = apiData.postImpact,
@@ -187,27 +271,22 @@ class ChangeRequestRepository {
                 apiData.scoreImpact,
                 apiData.scoreLikelihood,
                 apiData.scoreRisk
-            ),  // ✅ FIXED: Use skor_exposure from API
-            photoPath = apiData.inspectionPhotoUrl,  // ✅ FIXED: Map inspection photo
-            estimasiBiaya = apiData.estimasiBiaya,  // ✅ FIXED: Map estimasi biaya
-            estimasiWaktu = apiData.estimasiWaktu  // ✅ FIXED: Map estimasi waktu
+            ),
+            photoPath = apiData.inspectionPhotoUrl,
+            estimasiBiaya = apiData.estimasiBiaya,
+            estimasiWaktu = apiData.estimasiWaktu
         )
     }
 
-    /**
-     * ✅ NEW: Format usulan jadwal dari ISO 8601 ke yyyy-MM-dd
-     */
     private fun formatUsulanJadwal(jadwal: String): String {
         if (jadwal.isBlank()) return ""
 
         return try {
             when {
                 jadwal.contains("T") -> {
-                    // ISO 8601 format -> extract date only
                     jadwal.split("T").firstOrNull() ?: jadwal
                 }
                 jadwal.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) -> {
-                    // Already correct format
                     jadwal
                 }
                 else -> jadwal

@@ -4,6 +4,7 @@
 package com.example.saktinocompose.teknisi.pages
 
 import android.graphics.BitmapFactory
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -106,17 +107,26 @@ fun DetailFormTeknisiPage(
     // ✅ TAMBAH DIALOG HANDLERS:
     if (showSubmittedDialog) {
         SubmittedDetailDialog(
-            changeRequest = latestChangeRequest,  // ✅ Use latest data
+            changeRequest = latestChangeRequest,
             onDismiss = { showSubmittedDialog = false },
             onSave = { crId, description, impactedAssets, ciId, usulanJadwal ->
                 coroutineScope.launch {
                     try {
                         val request = SubmittedReviewRequest(
                             description = description,
-                            impactedAssets = impactedAssets,
+                            impactedAssets = impactedAssets,  // ✅ Array of kode_bmd
                             ciId = ciId,
                             usulanJadwal = usulanJadwal
                         )
+
+                        Log.d("DetailFormTeknisi", """
+                        📤 Submitting Review:
+                        - CR ID: $crId
+                        - Description: ${description.take(50)}...
+                        - Impacted Assets: $impactedAssets (${impactedAssets.size} items)
+                        - CI ID: $ciId
+                        - Usulan Jadwal: $usulanJadwal
+                    """.trimIndent())
 
                         val response = RetrofitClient.changeRequestService.submitReview(
                             crId = crId,
@@ -126,20 +136,51 @@ fun DetailFormTeknisiPage(
                         if (response.isSuccessful && response.body()?.status == "success") {
                             showSubmittedDialog = false
 
-                            // ✅ FIXED: Refresh data dari API untuk mendapatkan data terbaru
-                            delay(500) // Tunggu API ter-update
+                            // ✅ CRITICAL: Parse response untuk update lokal
+                            val responseBody = response.body()
+                            Log.d("DetailFormTeknisi", """
+                            ✅ Review submitted successfully
+                            Response: ${responseBody?.message}
+                            Data: ${responseBody?.data}
+                        """.trimIndent())
+
+                            // ✅ Update changeRequest dengan data yang baru di-submit
+                            val updatedRequest = latestChangeRequest.copy(
+                                description = description,
+                                asetTerdampak = impactedAssets.joinToString(","),  // ✅ Save as comma-separated
+                                relasiConfigurationItem = ciId,
+                                usulanJadwal = usulanJadwal,
+                                status = "Reviewed",
+                                updatedAt = System.currentTimeMillis().toString()
+                            )
+
+                            // Update lokal dulu untuk UI responsif
+                            changeRequestViewModel.updateFullChangeRequest(updatedRequest)
+
+                            // Tunggu sebentar lalu refresh dari API
+                            delay(500)
                             changeRequestViewModel.refreshSingleChangeRequest(crId)
 
                             successMessage = "Details saved! Status changed to 'Reviewed'. Data refreshed!"
                             showSuccessDialog = true
                         } else {
                             showSubmittedDialog = false
-                            errorMessage = response.body()?.message ?: "Failed to save details"
+                            val errorBody = response.errorBody()?.string()
+                            errorMessage = response.body()?.message ?: errorBody ?: "Failed to save details"
+
+                            Log.e("DetailFormTeknisi", """
+                            ❌ Failed to submit review:
+                            - Code: ${response.code()}
+                            - Message: $errorMessage
+                            - Body: $errorBody
+                        """.trimIndent())
+
                             showErrorDialog = true
                         }
                     } catch (e: Exception) {
                         showSubmittedDialog = false
                         errorMessage = "Error: ${e.message}"
+                        Log.e("DetailFormTeknisi", "❌ Exception during submit", e)
                         showErrorDialog = true
                     }
                 }
