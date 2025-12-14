@@ -12,6 +12,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -519,40 +520,135 @@ fun EmergencyFormPage(
                     // Impacted Asset
                     Text("Impacted Asset *", fontWeight = FontWeight.SemiBold)
                     if (asetTerdampakNama.isNotBlank()) {
+                        // ✅ FIXED: Table-like layout with header
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66).copy(alpha = 0.1f)),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalArrangement = Arrangement.spacedBy(0.dp)
                             ) {
+                                // Header with Edit button
                                 Row(
-                                    modifier = Modifier.weight(1f),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Card(
-                                        colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66)),
-                                        shape = RoundedCornerShape(4.dp)
-                                    ) {
-                                        Text(
-                                            asetTerdampakId,
-                                            fontSize = 11.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                        )
-                                    }
-                                    Column {
-                                        Text("Selected:", fontSize = 11.sp, color = Color.Gray)
-                                        Text(asetTerdampakNama, fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        "Selected Asset:",
+                                        fontSize = 12.sp,
+                                        color = Color.Gray,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    IconButton(onClick = { showAsetSearchDialog = true }) {
+                                        Icon(Icons.Default.Edit, "Change", tint = Color(0xFF384E66))
                                     }
                                 }
-                                IconButton(onClick = { showAsetSearchDialog = true }) {
-                                    Icon(Icons.Default.Edit, "Change", tint = Color(0xFF384E66))
+
+                                // Table with scrollable content
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp)
+                                        .padding(bottom = 12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                                    shape = RoundedCornerShape(8.dp)
+                                ) {
+                                    Column(modifier = Modifier.fillMaxWidth()) {
+                                        // Table Header
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(Color(0xFF384E66))
+                                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            Text(
+                                                text = "Asset ID",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.width(100.dp)
+                                            )
+                                            Text(
+                                                text = "Asset Name",
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+
+                                        HorizontalDivider(thickness = 1.dp, color = Color(0xFFE0E0E0))
+
+                                        // Scrollable Content Row
+                                        val scrollState = rememberScrollState()
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .horizontalScroll(scrollState)
+                                                .padding(horizontal = 12.dp, vertical = 12.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            // Kode BMD badge
+                                            Card(
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = Color(0xFF384E66)
+                                                ),
+                                                shape = RoundedCornerShape(6.dp),
+                                                modifier = Modifier.width(100.dp)
+                                            ) {
+                                                Text(
+                                                    text = asetTerdampakId,
+                                                    fontSize = 11.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = Color.White,
+                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                                                )
+                                            }
+
+                                            // Asset name (scrollable)
+                                            Text(
+                                                text = asetTerdampakNama,
+                                                fontSize = 13.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = Color.Black,
+                                                modifier = Modifier.widthIn(min = 200.dp)
+                                            )
+                                        }
+
+                                        // Scroll hint if name is long
+                                        if (asetTerdampakNama.length > 20) {
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                                                horizontalArrangement = Arrangement.End
+                                            ) {
+                                                Row(
+                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        Icons.Default.SwipeLeft,
+                                                        contentDescription = "Scroll",
+                                                        tint = Color.Gray,
+                                                        modifier = Modifier.size(12.dp)
+                                                    )
+                                                    Text(
+                                                        "Swipe to see full name",
+                                                        fontSize = 10.sp,
+                                                        color = Color.Gray
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }

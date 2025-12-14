@@ -56,6 +56,11 @@ fun TeknisiScreen(
     var showNotification by remember { mutableStateOf(false) }
     var showDetailForm by remember { mutableStateOf(false) }
 
+    // ✅ NEW: Emergency form state
+    var hasUnsavedEmergencyData by remember { mutableStateOf(false) }
+    var showLeaveEmergencyDialog by remember { mutableStateOf(false) }
+    var pendingNavIndex by remember { mutableIntStateOf(-1) }
+
     // ✅ UPDATED: Variables for CMDB sub-kategori navigation
     var showCMDBSubKategoriList by remember { mutableStateOf(false) }
     var selectedSubKategori by remember { mutableStateOf<String?>(null) }
