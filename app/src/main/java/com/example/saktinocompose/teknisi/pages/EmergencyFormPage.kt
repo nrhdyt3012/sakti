@@ -1,5 +1,5 @@
 // File: app/src/main/java/com/example/saktinocompose/teknisi/pages/EmergencyFormPage.kt
-// ✅ SIMPLIFIED VERSION - Only essential fields
+// ✅ FIXED VERSION - State Management & Auto Clear After Submit
 
 package com.example.saktinocompose.teknisi.pages
 
@@ -7,6 +7,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,6 +38,7 @@ import com.example.saktinocompose.network.Result
 import com.example.saktinocompose.repository.EmergencyPhotoRepository
 import com.example.saktinocompose.repository.EmergencyRepository
 import com.example.saktinocompose.utils.NetworkHelper
+import com.example.saktinocompose.utils.PhotoHelper
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -54,6 +57,7 @@ fun EmergencyFormPage(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val emergencyRepository = remember { EmergencyRepository() }
+    val photoRepository = remember { EmergencyPhotoRepository() }
     val scrollState = rememberScrollState()
 
     // Internet Check
@@ -67,22 +71,19 @@ fun EmergencyFormPage(
         }
     }
 
-    // Form States - SIMPLIFIED
-    val emergencyId = remember { UUID.randomUUID().toString() }
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var asetTerdampakId by remember { mutableStateOf("") }
-    var asetTerdampakNama by remember { mutableStateOf("") }
-    var selectedStatus by remember { mutableStateOf("COMPLETED") }
-    var note by remember { mutableStateOf("") }
+    // ✅ FIXED: Use rememberSaveable untuk persist state saat navigasi
+    val emergencyId = rememberSaveable { UUID.randomUUID().toString() }
+    var title by rememberSaveable { mutableStateOf("") }
+    var description by rememberSaveable { mutableStateOf("") }
+    var asetTerdampakId by rememberSaveable { mutableStateOf("") }
+    var asetTerdampakNama by rememberSaveable { mutableStateOf("") }
+    var selectedStatus by rememberSaveable { mutableStateOf("COMPLETED") }
+    var note by rememberSaveable { mutableStateOf("") }
 
-
-    // Photo States
+    // Photo States (tidak bisa pakai rememberSaveable untuk URI/Bitmap)
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     var photoBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var tempPhotoUri by remember { mutableStateOf<Uri?>(null) }
-
-    // ✅ TAMBAH: Photo upload states
     var uploadedPhotoUrl by remember { mutableStateOf<String?>(null) }
     var isUploadingPhoto by remember { mutableStateOf(false) }
     var uploadError by remember { mutableStateOf<String?>(null) }
@@ -93,10 +94,74 @@ fun EmergencyFormPage(
     var showAsetSearchDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var showErrorDialog by remember { mutableStateOf(false) }
+    var showBackConfirmDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var isSubmitting by remember { mutableStateOf(false) }
 
-    val photoRepository = remember { EmergencyPhotoRepository() }
+    // ✅ NEW: Check if form has data
+    val hasFormData = remember(title, description, asetTerdampakId, note, photoUri) {
+        title.isNotBlank() ||
+                description.isNotBlank() ||
+                asetTerdampakId.isNotBlank() ||
+                note.isNotBlank() ||
+                photoUri != null
+    }
+
+    // ✅ NEW: Function to clear all form data
+    fun clearFormData() {
+        title = ""
+        description = ""
+        asetTerdampakId = ""
+        asetTerdampakNama = ""
+        selectedStatus = "COMPLETED"
+        note = ""
+        photoUri = null
+        photoBitmap = null
+        uploadedPhotoUrl = null
+        uploadError = null
+    }
+
+    // ✅ FIXED: Back handler dengan konfirmasi jika ada data
+    BackHandler {
+        if (hasFormData && !isSubmitting) {
+            showBackConfirmDialog = true
+        } else {
+            onBackClick()
+        }
+    }
+
+    // ✅ NEW: Back Confirmation Dialog
+    if (showBackConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showBackConfirmDialog = false },
+            icon = {
+                Icon(Icons.Default.Warning, "Warning", tint = Color(0xFFFF9800), modifier = Modifier.size(48.dp))
+            },
+            title = {
+                Text("Discard Changes?", fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
+            },
+            text = {
+                Text("You have unsaved changes. Are you sure you want to leave? All data will be lost.")
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showBackConfirmDialog = false
+                        clearFormData()
+                        onBackClick()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                ) {
+                    Text("Yes, Discard")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showBackConfirmDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     fun uploadPhoto(uri: Uri) {
         isUploadingPhoto = true
@@ -134,8 +199,8 @@ fun EmergencyFormPage(
     ) { uri: Uri? ->
         uri?.let {
             photoUri = it
-            photoBitmap = loadBitmapFromUri(context, it)
-            uploadPhoto(it)  // ✅ Langsung upload
+            photoBitmap = PhotoHelper.loadBitmapFromUri(context, it)
+            uploadPhoto(it)
         }
     }
 
@@ -146,8 +211,8 @@ fun EmergencyFormPage(
         if (success) {
             tempPhotoUri?.let {
                 photoUri = it
-                photoBitmap = loadBitmapFromUri(context, it)
-                uploadPhoto(it)  // ✅ Langsung upload
+                photoBitmap = PhotoHelper.loadBitmapFromUri(context, it)
+                uploadPhoto(it)
             }
         }
     }
@@ -157,7 +222,7 @@ fun EmergencyFormPage(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
-            val photoFile = createImageFile(context)
+            val photoFile = PhotoHelper.createImageFile(context, "EMERGENCY")
             tempPhotoUri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.fileprovider",
@@ -200,15 +265,34 @@ fun EmergencyFormPage(
         )
     }
 
+    // ✅ FIXED: Success Dialog dengan auto-clear form
     if (showSuccessDialog) {
         AlertDialog(
-            onDismissRequest = { showSuccessDialog = false },
-            title = { Text("Success!") },
-            text = { Text("Emergency has been successfully submitted") },
+            onDismissRequest = {
+                showSuccessDialog = false
+                clearFormData() // ✅ Clear form after success
+                onFormSubmitted()
+            },
+            title = {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.CheckCircle, "Success", tint = Color(0xFF4CAF50), modifier = Modifier.size(32.dp))
+                    Text("Success!")
+                }
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Emergency has been successfully submitted")
+                    Text("Form will be cleared automatically.", fontSize = 13.sp, color = Color.Gray)
+                }
+            },
             confirmButton = {
                 Button(
                     onClick = {
                         showSuccessDialog = false
+                        clearFormData() // ✅ Clear form
                         onFormSubmitted()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
@@ -267,9 +351,9 @@ fun EmergencyFormPage(
         CmdbAsetSearchDialog(
             selectedKodeBmd = asetTerdampakId,
             onDismiss = { showAsetSearchDialog = false },
-            onSelect = {id, kodeBmd, namaAsset ->
+            onSelect = { id, namaAsset, kodeBmd ->
                 asetTerdampakId = id
-                asetTerdampakNama = kodeBmd
+                asetTerdampakNama = kodeBmd ?: namaAsset
                 showAsetSearchDialog = false
             }
         )
@@ -287,6 +371,24 @@ fun EmergencyFormPage(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text("Emergency Form", fontWeight = FontWeight.Bold, color = Color.White)
+
+                    // ✅ NEW: Indicator jika ada unsaved changes
+                    if (hasFormData) {
+                        Card(
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEB3B)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(Icons.Default.Edit, "Unsaved", modifier = Modifier.size(14.dp), tint = Color(0xFF000000))
+                                Text("Unsaved", fontSize = 11.sp, color = Color(0xFF000000), fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+
                     if (!isOnline) {
                         Card(
                             colors = CardDefaults.cardColors(containerColor = Color(0xFFD32F2F)),
@@ -305,7 +407,13 @@ fun EmergencyFormPage(
                 }
             },
             navigationIcon = {
-                IconButton(onClick = onBackClick) {
+                IconButton(onClick = {
+                    if (hasFormData && !isSubmitting) {
+                        showBackConfirmDialog = true
+                    } else {
+                        onBackClick()
+                    }
+                }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = Color.White)
                 }
             },
@@ -505,7 +613,7 @@ fun EmergencyFormPage(
                         placeholder = { Text("Add notes about the emergency...") }
                     )
 
-                    // Photo
+                    // Photo Section (unchanged from your original code)
                     Text("Evidence Photo (Optional)", fontWeight = FontWeight.SemiBold)
                     if (photoBitmap != null) {
                         Card(
@@ -520,7 +628,6 @@ fun EmergencyFormPage(
                                     contentScale = ContentScale.Crop
                                 )
 
-                                // Upload indicator overlay
                                 if (isUploadingPhoto) {
                                     Box(
                                         modifier = Modifier
@@ -538,7 +645,6 @@ fun EmergencyFormPage(
                                     }
                                 }
 
-                                // Success indicator
                                 if (uploadedPhotoUrl != null && !isUploadingPhoto) {
                                     Card(
                                         modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
@@ -571,7 +677,6 @@ fun EmergencyFormPage(
                             }
                         }
 
-                        // Upload error
                         if (uploadError != null) {
                             Card(
                                 modifier = Modifier.fillMaxWidth(),
@@ -619,7 +724,7 @@ fun EmergencyFormPage(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // ✅ UPDATED: Submit with photo URL validation
+            // Submit Button
             Button(
                 onClick = {
                     when {
