@@ -12,6 +12,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -830,7 +831,7 @@ fun EmergencyFormPage(
 
 // ✅ NEW: 3-Column Asset Table Component
 @Composable
-private fun ThreeColumnAssetTable(
+fun ThreeColumnAssetTable(
     asset: SelectedAssetState,
     modifier: Modifier = Modifier
 ) {
@@ -845,7 +846,7 @@ private fun ThreeColumnAssetTable(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            // Header
+            // Section Title
             Text(
                 "Selected Asset:",
                 fontSize = 12.sp,
@@ -854,131 +855,413 @@ private fun ThreeColumnAssetTable(
                 modifier = Modifier.padding(12.dp)
             )
 
-            // Table
+            // ✅ FIXED: Synchronized Scroll State
+            val scrollState = rememberScrollState()
+
+            // ✅ Scrollable Table Container with Border
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp)
                     .padding(bottom = 12.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(8.dp)
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
             ) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    // Table Header
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(8.dp))
+                ) {
+                    // ✅ HEADER (Scrollable with Body)
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .horizontalScroll(scrollState)
                             .background(Color(0xFF384E66))
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            .padding(0.dp)
                     ) {
-                        Text(
-                            text = "Asset ID",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.width(80.dp)
+                        // Asset ID Column Header
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .padding(12.dp)
+                                .border(
+                                    width = 0.5.dp,
+                                    color = Color.White.copy(alpha = 0.2f)
+                                )
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = "Asset ID",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+
+                        // Kode BMD Column Header
+                        Box(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .padding(12.dp)
+                                .border(
+                                    width = 0.5.dp,
+                                    color = Color.White.copy(alpha = 0.2f)
+                                )
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = "Kode BMD",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+
+                        // Asset Name Column Header
+                        Box(
+                            modifier = Modifier
+                                .width(250.dp) // Wider for asset name
+                                .padding(12.dp)
+                                .border(
+                                    width = 0.5.dp,
+                                    color = Color.White.copy(alpha = 0.2f)
+                                )
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = "Asset Name",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    // Divider between header and body
+                    HorizontalDivider(thickness = 1.dp, color = Color(0xFFE0E0E0))
+
+                    // ✅ BODY (Uses same scroll state as header)
+                    Row(
+                        modifier = Modifier
+                            .horizontalScroll(scrollState)
+                            .background(Color.White)
+                            .padding(0.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Asset ID Cell
+                        Box(
+                            modifier = Modifier
+                                .width(100.dp)
+                                .padding(12.dp)
+                                .border(0.5.dp, Color(0xFFE0E0E0))
+                                .padding(8.dp)
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF2196F3)
+                                ),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = asset.id.take(8),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        // Kode BMD Cell
+                        Box(
+                            modifier = Modifier
+                                .width(120.dp)
+                                .padding(12.dp)
+                                .border(0.5.dp, Color(0xFFE0E0E0))
+                                .padding(8.dp)
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = Color(0xFF384E66)
+                                ),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    text = asset.kodeBmd,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+
+                        // Asset Name Cell
+                        Box(
+                            modifier = Modifier
+                                .width(250.dp)
+                                .padding(12.dp)
+                                .border(0.5.dp, Color(0xFFE0E0E0))
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = asset.nama,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Color.Black,
+                                maxLines = 3
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ✅ Scroll Hint (Only if content is wider than screen)
+            if (asset.nama.length > 20) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.SwipeLeft,
+                            contentDescription = "Scroll",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "Kode BMD",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.width(100.dp)
+                            "Swipe to see full content",
+                            fontSize = 10.sp,
+                            color = Color.Gray
                         )
-                        Text(
-                            text = "Asset Name",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.weight(1f)
-                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ✅ ALTERNATIVE: Multi-Asset Table dengan Vertical List
+@Composable
+fun MultiAssetTable(
+    assets: List<SelectedAssetState>,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF384E66).copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            // Section Title
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "Selected Assets:",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    "${assets.size} asset${if (assets.size > 1) "s" else ""}",
+                    fontSize = 11.sp,
+                    color = Color(0xFF384E66),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+
+            // ✅ Synchronized Scroll State
+            val scrollState = rememberScrollState()
+
+            // ✅ Table Container
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .padding(bottom = 12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Color(0xFFE0E0E0), RoundedCornerShape(8.dp))
+                ) {
+                    // ✅ HEADER (Scrollable)
+                    Row(
+                        modifier = Modifier
+                            .horizontalScroll(scrollState)
+                            .background(Color(0xFF384E66))
+                    ) {
+                        HeaderCell(text = "No", width = 50.dp)
+                        HeaderCell(text = "Asset ID", width = 100.dp)
+                        HeaderCell(text = "Kode BMD", width = 120.dp)
+                        HeaderCell(text = "Asset Name", width = 250.dp)
                     }
 
                     HorizontalDivider(thickness = 1.dp, color = Color(0xFFE0E0E0))
 
-                    // Scrollable Content Row
-                    val scrollState = rememberScrollState()
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(scrollState)
-                            .padding(horizontal = 12.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Asset ID Badge
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF2196F3)
-                            ),
-                            shape = RoundedCornerShape(6.dp),
-                            modifier = Modifier.width(80.dp)
-                        ) {
-                            Text(
-                                text = asset.id.take(8),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
-                            )
-                        }
+                    // ✅ BODY ROWS (Same scroll state)
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        assets.forEachIndexed { index, asset ->
+                            if (index > 0) {
+                                HorizontalDivider(thickness = 0.5.dp, color = Color(0xFFE0E0E0))
+                            }
 
-                        // Kode BMD Badge
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(0xFF384E66)
-                            ),
-                            shape = RoundedCornerShape(6.dp),
-                            modifier = Modifier.width(100.dp)
-                        ) {
-                            Text(
-                                text = asset.kodeBmd,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
-                            )
-                        }
-
-                        // Asset name (scrollable)
-                        Text(
-                            text = asset.nama,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.Black,
-                            modifier = Modifier.widthIn(min = 200.dp)
-                        )
-                    }
-
-                    // Scroll hint if name is long
-                    if (asset.nama.length > 20) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 4.dp),
-                            horizontalArrangement = Arrangement.End
-                        ) {
                             Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier = Modifier
+                                    .horizontalScroll(scrollState)
+                                    .background(if (index % 2 == 0) Color.White else Color(0xFFF5F5F5))
                             ) {
-                                Icon(
-                                    Icons.Default.SwipeLeft,
-                                    contentDescription = "Scroll",
-                                    tint = Color.Gray,
-                                    modifier = Modifier.size(12.dp)
+                                BodyCell(
+                                    width = 50.dp,
+                                    content = {
+                                        Text(
+                                            text = "${index + 1}",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color(0xFF384E66)
+                                        )
+                                    }
                                 )
-                                Text(
-                                    "Swipe to see full name",
-                                    fontSize = 10.sp,
-                                    color = Color.Gray
+
+                                BodyCell(
+                                    width = 100.dp,
+                                    content = {
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color(0xFF2196F3)
+                                            ),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = asset.id.take(8),
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                    }
+                                )
+
+                                BodyCell(
+                                    width = 120.dp,
+                                    content = {
+                                        Card(
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = Color(0xFF384E66)
+                                            ),
+                                            shape = RoundedCornerShape(4.dp)
+                                        ) {
+                                            Text(
+                                                text = asset.kodeBmd,
+                                                fontSize = 11.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = Color.White,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                                            )
+                                        }
+                                    }
+                                )
+
+                                BodyCell(
+                                    width = 250.dp,
+                                    content = {
+                                        Text(
+                                            text = asset.nama,
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = Color.Black,
+                                            maxLines = 2
+                                        )
+                                    }
                                 )
                             }
                         }
                     }
                 }
             }
+
+            // Scroll Hint
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.SwipeLeft,
+                        contentDescription = "Scroll",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text(
+                        "Swipe to see full content",
+                        fontSize = 10.sp,
+                        color = Color.Gray
+                    )
+                }
+            }
         }
     }
+}
+
+// ✅ Helper Composables untuk Table Cells
+@Composable
+private fun HeaderCell(
+    text: String,
+    width: androidx.compose.ui.unit.Dp,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .width(width)
+            .padding(vertical = 12.dp, horizontal = 8.dp)
+            .border(0.5.dp, Color.White.copy(alpha = 0.2f))
+            .padding(8.dp)
+    ) {
+        Text(
+            text = text,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White
+        )
+    }
+}
+
+@Composable
+private fun BodyCell(
+    width: androidx.compose.ui.unit.Dp,
+    content: @Composable BoxScope.() -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .width(width)
+            .padding(vertical = 12.dp, horizontal = 8.dp)
+            .border(0.5.dp, Color(0xFFE0E0E0))
+            .padding(8.dp),
+        content = content
+    )
 }
