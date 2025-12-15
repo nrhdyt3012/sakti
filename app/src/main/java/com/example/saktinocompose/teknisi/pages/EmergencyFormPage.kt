@@ -1,5 +1,5 @@
 // File: app/src/main/java/com/example/saktinocompose/teknisi/pages/EmergencyFormPage.kt
-// ✅ FIXED VERSION - State Management & Auto Clear After Submit
+// ✅ FIXED VERSION - State Management & 3-Column Asset Table
 
 package com.example.saktinocompose.teknisi.pages
 
@@ -46,6 +46,30 @@ import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
+// ✅ NEW: Data class untuk simpan state asset
+@androidx.compose.runtime.Stable
+data class SelectedAssetState(
+    val id: String,
+    val kodeBmd: String,
+    val nama: String
+) {
+    companion object {
+        fun fromString(str: String): SelectedAssetState? {
+            if (str.isBlank()) return null
+            val parts = str.split("|")
+            return if (parts.size >= 3) {
+                SelectedAssetState(
+                    id = parts[0],
+                    kodeBmd = parts[1],
+                    nama = parts[2]
+                )
+            } else null
+        }
+    }
+
+    override fun toString(): String = "$id|$kodeBmd|$nama"
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmergencyFormPage(
@@ -76,8 +100,13 @@ fun EmergencyFormPage(
     val emergencyId = rememberSaveable { UUID.randomUUID().toString() }
     var title by rememberSaveable { mutableStateOf("") }
     var description by rememberSaveable { mutableStateOf("") }
-    var asetTerdampakId by rememberSaveable { mutableStateOf("") }
-    var asetTerdampakNama by rememberSaveable { mutableStateOf("") }
+
+    // ✅ FIXED: Simpan asset sebagai string serialized
+    var selectedAssetString by rememberSaveable { mutableStateOf("") }
+    val selectedAsset = remember(selectedAssetString) {
+        SelectedAssetState.fromString(selectedAssetString)
+    }
+
     var selectedStatus by rememberSaveable { mutableStateOf("COMPLETED") }
     var note by rememberSaveable { mutableStateOf("") }
 
@@ -100,10 +129,10 @@ fun EmergencyFormPage(
     var isSubmitting by remember { mutableStateOf(false) }
 
     // ✅ NEW: Check if form has data
-    val hasFormData = remember(title, description, asetTerdampakId, note, photoUri) {
+    val hasFormData = remember(title, description, selectedAssetString, note, photoUri) {
         title.isNotBlank() ||
                 description.isNotBlank() ||
-                asetTerdampakId.isNotBlank() ||
+                selectedAssetString.isNotBlank() ||
                 note.isNotBlank() ||
                 photoUri != null
     }
@@ -112,8 +141,7 @@ fun EmergencyFormPage(
     fun clearFormData() {
         title = ""
         description = ""
-        asetTerdampakId = ""
-        asetTerdampakNama = ""
+        selectedAssetString = ""
         selectedStatus = "COMPLETED"
         note = ""
         photoUri = null
@@ -271,7 +299,7 @@ fun EmergencyFormPage(
         AlertDialog(
             onDismissRequest = {
                 showSuccessDialog = false
-                clearFormData() // ✅ Clear form after success
+                clearFormData()
                 onFormSubmitted()
             },
             title = {
@@ -293,7 +321,7 @@ fun EmergencyFormPage(
                 Button(
                     onClick = {
                         showSuccessDialog = false
-                        clearFormData() // ✅ Clear form
+                        clearFormData()
                         onFormSubmitted()
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
@@ -348,13 +376,18 @@ fun EmergencyFormPage(
         )
     }
 
+    // ✅ FIXED: Asset Search Dialog dengan 3-column data
     if (showAsetSearchDialog) {
         CmdbAsetSearchDialog(
-            selectedKodeBmd = asetTerdampakId,
+            selectedKodeBmd = selectedAsset?.kodeBmd ?: "",
             onDismiss = { showAsetSearchDialog = false },
             onSelect = { id, namaAsset, kodeBmd ->
-                asetTerdampakId = id
-                asetTerdampakNama = kodeBmd ?: namaAsset
+                // ✅ Save all 3 fields
+                selectedAssetString = SelectedAssetState(
+                    id = id,
+                    kodeBmd = kodeBmd ?: id,
+                    nama = namaAsset
+                ).toString()
                 showAsetSearchDialog = false
             }
         )
@@ -517,141 +550,10 @@ fun EmergencyFormPage(
                         placeholder = { Text("Describe the emergency...") }
                     )
 
-                    // Impacted Asset
+                    // ✅ FIXED: Impacted Asset dengan 3 kolom
                     Text("Impacted Asset *", fontWeight = FontWeight.SemiBold)
-                    if (asetTerdampakNama.isNotBlank()) {
-                        // ✅ FIXED: Table-like layout with header
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = CardDefaults.cardColors(containerColor = Color(0xFF384E66).copy(alpha = 0.1f)),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(0.dp)
-                            ) {
-                                // Header with Edit button
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(12.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        "Selected Asset:",
-                                        fontSize = 12.sp,
-                                        color = Color.Gray,
-                                        fontWeight = FontWeight.Medium
-                                    )
-                                    IconButton(onClick = { showAsetSearchDialog = true }) {
-                                        Icon(Icons.Default.Edit, "Change", tint = Color(0xFF384E66))
-                                    }
-                                }
-
-                                // Table with scrollable content
-                                Card(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 12.dp)
-                                        .padding(bottom = 12.dp),
-                                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                                    shape = RoundedCornerShape(8.dp)
-                                ) {
-                                    Column(modifier = Modifier.fillMaxWidth()) {
-                                        // Table Header
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .background(Color(0xFF384E66))
-                                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            Text(
-                                                text = "Asset ID",
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                modifier = Modifier.width(100.dp)
-                                            )
-                                            Text(
-                                                text = "Asset Name",
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color.White,
-                                                modifier = Modifier.weight(1f)
-                                            )
-                                        }
-
-                                        HorizontalDivider(thickness = 1.dp, color = Color(0xFFE0E0E0))
-
-                                        // Scrollable Content Row
-                                        val scrollState = rememberScrollState()
-                                        Row(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .horizontalScroll(scrollState)
-                                                .padding(horizontal = 12.dp, vertical = 12.dp),
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            // Kode BMD badge
-                                            Card(
-                                                colors = CardDefaults.cardColors(
-                                                    containerColor = Color(0xFF384E66)
-                                                ),
-                                                shape = RoundedCornerShape(6.dp),
-                                                modifier = Modifier.width(100.dp)
-                                            ) {
-                                                Text(
-                                                    text = asetTerdampakId,
-                                                    fontSize = 11.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = Color.White,
-                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
-                                                )
-                                            }
-
-                                            // Asset name (scrollable)
-                                            Text(
-                                                text = asetTerdampakNama,
-                                                fontSize = 13.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = Color.Black,
-                                                modifier = Modifier.widthIn(min = 200.dp)
-                                            )
-                                        }
-
-                                        // Scroll hint if name is long
-                                        if (asetTerdampakNama.length > 20) {
-                                            Row(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                                                horizontalArrangement = Arrangement.End
-                                            ) {
-                                                Row(
-                                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Icon(
-                                                        Icons.Default.SwipeLeft,
-                                                        contentDescription = "Scroll",
-                                                        tint = Color.Gray,
-                                                        modifier = Modifier.size(12.dp)
-                                                    )
-                                                    Text(
-                                                        "Swipe to see full name",
-                                                        fontSize = 10.sp,
-                                                        color = Color.Gray
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                    if (selectedAsset != null) {
+                        ThreeColumnAssetTable(asset = selectedAsset)
                     }
 
                     OutlinedButton(
@@ -661,7 +563,7 @@ fun EmergencyFormPage(
                     ) {
                         Icon(Icons.Default.Search, null, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(if (asetTerdampakNama.isBlank()) "Search Asset" else "Change Asset")
+                        Text(if (selectedAsset == null) "Search Asset" else "Change Asset")
                     }
 
                     // Status Dropdown
@@ -832,7 +734,7 @@ fun EmergencyFormPage(
                             errorMessage = "Description is required"
                             showErrorDialog = true
                         }
-                        asetTerdampakId.isBlank() -> {
+                        selectedAsset == null -> {
                             errorMessage = "Impacted asset is required"
                             showErrorDialog = true
                         }
@@ -855,7 +757,7 @@ fun EmergencyFormPage(
                                         id = emergencyId,
                                         title = title,
                                         description = description,
-                                        impactedAssets = listOf(asetTerdampakId),
+                                        impactedAssets = listOf(selectedAsset!!.id),
                                         status = selectedStatus,
                                         note = note
                                     )
@@ -926,39 +828,157 @@ fun EmergencyFormPage(
     }
 }
 
-// Helper functions from InspectionDialog
-private fun createImageFile(context: Context): File {
-    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-    val storageDir = context.getExternalFilesDir(null)
-    return File.createTempFile("EMERGENCY_${timeStamp}_", ".jpg", storageDir)
-}
+// ✅ NEW: 3-Column Asset Table Component
+@Composable
+private fun ThreeColumnAssetTable(
+    asset: SelectedAssetState,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color(0xFF384E66).copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(8.dp)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            // Header
+            Text(
+                "Selected Asset:",
+                fontSize = 12.sp,
+                color = Color.Gray,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(12.dp)
+            )
 
-private fun loadBitmapFromUri(context: Context, uri: Uri): Bitmap? {
-    return try {
-        context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            BitmapFactory.decodeStream(inputStream)
-        }
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
-    }
-}
+            // Table
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp)
+                    .padding(bottom = 12.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    // Table Header
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF384E66))
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = "Asset ID",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.width(80.dp)
+                        )
+                        Text(
+                            text = "Kode BMD",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.width(100.dp)
+                        )
+                        Text(
+                            text = "Asset Name",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
 
-private fun savePhotoToInternalStorage(context: Context, uri: Uri): String? {
-    return try {
-        val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val fileName = "EMERGENCY_${timeStamp}.jpg"
-        val file = File(context.filesDir, fileName)
+                    HorizontalDivider(thickness = 1.dp, color = Color(0xFFE0E0E0))
 
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(file).use { output ->
-                input.copyTo(output)
+                    // Scrollable Content Row
+                    val scrollState = rememberScrollState()
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(scrollState)
+                            .padding(horizontal = 12.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Asset ID Badge
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF2196F3)
+                            ),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.width(80.dp)
+                        ) {
+                            Text(
+                                text = asset.id.take(8),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                            )
+                        }
+
+                        // Kode BMD Badge
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF384E66)
+                            ),
+                            shape = RoundedCornerShape(6.dp),
+                            modifier = Modifier.width(100.dp)
+                        ) {
+                            Text(
+                                text = asset.kodeBmd,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
+                            )
+                        }
+
+                        // Asset name (scrollable)
+                        Text(
+                            text = asset.nama,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.Black,
+                            modifier = Modifier.widthIn(min = 200.dp)
+                        )
+                    }
+
+                    // Scroll hint if name is long
+                    if (asset.nama.length > 20) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 12.dp, vertical = 4.dp),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    Icons.Default.SwipeLeft,
+                                    contentDescription = "Scroll",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(
+                                    "Swipe to see full name",
+                                    fontSize = 10.sp,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+                    }
+                }
             }
         }
-
-        file.absolutePath
-    } catch (e: Exception) {
-        e.printStackTrace()
-        null
     }
 }
